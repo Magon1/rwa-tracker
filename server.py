@@ -340,6 +340,16 @@ class H(BaseHTTPRequestHandler):
             with _lock:
                 self._send(200, json.dumps({'generated': int(_live['t']), 'tokens': _live['data']}), 'application/json')
             return
+        if path == '/api/geo':
+            # Country from the CDN edge (Cloudflare sets CF-IPCountry; others vary). Used only to
+            # auto-pick UI language (KR->ko, CN->zh, else en). No IP stored.
+            cc = (self.headers.get('CF-IPCountry')
+                  or self.headers.get('X-Vercel-IP-Country')
+                  or self.headers.get('X-Country-Code') or '').upper()
+            if cc in ('XX', 'T1'):
+                cc = ''
+            self._send(200, json.dumps({'country': cc}), 'application/json')
+            return
         if path == '/api/logo':
             q = urllib.parse.parse_qs(self.path.split('?', 1)[1]) if '?' in self.path else {}
             typ = 't' if 't' in q else 'd' if 'd' in q else 'c' if 'c' in q else None

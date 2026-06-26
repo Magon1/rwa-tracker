@@ -7,15 +7,18 @@
 <meta name="description" content="Live on-chain tokenized-stock & RWA dashboard — real-time volume, issued value, spreads, exchange comparison and news for Backpack, xStocks, Ondo. 실시간 토큰화 주식·RWA 온체인 트래커.">
 <meta name="keywords" content="tokenized stocks, tokenized equities, RWA, real world assets, Backpack Securities, xStocks, Ondo, onchain equities, tokenized securities, SPCX, Solana, Base, 토큰화 주식, 온체인 주식, RWA 트래커">
 <meta name="robots" content="index,follow">
+<link rel="canonical" href="https://onchainequity.com/">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://onchainequity.com/">
+<meta property="og:site_name" content="OnchainEquities">
 <meta property="og:title" content="OnchainEquities — Tokenized Stock & RWA Tracker">
 <meta property="og:description" content="Live on-chain tokenized-stock data: volume, value, spreads, news. Backpack · xStocks · Ondo.">
-<meta property="og:image" content="og.svg">
+<meta property="og:image" content="https://onchainequity.com/og.svg">
 <meta property="og:locale" content="en_US"><meta property="og:locale:alternate" content="ko_KR">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="OnchainEquities — Tokenized Stock & RWA Tracker">
 <meta name="twitter:description" content="Live on-chain tokenized-stock data: volume, value, spreads, news.">
-<meta name="twitter:image" content="og.svg">
+<meta name="twitter:image" content="https://onchainequity.com/og.svg">
 <meta name="theme-color" content="#f1efe7">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -438,18 +441,43 @@ function applyTheme(name){
 }
 
 /* ===================== i18n ===================== */
-let lang=localStorage.getItem('lang')||'ko';
+// Language: a manual pick (localStorage) always wins. Otherwise auto-pick by region —
+// Korea→ko, China→zh, everyone else→English (global default). Quick guess from browser
+// locale/timezone for instant paint; server /api/geo (real IP via CDN) confirms right after.
+const savedLang=localStorage.getItem('lang');
+function quickGuessLang(){
+  try{
+    const ls=((navigator.languages&&navigator.languages.join(','))||navigator.language||'').toLowerCase();
+    if(/(^|,)ko\b|ko-/.test(ls))return 'ko';
+    if(/(^|,)zh\b|zh-/.test(ls))return 'zh';
+    const tz=(Intl.DateTimeFormat().resolvedOptions().timeZone||'');
+    if(tz==='Asia/Seoul'||tz==='Asia/Pyongyang')return 'ko';
+    if(/Shanghai|Chongqing|Urumqi|Harbin|Taipei|Hong_Kong|Macau/.test(tz))return 'zh';
+  }catch(e){}
+  return 'en';
+}
+let lang=savedLang||quickGuessLang();
+async function confirmGeoLang(){
+  if(savedLang)return;                 // user already chose — never override
+  try{
+    const r=await fetch('/api/geo',{cache:'no-store'});
+    const cc=((await r.json()).country||'').toUpperCase();
+    if(!cc)return;                     // no edge country (e.g. local/non-CF host) — keep quick guess
+    const want=cc==='KR'?'ko':(cc==='CN'?'zh':'en');
+    if(want!==lang){lang=want;applyStatic();renderAll();}
+  }catch(e){}
+}
 const TR={
   refresh:{ko:'↻ 새로고침',en:'↻ REFRESH'}, keybtn:{ko:'BIRDEYE 키',en:'BIRDEYE KEY'}, share_btn:{ko:'🔗 공유',en:'🔗 SHARE'},
   edition_sub:{ko:'토큰화 주식 · RWA 온체인 데이터',en:'Tokenized Stocks · RWA On-chain Data'},
   search_ph:{ko:'주식 검색 — 예: AAPL, Tesla, Circle … (발행사별로 표시)',en:'Search a stock — e.g. AAPL, Tesla, Circle … (grouped by issuer)'},
   callout_q:{ko:'거래량 1위 = Backpack',en:'#1 Volume = Backpack'},
-  callout_a:{ko:'온체인 24h 거래량 기준 <b>Backpack 1위</b> — SPCX <b>$57.8M</b>·MU $37.1M·SNDK $17.3M, <b>3종목 합 ~$112M</b>(Solana DEX). xStocks ~$29M(Solana DEX). <b>Ondo는 발행액 1위($899M)이고 DEX 스왑은 ~0이지만 온체인 전송 거래량은 ~$13M</b>(Blockscout 트랜잭션 합산 — CRCLon $3.1M 등 mint/redeem·기관 이동). IBIT처럼 $497M 발행됐어도 24h 전송 0인 휴면 토큰도 큼.',
-    en:'By 24h on-chain volume, <b>Backpack leads</b> — SPCX <b>$57.8M</b>·MU $37.1M·SNDK $17.3M, <b>~$112M across 3</b> (Solana DEX). xStocks ~$29M (Solana DEX). <b>Ondo is #1 by issued value ($899M); DEX swaps ~$0 but its on-chain TRANSFER volume is ~$13M</b> (Blockscout tx sum — CRCLon $3.1M etc., mint/redeem & institutional). Some tokens like IBIT have $497M issued yet $0 transfers/24h (dormant).'},
+  callout_a:{ko:'온체인 24h <b>DEX 거래량은 Backpack 1위</b> — SPCX·MU·SNDK 3종목이 대부분(정확한 금액은 위 헤더·아래 표의 라이브 수치). xStocks가 그 다음. 반면 <b>Ondo는 발행액(온체인 가치) 1위지만 DEX 2차거래는 거의 0</b> — mint/redeem·기관 전송 중심이라 "전송 거래량"으로 봐야 함. ※ 거래량은 발행사마다 성격이 달라(스왑 vs 전송) 단순 합산 비교에 주의.',
+    en:'By 24h on-chain <b>DEX volume, Backpack leads</b> — mostly SPCX·MU·SNDK (exact figures = the live numbers in the header & table below). xStocks is next. By contrast <b>Ondo is #1 by issued value but has almost no DEX trading</b> — it runs on mint/redeem & institutional transfers, so its activity shows up as "transfer volume," not swaps. ⚠ Volume means different things per issuer (swap vs transfer) — compare with care.'},
   sec1_h:{ko:'현재 가장 활발한 토큰화 주식',en:'Most Active Tokenized Stocks'},
   sec1_d:{ko:'24h 온체인 DEX 거래량 상위 10 — 종목 · 발행사 · 등락',en:'Top 10 by 24h on-chain DEX volume — asset · issuer · change'},
   sec2_h:{ko:'발행사 점유율',en:'Issuer Market Share'},
-  sec2_d:{ko:'추적 3개 발행사 기준 · 볼륨은 Backpack, 온체인 발행액은 Ondo가 우위',en:'Across 3 tracked issuers · Backpack leads volume, Ondo leads on-chain value'},
+  sec2_d:{ko:'추적 4개 발행사 기준 · 볼륨은 Backpack, 온체인 발행액은 Ondo가 우위',en:'Across 4 tracked issuers · Backpack leads volume, Ondo leads on-chain value'},
   sec3_h:{ko:'체인별 분포',en:'By Chain'},
   sec3_d:{ko:'가치는 Ethereum·BNB에, 거래는 Solana에 — 분리해서 봐야 함',en:'Value sits on Ethereum/BNB, trading on Solana — read them separately'},
   sec4_h:{ko:'같은 종목, 다른 발행사 — 가격차',en:'Same Stock, Different Issuers — Price Gap'},
@@ -471,7 +499,7 @@ const TR={
   l_vol:{ko:'볼륨',en:'Volume'}, l_count:{ko:'종목 수',en:'Tokens'}, l_mcap:{ko:'온체인 발행액',en:'On-chain Value'},
   chain_mcap_h:{ko:'체인별 온체인 발행액',en:'On-chain Value by Chain'},
   chain_vol_h:{ko:'체인별 거래량 점유율',en:'Volume Share by Chain'},
-  chain_vol_d:{ko:'Solana ~95.6% 집중',en:'~95.6% on Solana'},
+  chain_vol_d:{ko:'DEX 스왑 거래 기준 · Solana ~95.6% 집중 (Ondo 전송량 제외)',en:'By DEX-swap trading · ~95.6% on Solana (excl. Ondo transfers)'},
   c_ticker:{ko:'티커',en:'Ticker'}, c_issuer:{ko:'발행사',en:'Issuer'}, c_class:{ko:'자산군',en:'Class'},
   c_chain:{ko:'체인',en:'Chain'}, c_price:{ko:'가격',en:'Price'}, c_vol:{ko:'24h 볼륨',en:'24h Vol'},
   c_liq:{ko:'유동성 (TVL)',en:'Liquidity (TVL)'}, c_mcap:{ko:'온체인 발행액',en:'On-chain Value'}, c_spread:{ko:'스프레드',en:'Spread'},
@@ -530,7 +558,7 @@ const TR_ZH={
   edition_sub:'代币化股票 · RWA 链上数据',
   search_ph:'搜索股票 — 例如 AAPL、Tesla、Circle …（按发行方分组）',
   callout_q:'成交量第一 = Backpack',
-  callout_a:'按24h链上成交量，<b>Backpack 第一</b> — SPCX <b>$57.8M</b>·MU $37.1M·SNDK $17.3M，<b>3只合计约 $112M</b>（Solana DEX）。xStocks 约 $29M（Solana DEX）。<b>Ondo 发行规模第一（$899M）；DEX 兑换约 $0，但链上转账成交量约 $13M</b>（Blockscout 交易合计 — 如 CRCLon $3.1M，铸造/赎回及机构划转）。部分代币如 IBIT 发行 $497M 却24h零转账（休眠）。',
+  callout_a:'按24h链上 <b>DEX 成交量，Backpack 第一</b> — 主要为 SPCX·MU·SNDK（具体金额见上方头部与下方表格的实时数值）。xStocks 次之。相反 <b>Ondo 发行规模（链上价值）第一，但几乎没有 DEX 二级交易</b> — 以铸造/赎回及机构转账为主，其活跃度体现为"转账成交量"而非兑换。⚠ 各发行方的成交量口径不同（兑换 vs 转账），简单相加比较需谨慎。',
   sec1_h:'当前最活跃的代币化股票', sec1_d:'按24h链上 DEX 成交量前10 — 资产 · 发行方 · 涨跌',
   sec2_h:'发行方市场份额', sec2_d:'基于3家追踪发行方 · 成交量 Backpack 领先，链上发行额 Ondo 领先',
   sec3_h:'按链分布', sec3_d:'价值在 Ethereum/BNB，交易在 Solana — 需分开看',
@@ -594,7 +622,7 @@ const ISSUER_AGG={  // 2026-06-26
   Backpack:{count:4,   mcap:17.6e6,  vol:112.1e6},  // SPCX·MU·SNDK·DRAM(신규) · Solana DEX 스왑(tokens.xyz)
   Dinari:  {count:10,  mcap:0,       vol:0},        // Base · 발행 초기 · DEX 거래/시세 데이터 미미(mint/redeem)
 };
-const SECTOR={mcap:1.52e9, assets:2480, monthlyVol:8.02e9, mcap30d:-6.65, vol30d:127.17};
+const SECTOR={mcap:1.52e9, assets:2480, monthlyVol:8.02e9, mcap30d:-6.6, vol30d:127};
 const CHAIN_MCAP=[['Ethereum',614.3e6,'#627EEA'],['Solana',442.6e6,'#9945FF'],['BNB Chain',432.2e6,'#F0B90B'],['Other',31e6,'#9aa0ab']];
 const CHAIN_VOL=[['Solana',95.6,'#9945FF'],['Gnosis',1.98,'#3E6957'],['Ethereum',1.8,'#627EEA'],['Other',0.62,'#F0B90B']];
 const A=(t,n,issuer,chain,ck,addr,price,vol,liq,mcap,spread,cls)=>({t,n,issuer,chain,ck,addr,price,vol,liq,mcap,spread,cls:cls||'stock'});
@@ -637,8 +665,8 @@ const ISSUER_INFO={
   Ondo:{color:'#5a51b0',
     count:{ko:'439 티커',en:'439 tickers'}, tag:{ko:'Ondo Global Markets · "on" 접미사',en:'Ondo Global Markets · "on" suffix'},
     por:{ko:'✓ 브로커딜러(Alpaca) 1:1 커스터디',en:'✓ Broker-dealer (Alpaca) 1:1 custody'},
-    items:{ko:[['온체인 발행액','<b>1위</b> $899M · 점유율 57.3%'],['종목','ETH 439 + BNB 439 + Solana 200+'],['거래','<b>DEX 2차거래 거의 없음</b> — mint/redeem 중심'],['상환','24×5 mint/redeem · 리테일은 파트너']],
-      en:[['On-chain Value','<b>#1</b> $899M · 57.3% share'],['Tokens','ETH 439 + BNB 439 + Solana 200+'],['Trading','<b>Almost no DEX volume</b> — mint/redeem model'],['Redemption','24×5 mint/redeem · retail via partners']]}},
+    items:{ko:[['온체인 발행액','<b>발행액 1위</b> $899M (추적 4사 중 ~59%)'],['종목','ETH 439 + BNB 439 + Solana 200+'],['거래','<b>DEX 2차거래 거의 없음</b> — mint/redeem 중심'],['상환','24×5 mint/redeem · 리테일은 파트너']],
+      en:[['On-chain Value','<b>#1 by value</b> $899M (~59% of 4 tracked)'],['Tokens','ETH 439 + BNB 439 + Solana 200+'],['Trading','<b>Almost no DEX volume</b> — mint/redeem model'],['Redemption','24×5 mint/redeem · retail via partners']]}},
   Dinari:{color:'#0891b2',
     count:{ko:'10 종목',en:'10 tokens'}, tag:{ko:'Dinari · dShares · ".d" 접미사',en:'Dinari · dShares · ".d" suffix'},
     por:{ko:'✓ SEC 등록 브로커딜러 1:1 백킹',en:'✓ SEC-registered broker-dealer 1:1'},
@@ -716,8 +744,10 @@ function renderHero(){
 }
 function renderMovers(){
   const ch=ASSETS.filter(a=>typeof a.chg==='number');
-  const gain=[...ch].sort((a,b)=>b.chg-a.chg).slice(0,4);
-  const lose=[...ch].sort((a,b)=>a.chg-b.chg).slice(0,4);
+  // only real gainers (chg>0) in the gainers box, real losers (chg<0) in the losers box —
+  // otherwise a down market makes "Top Gainers" show negative numbers, which looks broken.
+  const gain=ch.filter(a=>a.chg>0).sort((a,b)=>b.chg-a.chg).slice(0,4);
+  const lose=ch.filter(a=>a.chg<0).sort((a,b)=>a.chg-b.chg).slice(0,4);
   const rowsOf=arr=>arr.map(a=>`<div class="mv-row"><span class="tk">${a.t}</span><span class="v">${fmtPct(a.chg)}</span></div>`).join('')||`<div class="mv-row" style="color:var(--mut)">—</div>`;
   const news=LISTINGS[lang].map(l=>`<div class="mv-new"><span class="pill ${l[3]}">${l[0]}</span><span>${l[1]}</span><span class="d" style="margin-left:auto">${l[2]}</span></div>`).join('');
   document.getElementById('movers').innerHTML=`
@@ -793,6 +823,17 @@ function renderCross(){
 function tokSource(){
   if(FULL){const all=[];issuersList.forEach(i=>(FULL[i]||[]).forEach(a=>all.push({...a,issuer:i})));return all;}
   return ASSETS.slice();
+}
+// Keep the hero headline + share chart equal to the SUM of the tokens actually shown below.
+// Backpack/xStocks volume is live DEX data, so recompute from the live token list (not a frozen number).
+function recomputeAgg(){
+  if(!FULL)return;
+  ['Backpack','xStocks'].forEach(iss=>{
+    const arr=FULL[iss]; if(!arr||!arr.length)return;
+    ISSUER_AGG[iss].vol=arr.reduce((s,a)=>s+(a.vol||0),0);
+    ISSUER_AGG[iss].count=arr.length;
+    const m=arr.reduce((s,a)=>s+(a.mc||0),0); if(m>0)ISSUER_AGG[iss].mcap=m;
+  });
 }
 function renderTable(){
   const q=searchQ.trim().toLowerCase();
@@ -1112,6 +1153,7 @@ async function refreshLive(){
 }
 function renderAll(){
   applyStatic();
+  recomputeAgg();
   const loc=lang==='ko'?'ko-KR':(lang==='zh'?'zh-CN':'en-US');
   document.getElementById('editionDate').textContent='LIVE · '+new Date().toLocaleString(loc,{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderCross();renderTable();renderCmp();renderNews();
@@ -1152,7 +1194,7 @@ const savedTheme=localStorage.getItem('theme')||'editorial';
 document.body.className=savedTheme==='editorial'?'':'t-'+savedTheme;
 syncChartTheme();
 fetch('./assets.json',{cache:'no-store'}).then(r=>r.json()).then(j=>{FULL=j;renderTable();if(document.getElementById('modal').style.display==='flex')renderModal();}).catch(()=>{});
-renderAll();showTab('main');tick();setInterval(tick,30000);
+renderAll();showTab('main');tick();setInterval(tick,30000);confirmGeoLang();
 </script>
 </body>
 </html>
