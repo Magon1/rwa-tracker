@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OnchainEquities — Tokenized Stock & RWA Tracker (Backpack · xStocks · Ondo)</title>
+<meta name="description" content="Live on-chain tokenized-stock & RWA dashboard — real-time volume, issued value, spreads, exchange comparison and news for Backpack, xStocks, Ondo. 실시간 토큰화 주식·RWA 온체인 트래커.">
+<meta name="keywords" content="tokenized stocks, tokenized equities, RWA, real world assets, Backpack Securities, xStocks, Ondo, onchain equities, tokenized securities, SPCX, Solana, Base, 토큰화 주식, 온체인 주식, RWA 트래커">
+<meta name="robots" content="index,follow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OnchainEquities — Tokenized Stock & RWA Tracker">
+<meta property="og:description" content="Live on-chain tokenized-stock data: volume, value, spreads, news. Backpack · xStocks · Ondo.">
+<meta property="og:image" content="og.svg">
+<meta property="og:locale" content="en_US"><meta property="og:locale:alternate" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="OnchainEquities — Tokenized Stock & RWA Tracker">
+<meta name="twitter:description" content="Live on-chain tokenized-stock data: volume, value, spreads, news.">
+<meta name="twitter:image" content="og.svg">
+<meta name="theme-color" content="#f1efe7">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;450;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Manrope:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{ /* Editorial (default) */
+    --paper:#f1efe7; --card:#fbfaf5; --card2:#f6f4ec; --ink:#1c1b17; --ink2:#403d35;
+    --mut:#7a766c; --line:#ddd8ca; --line2:#cbc5b3; --chart-grid:#e3dfd4;
+    --up:#1c7a4a; --down:#bb3a2c; --gold:#b8893b; --accent:#1c1b17;
+    --ondo:#6366f1; --xs:#2f6fed; --bp:#e5383b; --dinari:#0891b2;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --serif:'Fraunces',Georgia,serif;
+    --sans:'Inter',system-ui,sans-serif;
+    --radius:6px;
+  }
+  body.t-terminal{ /* Bloomberg dark · monospace · dense */
+    --paper:#0a0a0a; --card:#121212; --card2:#171717; --ink:#e8e8e8; --ink2:#c2c2c2;
+    --mut:#8a8a8a; --line:#222; --line2:#2e2e2e; --chart-grid:#1c1c1c;
+    --up:#26d962; --down:#ff4d4d; --gold:#ffa028; --accent:#ffa028;
+    --ondo:#a78bfa; --xs:#5b9bff; --bp:#e5383b;
+    --mono:'JetBrains Mono',monospace; --serif:'JetBrains Mono',monospace; --sans:'IBM Plex Sans',sans-serif; --radius:2px;
+  }
+  body.t-nebula{ /* modern analytics dark · Dune/Nansen */
+    --paper:#0e0f13; --card:#1a1b22; --card2:#20222b; --ink:#f4f5f7; --ink2:#cbd0db;
+    --mut:#8b8f9c; --line:#262833; --line2:#333647; --chart-grid:#23252f;
+    --up:#2dd4a7; --down:#ff5c72; --gold:#7c5cff; --accent:#7c5cff;
+    --ondo:#a78bfa; --xs:#5b8cff; --bp:#e5383b;
+    --mono:'IBM Plex Mono',monospace; --serif:'Space Grotesk',sans-serif; --sans:'Inter',sans-serif; --radius:12px;
+  }
+  body.t-institutional{ /* clean light · DefiLlama/Stripe/Token Terminal */
+    --paper:#fbfbfd; --card:#ffffff; --card2:#f4f6f9; --ink:#0a2540; --ink2:#334155;
+    --mut:#6b7280; --line:#e6e8ec; --line2:#d8dbe0; --chart-grid:#eef0f3;
+    --up:#10a862; --down:#e5484d; --gold:#4f46e5; --accent:#4f46e5;
+    --ondo:#6366f1; --xs:#2f6fed; --bp:#e5383b;
+    --mono:'IBM Plex Mono',monospace; --serif:'Manrope',sans-serif; --sans:'Inter',sans-serif; --radius:8px;
+  }
+  body.t-vault{ /* warm gold private-bank dark */
+    --paper:#0d0c0a; --card:#1a1815; --card2:#211e19; --ink:#f3efe7; --ink2:#d8d2c5;
+    --mut:#9a9384; --line:#2b2823; --line2:#38332b; --chart-grid:#241f19;
+    --up:#3fb97a; --down:#d9544d; --gold:#e5b94e; --accent:#e5b94e;
+    --ondo:#b8a6f5; --xs:#6f93e6; --bp:#e5383b;
+    --mono:'IBM Plex Mono',monospace; --serif:'Fraunces',serif; --sans:'Inter',sans-serif; --radius:7px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;
+    -webkit-font-smoothing:antialiased;line-height:1.5}
+  .nav{position:sticky;top:0;z-index:30;background:var(--paper);border-bottom:1px solid var(--line2);
+    display:flex;gap:4px;flex-wrap:wrap;padding:9px 0;margin-bottom:6px}
+  .nav a{font-family:var(--mono);font-size:12px;color:var(--mut);padding:7px 13px;border-radius:var(--radius);
+    border:1px solid transparent;cursor:pointer}
+  .nav a:hover{color:var(--ink);background:var(--card);border-color:var(--line2)}
+  .nav a.active{color:var(--paper);background:var(--ink);border-color:var(--ink)}
+  .nav button.tab{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--mut);
+    padding:9px 17px;border:1px solid transparent;border-radius:7px;background:none;cursor:pointer}
+  .nav button.tab:hover{color:var(--ink);background:var(--card);border-color:var(--line2)}
+  .nav button.tab.on{color:var(--paper);background:var(--ink);border-color:var(--ink)}
+  section{scroll-margin-top:64px}
+  a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line2)}
+  a:hover{border-color:var(--ink)}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px 40vh}
+  .mast{padding:22px 0 14px;border-bottom:2px solid var(--ink)}
+  .mast-top{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap}
+  .title{font-family:var(--serif);font-weight:600;font-size:40px;letter-spacing:-.5px;line-height:.95}
+  .title b{font-style:italic;font-weight:600}
+  .mast-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:11px;color:var(--mut);border:1px solid var(--line2);
+    padding:5px 9px;border-radius:3px;background:var(--card);display:inline-flex;align-items:center;gap:6px}
+  .chip .led{width:6px;height:6px;border-radius:50%;background:var(--up)}
+  .chip.closed .led{background:var(--mut)}
+  .btn{font-family:var(--mono);font-size:11px;color:var(--ink);border:1px solid var(--line2);
+    padding:6px 10px;border-radius:3px;background:var(--card);cursor:pointer}
+  .btn:hover{border-color:var(--ink)}
+  .edition{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:11px;color:var(--mut);text-transform:uppercase;
+    letter-spacing:.6px;padding:9px 0;border-bottom:1px solid var(--line);margin-bottom:22px}
+  .searchbar{display:flex;align-items:center;gap:10px;margin:20px 0;padding:3px 4px 3px 14px;
+    background:var(--card);border:1px solid var(--line2);border-radius:5px;max-width:560px}
+  .searchbar svg{flex:none;opacity:.5}
+  .searchbar input{flex:1;border:none;background:none;outline:none;font-family:var(--sans);
+    font-size:15px;color:var(--ink);padding:9px 0}
+  .searchbar .clr{font-family:var(--mono);font-size:11px;color:var(--mut);background:var(--card2);
+    border:1px solid var(--line);padding:5px 9px;border-radius:3px;cursor:pointer}
+  #searchInfo{font-family:var(--mono);font-size:12px;color:var(--mut);margin:-8px 0 18px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line2);
+    border-radius:var(--radius);overflow:hidden;background:var(--card);margin-bottom:8px}
+  .kpi{padding:15px 18px;border-right:1px solid var(--line)}
+  .kpi:last-child{border-right:none}
+  .kpi .l{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--mut)}
+  .kpi .v{font-family:var(--serif);font-weight:600;font-size:27px;margin-top:8px;letter-spacing:-.3px}
+  .kpi .s{font-size:12px;color:var(--mut);margin-top:3px}
+  .up{color:var(--up)} .down{color:var(--down)}
+  .hero{display:grid;grid-template-columns:1.45fr 1fr;gap:16px;margin:18px 0}
+  .hero-card{background:var(--card);border:1px solid var(--line2);border-radius:var(--radius);padding:20px 24px;position:relative;overflow:hidden}
+  .hero-lead{border-left:4px solid var(--ink)}
+  .hero-eyebrow{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--mut)}
+  .hero-title{font-family:var(--serif);font-size:30px;font-weight:700;margin:10px 0 3px;display:flex;align-items:baseline;gap:13px;flex-wrap:wrap}
+  .hero-big{font-size:38px;letter-spacing:-1px}
+  .hero-sub{font-size:13px;color:var(--ink2);margin-bottom:18px}
+  .hero-cta{display:inline-flex;align-items:center;gap:8px;color:#fff;border:none;border-radius:8px;
+    padding:12px 22px;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+  .hero-cta:hover{filter:brightness(1.07);transform:translateY(-1px)}
+  .pulse-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--mut)}
+  .pulse-row b{font-family:var(--mono);color:var(--ink);font-size:14px}
+  .pulse-live{margin-top:12px;font-family:var(--mono);font-size:11.5px;color:var(--up);display:flex;align-items:center;gap:7px}
+  .pulse-live .dot{width:7px;height:7px;border-radius:50%;background:var(--up);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--up) 60%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  .movers{display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:14px;margin:16px 0 6px}
+  .mv-card{background:var(--card);border:1px solid var(--line2);border-radius:var(--radius);padding:13px 16px}
+  .mv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .mv-head h4{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin:0}
+  .mv-row{display:flex;justify-content:space-between;align-items:baseline;padding:4.5px 0;font-size:13px}
+  .mv-row .tk{font-size:13px} .mv-row .v{font-family:var(--mono);font-size:12.5px}
+  .mv-link{font-family:var(--mono);font-size:10.5px;color:var(--accent);cursor:pointer;border:none;background:none}
+  .mv-new{display:flex;align-items:baseline;gap:8px;padding:4.5px 0;font-size:12.5px}
+  .mv-new .d{font-family:var(--mono);font-size:10.5px;color:var(--mut)}
+  .star{cursor:pointer;color:var(--line2);font-size:13px;margin-right:5px;user-select:none;transition:color .12s}
+  .star:hover{color:var(--gold)} .star.on{color:var(--gold)}
+  .seg button.watch.on{background:var(--gold);color:#fff;border-color:var(--gold)}
+  .btn.on{background:var(--gold);color:#fff;border-color:var(--gold)}
+  @media(max-width:880px){.hero{grid-template-columns:1fr}.movers{grid-template-columns:1fr}}
+  .callout{display:flex;gap:14px;background:var(--card);border:1px solid var(--line2);
+    border-left:3px solid var(--bp);border-radius:5px;padding:14px 18px;margin:22px 0}
+  .callout .q{font-family:var(--serif);font-weight:600;font-size:15px;white-space:nowrap;color:var(--bp)}
+  .callout .a{font-size:13px;color:var(--ink2)}
+  section{margin:38px 0}
+  .sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;
+    border-bottom:1px solid var(--ink);padding-bottom:8px;margin-bottom:16px}
+  .sec-label{font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--mut);text-transform:uppercase}
+  .sec-head h2{font-family:var(--serif);font-weight:600;font-size:22px;margin:3px 0 0;letter-spacing:-.3px}
+  .sec-head .desc{font-size:12.5px;color:var(--mut);max-width:48ch;text-align:right}
+  .grid{display:grid;gap:22px}
+  .g2{grid-template-columns:1.25fr .75fr}
+  .gg2{grid-template-columns:1fr 1fr}
+  .panel{background:var(--card);border:1px solid var(--line2);border-radius:var(--radius);padding:18px}
+  .panel h3{font-family:var(--serif);font-weight:600;font-size:16px;margin:0 0 2px}
+  .panel .pd{font-size:12px;color:var(--mut);margin:0 0 14px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:right;padding:9px 9px;border-bottom:1px solid var(--line);font-size:13px}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.6px;
+    color:var(--mut);font-weight:500;border-bottom:1px solid var(--line2)}
+  tbody tr:hover{background:var(--card2)}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .tk{font-family:var(--mono);font-weight:600;font-size:13.5px}
+  td.c-tk{text-align:left}
+  .logo{width:17px;height:17px;border-radius:3px;vertical-align:-4px;margin-right:7px;object-fit:contain;background:#fff;border:1px solid var(--line)}
+  .nm{color:var(--mut);font-size:11.5px}
+  .rk{font-family:var(--mono);color:var(--mut);width:24px;text-align:right}
+  .pill{font-family:var(--mono);font-size:10.5px;font-weight:500;padding:2px 7px;border-radius:3px;border:1px solid}
+  .pill.Backpack{color:var(--bp);border-color:color-mix(in srgb,var(--bp) 40%,transparent);background:color-mix(in srgb,var(--bp) 13%,transparent)}
+  .pill.xStocks{color:var(--xs);border-color:color-mix(in srgb,var(--xs) 40%,transparent);background:color-mix(in srgb,var(--xs) 13%,transparent)}
+  .pill.Ondo{color:var(--ondo);border-color:color-mix(in srgb,var(--ondo) 40%,transparent);background:color-mix(in srgb,var(--ondo) 13%,transparent)}
+  .pill.Dinari{color:var(--dinari);border-color:color-mix(in srgb,var(--dinari) 40%,transparent);background:color-mix(in srgb,var(--dinari) 13%,transparent)}
+  .tag{font-family:var(--mono);font-size:10px;color:var(--mut);border:1px solid var(--line2);padding:1px 5px;border-radius:3px}
+  .vbar{position:relative}
+  .vbar i{position:absolute;left:0;top:50%;transform:translateY(-50%);height:60%;border-radius:2px;opacity:.16;z-index:0}
+  .vbar span{position:relative;z-index:1}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;margin-top:12px}
+  .legend .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
+  .seg{display:inline-flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden}
+  .seg button{font-family:var(--mono);font-size:11px;background:var(--card);border:none;
+    color:var(--mut);padding:6px 12px;cursor:pointer;border-left:1px solid var(--line)}
+  .seg button:first-child{border-left:none}
+  .seg button.on{background:var(--ink);color:var(--paper)}
+  .cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+  .ic{background:var(--card);border:1px solid var(--line2);border-radius:var(--radius);padding:18px;border-top:3px solid}
+  .ic h3{font-family:var(--serif);font-weight:600;font-size:18px;margin:0}
+  .ic .cnt{font-family:var(--mono);font-size:12px;color:var(--mut)}
+  .ic .tag2{font-size:11.5px;color:var(--mut);margin:8px 0 2px}
+  .ic .por{font-family:var(--mono);font-size:10.5px;color:var(--up);margin-top:6px}
+  .ic ul{margin:10px 0 0;padding:0;list-style:none;font-size:12px;line-height:1.5}
+  .ic li{padding:6px 0;border-top:1px solid var(--line);color:var(--mut)}
+  .ic li b{color:var(--ink);font-weight:600}
+  .ic li:first-child{border-top:none}
+  .listings{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  .lst{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line2);border-radius:4px;padding:7px 11px;background:var(--card)}
+  .lst b{color:var(--ink)} .lst .d{color:var(--mut)}
+  .news{display:grid;gap:0;border-top:1px solid var(--line2)}
+  .ni{display:flex;gap:14px;padding:13px 2px;border-bottom:1px solid var(--line);align-items:baseline}
+  .ni .cat{font-family:var(--mono);font-size:10px;letter-spacing:.5px;padding:2px 7px;border-radius:3px;white-space:nowrap;width:88px;text-align:center}
+  .cat.reg{color:var(--down);background:color-mix(in srgb,var(--down) 14%,transparent)}
+  .cat.entrant{color:var(--xs);background:color-mix(in srgb,var(--xs) 14%,transparent)}
+  .cat.launch{color:var(--up);background:color-mix(in srgb,var(--up) 14%,transparent)}
+  .cat.milestone{color:var(--gold);background:color-mix(in srgb,var(--gold) 16%,transparent)}
+  .badge{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.4px}
+  .badge.live{color:var(--up);background:color-mix(in srgb,var(--up) 16%,transparent)}
+  .badge.sample{color:var(--gold);background:color-mix(in srgb,var(--gold) 18%,transparent)}
+  .ni h4{margin:0;font-size:13.5px;font-weight:500}
+  .ni .meta{font-family:var(--mono);font-size:11px;color:var(--mut);white-space:nowrap}
+  .ni-item{border-bottom:1px solid var(--line)}
+  .ni-item>.ni{border-bottom:none;cursor:pointer}
+  .ni-item>.ni:hover h4{color:var(--accent)}
+  .ni-caret{font-size:9px;color:var(--mut);transition:transform .15s}
+  .ni.open .ni-caret{transform:rotate(180deg)}
+  .ni-summary{padding:0 4px 14px 102px}
+  .ni-summary p{margin:0 0 8px;font-size:12.5px;color:var(--ink2);line-height:1.55}
+  .ni-summary a{font-family:var(--mono);font-size:11px;color:var(--accent)}
+  .foot{margin-top:46px;border-top:2px solid var(--ink);padding-top:14px;font-family:var(--mono);font-size:11px;color:var(--mut);line-height:1.7}
+  .ic{cursor:pointer;transition:box-shadow .15s,transform .15s}
+  .ic:hover{box-shadow:0 6px 22px rgba(28,27,23,.12);transform:translateY(-2px)}
+  .ic .view{font-family:var(--mono);font-size:10.5px;color:var(--mut);margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+  .ic:hover .view{color:var(--ink)}
+  .modal-bg{position:fixed;inset:0;background:rgba(20,19,16,.5);display:flex;align-items:flex-start;
+    justify-content:center;padding:38px 16px;z-index:50;overflow:auto}
+  .modal{background:var(--paper);border:1px solid var(--line2);border-radius:8px;max-width:840px;width:100%;
+    padding:24px 24px 26px;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.28)}
+  .modal-x{position:absolute;top:12px;right:16px;background:none;border:none;font-size:26px;
+    color:var(--mut);cursor:pointer;line-height:1}
+  .modal-x:hover{color:var(--ink)}
+  .modal h2{font-family:var(--serif);font-weight:600;font-size:25px;margin:0;letter-spacing:-.3px}
+  .mstats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line2);
+    border:1px solid var(--line2);border-radius:var(--radius);overflow:hidden;margin:16px 0 10px}
+  .mstat{background:var(--card);padding:12px 14px}
+  .mstat .l{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut)}
+  .mstat .v{font-family:var(--serif);font-weight:600;font-size:21px;margin-top:5px}
+  .mcov{font-family:var(--mono);font-size:11px;color:var(--mut);margin:6px 0 12px}
+  .issuer-cta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--card);
+    border:1px solid var(--line2);border-radius:var(--radius);padding:14px 18px;margin:22px 0}
+  .issuer-cta .lbl{font-family:var(--serif);font-weight:600;font-size:15px}
+  .ibtn{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:13px;font-weight:600;
+    border:1.5px solid;border-radius:7px;padding:10px 15px;cursor:pointer;background:var(--card);transition:all .15s}
+  .ibtn:hover{color:#fff;transform:translateY(-1px)}
+  .ibtn .sub{font-size:11px;font-weight:400;opacity:.75} .ibtn .ar{font-size:15px}
+  .ibtn.Backpack{color:var(--bp);border-color:var(--bp)} .ibtn.Backpack:hover{background:var(--bp)}
+  .ibtn.xStocks{color:var(--xs);border-color:var(--xs)} .ibtn.xStocks:hover{background:var(--xs)}
+  .ibtn.Ondo{color:var(--ondo);border-color:var(--ondo)} .ibtn.Ondo:hover{background:var(--ondo)}
+  .ibtn.Dinari{color:var(--dinari);border-color:var(--dinari)} .ibtn.Dinari:hover{background:var(--dinari)}
+  .view-btn{display:inline-flex;align-items:center;gap:7px;margin-top:14px;color:#fff;
+    font-family:var(--mono);font-size:11.5px;font-weight:600;padding:9px 14px;border-radius:var(--radius)}
+  .ic:hover .view-btn{filter:brightness(1.08)}
+  .ccorner{position:absolute;top:12px;right:14px;font-size:15px;color:var(--mut)}
+  .ic{position:relative}
+  #themeSel{font-family:var(--mono);font-size:11px;color:var(--ink);background:var(--card);
+    border:1px solid var(--line2);border-radius:var(--radius);padding:6px 8px;cursor:pointer}
+  .ibtn:hover .sub{opacity:.95}
+  @media(max-width:880px){.kpis{grid-template-columns:repeat(2,1fr)}.kpi:nth-child(2){border-right:none}
+    .mstats{grid-template-columns:repeat(2,1fr)}
+    .g2,.gg2,.cmp{grid-template-columns:1fr}.title{font-size:32px}.sec-head .desc{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="mast-top">
+      <div class="title">Onchain<b>Equities</b></div>
+      <div class="mast-controls">
+        <button class="btn" id="shareBtn" data-t="share_btn">SHARE</button>
+        <div class="seg" id="langSeg">
+          <button data-lang="ko">한국어</button><button data-lang="en">EN</button><button data-lang="zh">中文</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="edition">
+    <span data-t="edition_sub"></span>
+    <span id="editionDate">—</span>
+    <span>SRC · tokens.xyz / RWA.xyz / DefiLlama</span>
+  </div>
+
+  <nav class="nav" id="tabbar">
+    <button class="tab on" data-tab="main" data-t="tab_main"></button>
+    <button class="tab" data-tab="news" data-t="tab_news"></button>
+    <button class="tab" data-tab="issuers" data-t="tab_issuers"></button>
+    <button class="tab" data-tab="cex" data-t="tab_cex"></button>
+  </nav>
+
+  <div class="searchbar" data-tab="main">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input id="search" autocomplete="off" />
+    <button class="clr" id="searchClr">CLEAR</button>
+  </div>
+  <div id="searchInfo" data-tab="main" style="display:none"></div>
+
+  <div class="hero" id="hero" data-tab="main"></div>
+  <div class="movers" id="movers" data-tab="main"></div>
+
+  <div class="callout" data-tab="main">
+    <div class="q" data-t="callout_q"></div>
+    <div class="a" data-t="callout_a"></div>
+  </div>
+
+  <div class="issuer-cta" id="issuerCta" data-tab="issuers"></div>
+
+  <section id="s-active" data-tab="main">
+    <div class="sec-head"><div><div class="sec-label">01 · Most Active</div><h2 data-t="sec1_h"></h2></div>
+      <div class="desc" data-t="sec1_d"></div></div>
+    <table id="topTable"><thead><tr>
+      <th>#</th><th data-t="c_ticker"></th><th data-t="c_issuer"></th><th data-t="c_class"></th>
+      <th data-t="c_chain"></th><th data-t="c_price"></th><th>24h</th><th data-t="c_vol"></th><th data-t="c_liq"></th>
+    </tr></thead><tbody></tbody></table>
+    <div id="topPager" style="display:flex;justify-content:space-between;align-items:center;margin-top:14px"></div>
+  </section>
+
+  <section id="s-share" data-tab="main">
+    <div class="sec-head"><div><div class="sec-label">02 · Market Share</div><h2 data-t="sec2_h"></h2></div>
+      <div class="desc" data-t="sec2_d"></div></div>
+    <div class="grid g2">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3 data-t="share_by"></h3>
+          <div class="seg" id="shareSeg">
+            <button data-m="volume" class="on" data-t="m_vol"></button>
+            <button data-m="count" data-t="m_count"></button>
+            <button data-m="mcap" data-t="m_mcap"></button>
+          </div>
+        </div>
+        <div class="pd" id="shareNote"></div>
+        <div style="position:relative;height:150px"><canvas id="barChart"></canvas></div>
+        <div class="legend" id="shareLegend"></div>
+      </div>
+      <div class="panel"><h3 data-t="dist"></h3><div class="pd"><span id="donutMetric"></span></div>
+        <canvas id="donut" height="210"></canvas></div>
+    </div>
+  </section>
+
+  <section id="s-chain" data-tab="main">
+    <div class="sec-head"><div><div class="sec-label">03 · By Chain</div><h2 data-t="sec3_h"></h2></div>
+      <div class="desc" data-t="sec3_d"></div></div>
+    <div class="grid gg2">
+      <div class="panel"><h3 data-t="chain_mcap_h"></h3><div class="pd">RWA.xyz · 2026-06-25</div>
+        <div style="position:relative;height:190px"><canvas id="chainMcap"></canvas></div>
+        <div class="legend" id="chainMcapLeg" style="justify-content:center"></div></div>
+      <div class="panel"><h3 data-t="chain_vol_h"></h3><div class="pd" data-t="chain_vol_d"></div>
+        <div style="position:relative;height:190px"><canvas id="chainVol"></canvas></div>
+        <div class="legend" id="chainVolLeg" style="justify-content:center"></div></div>
+    </div>
+  </section>
+
+  <section id="s-tokmc" data-tab="main">
+    <div class="sec-head"><div><div class="sec-label">Issuer Tokens</div><h2 data-t="sec_tokmc_h"></h2></div>
+      <div class="desc" data-t="sec_tokmc_d"></div></div>
+    <div class="cmp" id="tokmcGrid"></div>
+  </section>
+
+  <section id="s-cex" data-tab="cex">
+    <div class="sec-head"><div><div class="sec-label">CEX vs On-chain</div><h2 data-t="sec_cex_h"></h2></div>
+      <div class="desc" data-t="sec_cex_d"></div></div>
+    <div id="cexNote" class="mcov" style="margin:0 0 10px"></div>
+    <table id="cexTable"></table>
+  </section>
+
+  <section data-tab="main">
+    <div class="sec-head"><div><div class="sec-label">04 · Cross-Issuer</div><h2 data-t="sec4_h"></h2></div>
+      <div class="desc" data-t="sec4_d"></div></div>
+    <table id="crossTable"><thead><tr>
+      <th data-t="c_stock"></th><th data-t="c_tokens"></th><th data-t="c_gap"></th>
+    </tr></thead><tbody></tbody></table>
+  </section>
+
+  <section id="s-tokens" data-tab="main">
+    <div class="sec-head"><div><div class="sec-label">05 · All Tokens</div><h2 data-t="sec5_h"></h2></div>
+      <div class="desc" data-t="sec5_d"></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+      <div class="seg" id="issuerFilter">
+        <button data-i="all" class="on" data-t="f_all"></button>
+        <button data-i="Backpack">Backpack</button><button data-i="xStocks">xStocks</button><button data-i="Ondo">Ondo</button><button data-i="Dinari">Dinari</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn" id="watchBtn" data-t="watch_btn"></button>
+        <div class="seg" id="tableSort">
+          <button data-s="vol" class="on" data-t="m_sort_vol"></button><button data-s="mc" data-t="m_sort_mc"></button><button data-s="liq" data-t="m_sort_tvl"></button>
+        </div>
+      </div>
+    </div>
+    <div class="mcov" id="tokLegend" style="margin:-2px 0 10px"></div>
+    <table id="tokTable"><thead><tr>
+      <th>#</th><th data-t="c_ticker"></th><th data-t="c_issuer"></th><th data-t="c_chain"></th>
+      <th data-t="c_price"></th><th data-t="c_vol"></th><th data-t="c_mcap"></th><th data-t="c_liq"></th>
+    </tr></thead><tbody></tbody></table>
+    <div id="tokPager" style="display:flex;justify-content:space-between;align-items:center;margin-top:14px"></div>
+  </section>
+
+  <section id="s-issuers" data-tab="issuers">
+    <div class="sec-head"><div><div class="sec-label">06 · Issuers</div><h2 data-t="sec6_h"></h2></div>
+      <div class="desc" data-t="sec6_d"></div></div>
+    <div class="panel" style="margin-bottom:22px">
+      <h3 data-t="struct_h"></h3><div class="pd" data-t="struct_cap"></div>
+      <div id="structDiagram"></div>
+    </div>
+    <div class="cmp" id="issuerCmp"></div>
+  </section>
+
+  <section id="s-news" data-tab="news">
+    <div class="sec-head"><div><div class="sec-label">LIVE · Newsflow</div><h2 data-t="sec_news_h"></h2></div>
+      <div class="desc" data-t="sec_news_d"></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="listings" id="listings" style="margin:0"></div>
+      <button class="btn" id="newsRefresh" data-t="news_refresh"></button>
+    </div>
+    <div class="news" id="newsLive"></div>
+  </section>
+
+  <section id="s-rec" data-tab="news">
+    <div class="sec-head"><div><div class="sec-label">Research</div><h2 data-t="sec_rec_h"></h2></div>
+      <div class="desc" data-t="sec_rec_d"></div></div>
+    <div class="cmp" id="recGrid"></div>
+  </section>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<div class="modal-bg" id="modal" style="display:none">
+  <div class="modal"><button class="modal-x" id="modalX">&times;</button><div id="modalBody"></div></div>
+</div>
+
+<script>
+const cv=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
+const IKEY={xStocks:'--xs',Backpack:'--bp',Ondo:'--ondo',Dinari:'--dinari'};
+function syncChartTheme(){if(window.Chart){Chart.defaults.font.family=cv('--sans')||'Inter';Chart.defaults.color=cv('--ink2')||'#403d35';}
+  if(typeof issuersList!=='undefined')issuersList.forEach(i=>{if(ISSUERS[i])ISSUERS[i].color=cv(IKEY[i]);});}
+function applyTheme(name){
+  document.body.className=name==='editorial'?'':'t-'+name;
+  localStorage.setItem('theme',name);
+  [barChart,donut,chainMcapCh,chainVolCh].forEach(c=>{try{if(c)c.destroy();}catch(e){}});
+  barChart=donut=chainMcapCh=chainVolCh=null;
+  syncChartTheme();renderAll();
+  const sel=document.getElementById('themeSel');if(sel)sel.value=name;
+}
+
+/* ===================== i18n ===================== */
+let lang=localStorage.getItem('lang')||'ko';
+const TR={
+  refresh:{ko:'↻ 새로고침',en:'↻ REFRESH'}, keybtn:{ko:'BIRDEYE 키',en:'BIRDEYE KEY'}, share_btn:{ko:'🔗 공유',en:'🔗 SHARE'},
+  edition_sub:{ko:'토큰화 주식 · RWA 온체인 데이터',en:'Tokenized Stocks · RWA On-chain Data'},
+  search_ph:{ko:'주식 검색 — 예: AAPL, Tesla, Circle … (발행사별로 표시)',en:'Search a stock — e.g. AAPL, Tesla, Circle … (grouped by issuer)'},
+  callout_q:{ko:'거래량 1위 = Backpack',en:'#1 Volume = Backpack'},
+  callout_a:{ko:'온체인 24h 거래량 기준 <b>Backpack 1위</b> — SPCX <b>$57.8M</b>·MU $37.1M·SNDK $17.3M, <b>3종목 합 ~$112M</b>(Solana DEX). xStocks ~$29M(Solana DEX). <b>Ondo는 발행액 1위($899M)이고 DEX 스왑은 ~0이지만 온체인 전송 거래량은 ~$13M</b>(Blockscout 트랜잭션 합산 — CRCLon $3.1M 등 mint/redeem·기관 이동). IBIT처럼 $497M 발행됐어도 24h 전송 0인 휴면 토큰도 큼.',
+    en:'By 24h on-chain volume, <b>Backpack leads</b> — SPCX <b>$57.8M</b>·MU $37.1M·SNDK $17.3M, <b>~$112M across 3</b> (Solana DEX). xStocks ~$29M (Solana DEX). <b>Ondo is #1 by issued value ($899M); DEX swaps ~$0 but its on-chain TRANSFER volume is ~$13M</b> (Blockscout tx sum — CRCLon $3.1M etc., mint/redeem & institutional). Some tokens like IBIT have $497M issued yet $0 transfers/24h (dormant).'},
+  sec1_h:{ko:'현재 가장 활발한 토큰화 주식',en:'Most Active Tokenized Stocks'},
+  sec1_d:{ko:'24h 온체인 DEX 거래량 상위 10 — 종목 · 발행사 · 등락',en:'Top 10 by 24h on-chain DEX volume — asset · issuer · change'},
+  sec2_h:{ko:'발행사 점유율',en:'Issuer Market Share'},
+  sec2_d:{ko:'추적 3개 발행사 기준 · 볼륨은 Backpack, 온체인 발행액은 Ondo가 우위',en:'Across 3 tracked issuers · Backpack leads volume, Ondo leads on-chain value'},
+  sec3_h:{ko:'체인별 분포',en:'By Chain'},
+  sec3_d:{ko:'가치는 Ethereum·BNB에, 거래는 Solana에 — 분리해서 봐야 함',en:'Value sits on Ethereum/BNB, trading on Solana — read them separately'},
+  sec4_h:{ko:'같은 종목, 다른 발행사 — 가격차',en:'Same Stock, Different Issuers — Price Gap'},
+  sec4_d:{ko:'한 주식이 여러 발행사에 토큰화됨 · 발행사간 괴리는 차익거래 신호',en:'One stock tokenized by several issuers · gaps are arbitrage signals'},
+  sec5_h:{ko:'개별 토큰 데이터',en:'All Tokens'},
+  sec5_d:{ko:'실제 mint/컨트랙트 기준 · 가격 LIVE=DefiLlama · 볼륨=tokens.xyz',en:'By real mint/contract · price LIVE=DefiLlama · volume=tokens.xyz'},
+  struct_h:{ko:'구조 흐름 비교',en:'Structure Flow'},
+  struct_cap:{ko:'Backpack은 IBKR 파트너 증권사로 <b>실주식 송금</b> + <b>온체인 즉시 입출금</b>이 양방향으로 되는 업계 최초 구조. xStocks는 현금가치 청구권(실주식 인출 불가), Ondo는 기관 mint/redeem 중심.',
+    en:'Backpack is the first structure where <b>real shares transfer</b> (IBKR-partner broker) and <b>instant on-chain in/out</b> both work bidirectionally. xStocks = cash-value claim (no share withdrawal); Ondo = institutional mint/redeem.'},
+  sec6_h:{ko:'발행사 구조 & 백킹',en:'Issuer Structure & Backing'},
+  sec6_d:{ko:'갯수 · 권리 · 상환 · 준비금이 전부 다름 — 카드 클릭 시 발행 자산 전체',en:'Count, rights, redemption all differ — click a card for its full asset list'},
+  sec7_h:{ko:'최근 상장 · 규제 · 신규 진입',en:'Listings · Regulation · New Entrants'},
+  sec7_d:{ko:'검증된 사건 타임라인',en:'Verified event timeline'},
+  share_by:{ko:'발행사별 비중',en:'Share by Issuer'}, dist:{ko:'분포',en:'Distribution'},
+  m_vol:{ko:'볼륨',en:'Volume'}, m_count:{ko:'종목 수',en:'Tokens'}, m_mcap:{ko:'온체인 발행액',en:'On-chain Value'},
+  note_vol:{ko:'24h 온체인 거래량 · Backpack·xStocks=Solana DEX 스왑(tokens.xyz), Ondo=온체인 전송(Blockscout)',en:'24h on-chain volume · Backpack·xStocks=Solana DEX swaps (tokens.xyz), Ondo=on-chain transfers (Blockscout)'},
+  note_count:{ko:'발행사별 토큰 갯수',en:'Tokens per issuer'},
+  note_mcap:{ko:'온체인 발행액 (RWA.xyz 06-25)',en:'On-chain Value (RWA.xyz 06-25)'},
+  l_vol:{ko:'볼륨',en:'Volume'}, l_count:{ko:'종목 수',en:'Tokens'}, l_mcap:{ko:'온체인 발행액',en:'On-chain Value'},
+  chain_mcap_h:{ko:'체인별 온체인 발행액',en:'On-chain Value by Chain'},
+  chain_vol_h:{ko:'체인별 거래량 점유율',en:'Volume Share by Chain'},
+  chain_vol_d:{ko:'Solana ~95.6% 집중',en:'~95.6% on Solana'},
+  c_ticker:{ko:'티커',en:'Ticker'}, c_issuer:{ko:'발행사',en:'Issuer'}, c_class:{ko:'자산군',en:'Class'},
+  c_chain:{ko:'체인',en:'Chain'}, c_price:{ko:'가격',en:'Price'}, c_vol:{ko:'24h 볼륨',en:'24h Vol'},
+  c_liq:{ko:'유동성 (TVL)',en:'Liquidity (TVL)'}, c_mcap:{ko:'온체인 발행액',en:'On-chain Value'}, c_spread:{ko:'스프레드',en:'Spread'},
+  m_sort_mc:{ko:'발행액순',en:'On-chain Value'},
+  legend_val:{ko:'발행액 = 공급량 × 가격 (발행·보유 규모)',en:'On-chain Value = supply × price (issued/held)'},
+  legend_liq:{ko:'유동성(TVL) = DEX 풀 잔고 (즉시 거래 가능 규모)',en:'Liquidity (TVL) = DEX pool reserves (tradeable depth)'},
+  c_stock:{ko:'종목',en:'Stock'}, c_tokens:{ko:'발행사별 토큰 · 가격',en:'Tokens by issuer · price'}, c_gap:{ko:'가격 괴리',en:'Price gap'},
+  f_all:{ko:'전체',en:'All'},
+  kpi_mcap:{ko:'섹터 총 온체인 발행액',en:'Sector On-chain Value'}, kpi_vol:{ko:'섹터 월 거래량',en:'Monthly Volume'},
+  kpi_top:{ko:'24h 최다 거래 토큰',en:'Top 24h Volume'}, kpi_sol:{ko:'Solana 거래량 점유율',en:'Solana Volume Share'},
+  u_assets:{ko:'개',en:' assets'}, u_most:{ko:'온체인 거래의 대부분',en:'Most on-chain volume'},
+  cls_stock:{ko:'주식',en:'Stock'}, cls_etf:{ko:'ETF',en:'ETF'},
+  search_lbl:{ko:'검색',en:'Search'}, no_res:{ko:'결과 없음',en:'no results'},
+  mkt_open:{ko:'NYSE 개장 중',en:'NYSE Open'}, mkt_closed:{ko:'NYSE 마감',en:'NYSE Closed'},
+  mkt_pre:{ko:'프리마켓',en:'Pre-market'}, mkt_weekend:{ko:'NYSE 주말 휴장',en:'NYSE Weekend'},
+  m_total_tokens:{ko:'전체 종목',en:'Total Tokens'}, m_vol24:{ko:'24h 볼륨',en:'24h Volume'},
+  m_mcap2:{ko:'온체인 발행액',en:'On-chain Value'}, m_share:{ko:'볼륨 점유율',en:'Volume Share'},
+  m_avgspread:{ko:'평균 스프레드',en:'Avg spread'}, m_liq2:{ko:'유동성 합',en:'Liquidity'},
+  m_viewassets:{ko:'발행 자산 · 거래량 보기 →',en:'View assets & volume →'},
+  cta_lbl:{ko:'발행사 클릭 → 발행 자산·거래량 보기:',en:'Click an issuer → its assets & volume:'},
+  hero_eyebrow:{ko:'지금 온체인 24h 거래 1위 발행사',en:'#1 issuer by 24h on-chain volume now'},
+  hero_cta:{ko:'발행 자산·구조 탐색 →',en:'Explore assets & structure →'},
+  hero_pulse:{ko:'시장 현황',en:'Market Pulse'},
+  u_tokens:{ko:'종목',en:' tokens'}, vol_updated:{ko:'볼륨 갱신',en:'vol'},
+  mv_gain:{ko:'24h 상승 TOP',en:'Top Gainers 24h'}, mv_lose:{ko:'24h 하락 TOP',en:'Top Losers 24h'},
+  mv_new:{ko:'신규 상장',en:'New Listings'}, mv_all:{ko:'전체 토큰 →',en:'All tokens →'},
+  watch_btn:{ko:'★ 관심종목',en:'★ Watchlist'}, watch_empty:{ko:'관심종목 없음 — 표에서 ☆를 눌러 추가',en:'No watchlist — tap ☆ in tables to add'},
+  nav_active:{ko:'가장 활발',en:'Most Active'}, nav_share:{ko:'점유율',en:'Market Share'},
+  nav_chain:{ko:'체인별',en:'By Chain'}, nav_tokens:{ko:'전체 토큰',en:'All Tokens'},
+  nav_issuers:{ko:'발행사 구조',en:'Issuers'}, nav_news:{ko:'뉴스',en:'News'},
+  m_sort_vol:{ko:'볼륨순',en:'Volume'}, m_sort_tvl:{ko:'TVL순',en:'TVL'}, m_page:{ko:'페이지',en:'Page'},
+  m_prev:{ko:'← 이전',en:'← Prev'}, m_next:{ko:'다음 →',en:'Next →'},
+  tab_main:{ko:'Main',en:'Main'}, tab_news:{ko:'RWA 뉴스 · 리서치',en:'RWA News · Research'}, tab_issuers:{ko:'발행사별 구조',en:'Issuers'}, tab_cex:{ko:'거래소 비교',en:'Exchanges'},
+  sec_tokmc_h:{ko:'발행사 토큰 시가총액',en:'Issuer Token Market Cap'},
+  sec_tokmc_d:{ko:'토큰화 주식의 온체인 발행액과 별개 — 발행사 자체 토큰',en:"Distinct from tokenized-stock value — the issuers' own tokens"},
+  sec_cex_h:{ko:'거래소 현물 비교 — Binance Bstock vs Backpack',en:'CEX Spot Comparison — Binance Bstock vs Backpack'},
+  sec_cex_d:{ko:'Binance CEX 오더북 거래량 vs Backpack 온체인 securities (라이브)',en:'Binance CEX orderbook vs Backpack on-chain securities (live)'},
+  sec_news_h:{ko:'RWA · 토큰화 주식 뉴스',en:'RWA · Tokenized-Stock News'},
+  sec_news_d:{ko:'다중 소스 RSS 실시간 집계 · 중요도 랭킹',en:'Multi-source RSS · ranked by importance'},
+  sec_rec_h:{ko:'추천: 추가할 발행사',en:'Recommended Issuers to Add'},
+  sec_rec_d:{ko:'Base·BNB 등 온체인 토큰화 주식 발행사 후보',en:'On-chain tokenized-stock issuers to add (Base/BNB)'},
+  no_token:{ko:'발행사 토큰 없음',en:'No issuer token'},
+  news_loading:{ko:'뉴스 불러오는 중…',en:'Loading news…'},
+  news_refresh:{ko:'↻ 새로고침',en:'↻ Refresh'},
+  cex_total:{ko:'합계 / 평균',en:'Total / Avg'}, cex_venue:{ko:'거래 장소',en:'Venue'},
+  cex_spread:{ko:'스프레드',en:'Spread'}, cex_vol:{ko:'24h 볼륨',en:'24h Vol'},
+  cex_note:{ko:'Binance Bstock은 RFQ·지역제한(한국 등 미지원) — 스프레드는 라이브 호가(bid/ask). Backpack은 온체인 DEX 유효 스프레드(추정).',
+    en:'Binance Bstock is RFQ / geo-restricted — spread is live bid/ask. Backpack is on-chain DEX effective spread (est.).'},
+  onchainval:{ko:'온체인 발행액',en:'On-chain Value'}, tokenmc:{ko:'토큰 시총',en:'Token Mcap'},
+  m_coverage:{ko:'추적 {n}/{total}개 종목 (거래량 상위 위주)',en:'Showing {n}/{total} tracked (top by volume)'},
+  foot:{ko:'데이터 · <b>24h 볼륨·유동성 = 전 체인 온체인 DEX</b> (Solana <a href="https://www.tokens.xyz" target="_blank">tokens.xyz/Sunrise</a> + EVM <a href="https://www.geckoterminal.com" target="_blank">GeckoTerminal</a>, 06-26 스냅샷; xStocks EVM·Ondo 전 체인 ≈$0 확인) / 종목수 <a href="https://api.backed.fi/api/v2/public/assets" target="_blank">api.backed.fi</a> · Ondo <a href="https://github.com/ondoprotocol/ondo-global-markets-token-list" target="_blank">token-list</a> / 온체인 발행액 <a href="https://app.rwa.xyz/stocks" target="_blank">RWA.xyz</a> 06-25 / 가격 라이브 <a href="https://defillama.com" target="_blank">DefiLlama</a><br>정보 제공용 · 투자 자문 아님 · 온체인 데이터 지연·부정확 가능 · Backpack Securities 미·영·UAE·일·EU 미제공',
+    en:'Data · <b>24h volume·liquidity = all-chain on-chain DEX</b> (Solana <a href="https://www.tokens.xyz" target="_blank">tokens.xyz/Sunrise</a> + EVM <a href="https://www.geckoterminal.com" target="_blank">GeckoTerminal</a>, 06-26 snapshot; xStocks EVM & Ondo all-chain ≈$0 verified) / counts <a href="https://api.backed.fi/api/v2/public/assets" target="_blank">api.backed.fi</a> · Ondo <a href="https://github.com/ondoprotocol/ondo-global-markets-token-list" target="_blank">token-list</a> / on-chain value <a href="https://app.rwa.xyz/stocks" target="_blank">RWA.xyz</a> 06-25 / live price <a href="https://defillama.com" target="_blank">DefiLlama</a><br>Informational only · not investment advice · on-chain data may be delayed/inaccurate · Backpack Securities unavailable in US/UK/UAE/JP/EU'},
+};
+const TR_ZH={
+  share_btn:'🔗 分享',
+  edition_sub:'代币化股票 · RWA 链上数据',
+  search_ph:'搜索股票 — 例如 AAPL、Tesla、Circle …（按发行方分组）',
+  callout_q:'成交量第一 = Backpack',
+  callout_a:'按24h链上成交量，<b>Backpack 第一</b> — SPCX <b>$57.8M</b>·MU $37.1M·SNDK $17.3M，<b>3只合计约 $112M</b>（Solana DEX）。xStocks 约 $29M（Solana DEX）。<b>Ondo 发行规模第一（$899M）；DEX 兑换约 $0，但链上转账成交量约 $13M</b>（Blockscout 交易合计 — 如 CRCLon $3.1M，铸造/赎回及机构划转）。部分代币如 IBIT 发行 $497M 却24h零转账（休眠）。',
+  sec1_h:'当前最活跃的代币化股票', sec1_d:'按24h链上 DEX 成交量前10 — 资产 · 发行方 · 涨跌',
+  sec2_h:'发行方市场份额', sec2_d:'基于3家追踪发行方 · 成交量 Backpack 领先，链上发行额 Ondo 领先',
+  sec3_h:'按链分布', sec3_d:'价值在 Ethereum/BNB，交易在 Solana — 需分开看',
+  sec4_h:'同一股票，不同发行方 — 价差', sec4_d:'一只股票被多家发行方代币化 · 价差是套利信号',
+  sec5_h:'全部代币数据', sec5_d:'基于真实 mint/合约 · 价格 LIVE=DefiLlama · 成交量=tokens.xyz',
+  struct_h:'结构流程对比',
+  struct_cap:'Backpack 是业内首个 <b>实股划转</b>（IBKR 合作券商）与 <b>链上即时出入金</b> 双向打通的结构。xStocks = 现金价值索偿（不可提取实股）；Ondo = 机构铸造/赎回为主。',
+  sec6_h:'发行方结构与背书', sec6_d:'数量 · 权利 · 赎回 · 储备各不相同 — 点击卡片查看全部发行资产',
+  sec7_h:'上市 · 监管 · 新进入者', sec7_d:'已核实事件时间线',
+  share_by:'按发行方占比', dist:'分布',
+  m_vol:'成交量', m_count:'代币数', m_mcap:'链上发行额',
+  note_vol:'24h链上成交量 · Backpack·xStocks=Solana DEX 兑换(tokens.xyz)，Ondo=链上转账(Blockscout)',
+  note_count:'各发行方代币数量', note_mcap:'链上发行额 (RWA.xyz 06-25)',
+  l_vol:'成交量', l_count:'代币数', l_mcap:'链上发行额',
+  chain_mcap_h:'各链链上发行额', chain_vol_h:'各链成交量占比', chain_vol_d:'Solana 约 95.6% 集中',
+  c_ticker:'代码', c_issuer:'发行方', c_class:'类别',
+  c_chain:'链', c_price:'价格', c_vol:'24h 成交量',
+  c_liq:'流动性 (TVL)', c_mcap:'链上发行额', c_spread:'价差',
+  m_sort_mc:'按发行额',
+  legend_val:'发行额 = 供应量 × 价格（发行/持有规模）',
+  legend_liq:'流动性(TVL) = DEX 池储备（可即时交易深度）',
+  c_stock:'股票', c_tokens:'各发行方代币 · 价格', c_gap:'价差',
+  f_all:'全部',
+  kpi_mcap:'板块链上发行总额', kpi_vol:'月成交量', kpi_top:'24h 最高成交代币', kpi_sol:'Solana 成交量占比',
+  u_assets:' 个', u_most:'链上成交量大部分',
+  cls_stock:'股票', cls_etf:'ETF',
+  search_lbl:'搜索', no_res:'无结果',
+  mkt_open:'NYSE 开盘中', mkt_closed:'NYSE 收盘', mkt_pre:'盘前', mkt_weekend:'NYSE 周末休市',
+  m_total_tokens:'代币总数', m_vol24:'24h 成交量', m_mcap2:'链上发行额', m_share:'成交量占比',
+  m_avgspread:'平均价差', m_liq2:'流动性合计', m_viewassets:'查看发行资产 · 成交量 →',
+  cta_lbl:'点击发行方 → 查看其资产与成交量：',
+  hero_eyebrow:'当前24h链上成交量第一的发行方', hero_cta:'探索资产与结构 →', hero_pulse:'市场概况',
+  u_tokens:' 只',
+  mv_gain:'24h 涨幅榜', mv_lose:'24h 跌幅榜', mv_new:'新上市', mv_all:'全部代币 →',
+  watch_btn:'★ 自选', watch_empty:'暂无自选 — 在表格中点 ☆ 添加',
+  nav_active:'最活跃', nav_share:'市场份额', nav_chain:'按链', nav_tokens:'全部代币',
+  nav_issuers:'发行方结构', nav_news:'新闻',
+  m_sort_vol:'按成交量', m_sort_tvl:'按 TVL', m_page:'页', m_prev:'← 上一页', m_next:'下一页 →',
+  tab_main:'Main', tab_news:'RWA 新闻 · 研究', tab_issuers:'发行方结构', tab_cex:'交易所对比',
+  sec_tokmc_h:'发行方代币市值', sec_tokmc_d:'与代币化股票发行额无关 — 发行方自身代币',
+  sec_cex_h:'交易所现货对比 — Binance Bstock vs Backpack',
+  sec_cex_d:'Binance CEX 订单簿成交量 vs Backpack 链上证券（实时）',
+  sec_news_h:'RWA · 代币化股票新闻', sec_news_d:'多源 RSS 实时聚合 · 按重要性排序',
+  sec_rec_h:'推荐：可加入的发行方', sec_rec_d:'Base·BNB 等链上代币化股票发行方候选',
+  no_token:'无发行方代币', news_loading:'加载新闻中…', news_refresh:'↻ 刷新',
+  cex_total:'合计 / 平均', cex_venue:'交易场所', cex_spread:'价差', cex_vol:'24h 成交量',
+  cex_note:'Binance Bstock 为 RFQ / 地区限制 — 价差为实时买卖盘。Backpack 为链上 DEX 有效价差（估算）。',
+  onchainval:'链上发行额', tokenmc:'代币市值',
+  m_coverage:'显示 {n}/{total} 个追踪代币（按成交量靠前）',
+  foot:'数据 · <b>24h 成交量·流动性 = 全链链上 DEX</b>（Solana <a href="https://www.tokens.xyz" target="_blank">tokens.xyz/Sunrise</a> + EVM <a href="https://www.geckoterminal.com" target="_blank">GeckoTerminal</a>，06-26 快照；xStocks EVM 与 Ondo 全链 ≈$0 已核实）/ 数量 <a href="https://api.backed.fi/api/v2/public/assets" target="_blank">api.backed.fi</a> · Ondo <a href="https://github.com/ondoprotocol/ondo-global-markets-token-list" target="_blank">token-list</a> / 链上发行额 <a href="https://app.rwa.xyz/stocks" target="_blank">RWA.xyz</a> 06-25 / 实时价格 <a href="https://defillama.com" target="_blank">DefiLlama</a><br>仅供参考 · 非投资建议 · 链上数据可能延迟/不准确 · Backpack Securities 不向 美/英/UAE/日/欧盟 提供',
+};
+Object.keys(TR_ZH).forEach(k=>{if(TR[k])TR[k].zh=TR_ZH[k];else TR[k]={zh:TR_ZH[k]};});
+const t=k=>(TR[k]&&(TR[k][lang]||TR[k].en))||k;
+
+/* ===================== DATA ===================== */
+const ISSUERS={ xStocks:{color:'#2f6fed'}, Backpack:{color:'#e5383b'}, Ondo:{color:'#6366f1'}, Dinari:{color:'#0891b2'} };
+const issuersList=Object.keys(ISSUERS);
+const ISSUER_AGG={  // 2026-06-26
+  Ondo:    {count:439, mcap:899.4e6, vol:12.93e6},  // 온체인 전송 거래량(Blockscout ETH, 트랜잭션 합산) · DEX 스왑은 ~0
+  xStocks: {count:166, mcap:507.7e6, vol:29e6},     // Solana DEX 스왑(tokens.xyz)
+  Backpack:{count:4,   mcap:17.6e6,  vol:112.1e6},  // SPCX·MU·SNDK·DRAM(신규) · Solana DEX 스왑(tokens.xyz)
+  Dinari:  {count:10,  mcap:0,       vol:0},        // Base · 발행 초기 · DEX 거래/시세 데이터 미미(mint/redeem)
+};
+const SECTOR={mcap:1.52e9, assets:2480, monthlyVol:8.02e9, mcap30d:-6.65, vol30d:127.17};
+const CHAIN_MCAP=[['Ethereum',614.3e6,'#627EEA'],['Solana',442.6e6,'#9945FF'],['BNB Chain',432.2e6,'#F0B90B'],['Other',31e6,'#9aa0ab']];
+const CHAIN_VOL=[['Solana',95.6,'#9945FF'],['Gnosis',1.98,'#3E6957'],['Ethereum',1.8,'#627EEA'],['Other',0.62,'#F0B90B']];
+const A=(t,n,issuer,chain,ck,addr,price,vol,liq,mcap,spread,cls)=>({t,n,issuer,chain,ck,addr,price,vol,liq,mcap,spread,cls:cls||'stock'});
+const ASSETS=[
+  A('SPCX','SpaceX','Backpack','Solana','solana','SPCXxcqXj6e5dJDVNovHN8744zkbhM2bYudU45BimGb',151.65,57.75e6,7.54e6,12.2e6,8),
+  A('MU','Micron','Backpack','Solana','solana','MUxEsUKSMACyw5fZf68wxf5FLnZVhtU9CwH8uNNGay1',1234.57,37.08e6,4.81e6,3.7e6,10),
+  A('SNDK','SanDisk','Backpack','Solana','solana','SNDKbwMUQvZhnLnxLduradgLHG5KrPuKwpnrkkGRhfH',2287.31,17.27e6,1.12e6,1.4e6,14),
+  A('SPYx','S&P 500','xStocks','Solana','solana','XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W',732.86,10.47e6,5.33e6,null,11,'etf'),
+  A('CRCLx','Circle','xStocks','Solana','solana','XsueG8BtpquVJX9LVLLEGuViXUungE6WmK5YZ3p3bd1',69.54,3.90e6,3.94e6,null,12),
+  A('NVDAx','NVIDIA','xStocks','Solana','solana','Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh',195.39,3.43e6,3.61e6,null,12),
+  A('QQQx','Nasdaq 100','xStocks','Solana','solana','Xs8S1uUs1zvS2p7iwtsG3b6fkhpvmwz4GYU3gWAmWHZ',716.74,2.97e6,3.21e6,null,13,'etf'),
+  A('SPCXx','SpaceX','xStocks','Solana','solana','Xs3oZwbHvqis4NYcf4YKWmEia2eC84wSiVrcYcTqpH8',152.04,2.92e6,1.28e6,null,16),
+  A('TSLAx','Tesla','xStocks','Solana','solana','XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB',373.64,2.61e6,3.63e6,null,12),
+  A('MSTRx','Strategy','xStocks','Solana','solana','XsP7xzNPvEHS1m6qfanPUGjNmdnmsLKEoNAnHjdxxyZ',87.42,1.32e6,0.77e6,null,18),
+  A('COINx','Coinbase','xStocks','Solana','solana','Xs7ZdzSHLU9ftNJsii5fCeJhoRWSC32SQGzGQtePxNu',145.09,0.54e6,0.51e6,null,17),
+  A('GOOGLx','Alphabet','xStocks','Solana','solana','XsCPL9dNWBMvFtTmwcCA5v3xWPSMEBCszbQdiLLq6aN',341.55,0.47e6,0.75e6,null,18),
+  A('AMZNx','Amazon','xStocks','Solana','solana','Xs3eBt7uRfJX8QUs4suhyU8p2M6DoUDrJyWBa8LLZsg',233.28,0.12e6,0.38e6,null,20),
+  A('HOODx','Robinhood','xStocks','Solana','solana','XsvNBAYkrDRNhA7wPHQfX3ZUXZyZLdnCQDfHZ56bzpg',98.81,0.12e6,0.38e6,null,20),
+  A('AAPLx','Apple','xStocks','Solana','solana','XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp',277.50,0.11e6,0.13e6,null,22),
+  A('METAx','Meta','xStocks','Solana','solana','Xsa62P5mvPszXL1krVUnU5ar38bBSVcWAB6fmPCo5Zu',545.90,0.04e6,0.14e6,null,24),
+  // Ondo (Ethereum) — DEX volume ≈ 0 (GeckoTerminal verified); #1 by on-chain value, mint/redeem model
+  A('CRCLon','Circle','Ondo','Ethereum','ethereum','0x3632DEa96A953C11dac2f00b4A05a32CD1063fAE',null,0.0001e6,0.008e6,130.3e6,20),
+  A('TSLAon','Tesla','Ondo','Ethereum','ethereum','0xf6b1117ec07684D3958caD8BEb1b302bfD21103f',null,0.0013e6,0.018e6,null,22),
+  A('NVDAon','NVIDIA','Ondo','Ethereum','ethereum','0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE',null,0.0005e6,0.010e6,null,23),
+  A('AAPLon','Apple','Ondo','Ethereum','ethereum','0x14c3abF95Cb9C93a8b82C1CdCB76D72Cb87b2d4c',null,0.0004e6,0.010e6,null,24),
+  A('MSFTon','Microsoft','Ondo','Ethereum','ethereum','0xB812837b81a3a6b81d7CD74CfB19A7f2784555E5',null,0,0.002e6,null,25),
+];
+
+const ISSUER_INFO={
+  xStocks:{color:'#2f5fc0',
+    count:{ko:'166 종목',en:'166 tokens'}, tag:{ko:'Backed Finance · "x" 접미사',en:'Backed Finance · "x" suffix'},
+    por:{ko:'✓ Chainlink Proof-of-Reserve 활성',en:'✓ Chainlink Proof-of-Reserve active'},
+    items:{ko:[['거래량','<b>온체인 2위</b> — Solana DEX + CEX(Kraken/Bybit)'],['구조','SPL Token-2022, 1:1 백킹, <b>현금가치 청구권</b>'],['체인','전 종목 Solana + ETH/BNB/Optimism 등'],['데이터','공개 API로 mint·메타데이터 투명']],
+      en:[['Volume','<b>#2 on-chain</b> — Solana DEX + CEX (Kraken/Bybit)'],['Structure','SPL Token-2022, 1:1 backed, <b>cash-value claim</b>'],['Chains','All on Solana + ETH/BNB/Optimism…'],['Data','Public API exposes mints & metadata']]}},
+  Backpack:{color:'#e5383b',
+    count:{ko:'4 종목',en:'4 tokens'}, tag:{ko:'Backpack Securities · Sunrise/Wormhole',en:'Backpack Securities · Sunrise/Wormhole'},
+    por:{ko:'✓ 1:1 실주식 · UCC Art.8 보호',en:'✓ 1:1 real shares · UCC Art.8'},
+    items:{ko:[['종목','SPCX·MU·SNDK·<b>DRAM</b>(신규 ETF), <b>Solana만</b>'],['거래량','<b>온체인 1위</b> — 3종목 합 ~$112M/24h'],['구조','<b>상환 가능 증권</b> — ACATS/DTCC로 실주식 이관'],['홀더','SPCX 1만+ (xStocks SPCXx의 ~2배)']],
+      en:[['Tokens','SPCX·MU·SNDK·<b>DRAM</b>(new ETF), <b>Solana only</b>'],['Volume','<b>#1 on-chain</b> — ~$112M/24h across 3'],['Structure','<b>Redeemable security</b> — move shares via ACATS/DTCC'],['Holders','SPCX 10k+ (≈2× xStocks SPCXx)']]}},
+  Ondo:{color:'#5a51b0',
+    count:{ko:'439 티커',en:'439 tickers'}, tag:{ko:'Ondo Global Markets · "on" 접미사',en:'Ondo Global Markets · "on" suffix'},
+    por:{ko:'✓ 브로커딜러(Alpaca) 1:1 커스터디',en:'✓ Broker-dealer (Alpaca) 1:1 custody'},
+    items:{ko:[['온체인 발행액','<b>1위</b> $899M · 점유율 57.3%'],['종목','ETH 439 + BNB 439 + Solana 200+'],['거래','<b>DEX 2차거래 거의 없음</b> — mint/redeem 중심'],['상환','24×5 mint/redeem · 리테일은 파트너']],
+      en:[['On-chain Value','<b>#1</b> $899M · 57.3% share'],['Tokens','ETH 439 + BNB 439 + Solana 200+'],['Trading','<b>Almost no DEX volume</b> — mint/redeem model'],['Redemption','24×5 mint/redeem · retail via partners']]}},
+  Dinari:{color:'#0891b2',
+    count:{ko:'10 종목',en:'10 tokens'}, tag:{ko:'Dinari · dShares · ".d" 접미사',en:'Dinari · dShares · ".d" suffix'},
+    por:{ko:'✓ SEC 등록 브로커딜러 1:1 백킹',en:'✓ SEC-registered broker-dealer 1:1'},
+    items:{ko:[['체인','<b>Base</b> · Arbitrum · ETH (~50종목 listable)'],['구조','mint/redeem · 배당 포함'],['거래','<b>발행 초기</b> — DEX 유동성·시세 데이터 미미'],['특징','Gemini EU가 Dinari 인프라 사용']],
+      en:[['Chains','<b>Base</b> · Arbitrum · ETH (~50 listable)'],['Structure','mint/redeem · total-return'],['Trading','<b>Early-stage</b> — minimal DEX/price data'],['Notes','Gemini EU runs on Dinari infra']]}},
+};
+const LISTINGS={ko:[['SNDK','SanDisk','06-24','Backpack'],['MU','Micron','06-22','Backpack'],['+173','Ondo 대량 상장','06-17','Ondo'],['SPCX','SpaceX','06-12','Backpack']],
+  en:[['SNDK','SanDisk','06-24','Backpack'],['MU','Micron','06-22','Backpack'],['+173','Ondo bulk listing','06-17','Ondo'],['SPCX','SpaceX','06-12','Backpack']]};
+const NEWS={ko:[
+  {c:'launch',l:'LAUNCH',t:'Backpack, SanDisk(SNDK) 토큰화 — Solana 3번째 종목',m:'Cryptobriefing · 06-24'},
+  {c:'launch',l:'LAUNCH',t:'Backpack, Micron(MU) 온체인 — 실적발표 48시간 전',m:'The Defiant · 06-22'},
+  {c:'milestone',l:'RECORD',t:'솔라나 토큰주식 24h 거래량 $380M 돌파 — xStocks·Backpack 주도',m:'CryptoAdventure · 06-24'},
+  {c:'entrant',l:'ENTRANT',t:'Ondo, 173개 주식/ETF 추가 — 3개 체인 합 430+ 종목',m:'The Defiant · 06-17'},
+  {c:'milestone',l:'RECORD',t:'SPCX, 솔라나 단일 토큰 일일 거래 $108M — 역대 최고',m:'KuCoin · 06-15'},
+  {c:'launch',l:'LAUNCH',t:'Backpack, SpaceX(SPCX) 토큰화 — 나스닥 상장 당일',m:'Solana Compass · 06-12'},
+  {c:'reg',l:'REG',t:'Ondo–J.P.Morgan·Mastercard·Ripple 국경간 상환 파일럿',m:'05-06'}],
+  en:[
+  {c:'launch',l:'LAUNCH',t:'Backpack tokenizes SanDisk (SNDK) — 3rd Solana name',m:'Cryptobriefing · 06-24'},
+  {c:'launch',l:'LAUNCH',t:'Backpack brings Micron (MU) on-chain — 48h before earnings',m:'The Defiant · 06-22'},
+  {c:'milestone',l:'RECORD',t:'Solana tokenized-stock 24h volume tops $380M — xStocks & Backpack lead',m:'CryptoAdventure · 06-24'},
+  {c:'entrant',l:'ENTRANT',t:'Ondo adds 173 stocks/ETFs — 430+ across 3 chains',m:'The Defiant · 06-17'},
+  {c:'milestone',l:'RECORD',t:'SPCX hits $108M single-token daily volume on Solana — record',m:'KuCoin · 06-15'},
+  {c:'launch',l:'LAUNCH',t:'Backpack tokenizes SpaceX (SPCX) — day of Nasdaq listing',m:'Solana Compass · 06-12'},
+  {c:'reg',l:'REG',t:'Ondo–J.P.Morgan·Mastercard·Ripple cross-border redemption pilot',m:'05-06'}]};
+
+/* ===================== HELPERS ===================== */
+let shareMetric='volume', issuerFilter='all', searchQ='', priceLive=false, tablePage=0, tableSort='vol', topPage=0, liveVolTs=0;
+let watch=new Set(JSON.parse(localStorage.getItem('watch')||'[]')), watchOnly=false;
+function toggleWatch(tk){if(watch.has(tk))watch.delete(tk);else watch.add(tk);
+  localStorage.setItem('watch',JSON.stringify([...watch]));renderTop();renderTable();renderMovers();}
+const starHtml=tk=>`<span class="star ${watch.has(tk)?'on':''}" onclick="event.stopPropagation();toggleWatch('${tk}')">${watch.has(tk)?'★':'☆'}</span>`;
+function logoT(a){const tk=a.t||''; if(a.issuer==='xStocks')return tk.replace(/x$/,''); if(a.issuer==='Ondo')return tk.replace(/on$/,''); if(a.issuer==='Dinari')return tk.replace(/\.d$/i,''); return tk;}
+const logoImg=a=>`<img class="logo" loading="lazy" src="/api/logo?t=${encodeURIComponent(logoT(a))}" onerror="this.style.display='none'" alt="">`;
+function txtOn(hex){hex=(hex||'').replace('#','');if(hex.length<6)return '#fff';const r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16);return (0.299*r+0.587*g+0.114*b)>150?'#15170d':'#fff';}
+const ISSUER_DOM={Backpack:'backpack.exchange',xStocks:'backed.fi',Ondo:'ondo.finance',Dinari:'dinari.com'};
+const CHAIN_SLUG={Solana:'solana',Ethereum:'ethereum','BNB Chain':'binance',Gnosis:'gnosis',Arbitrum:'arbitrum',Base:'base'};
+const issuerLogo=i=>ISSUER_DOM[i]?`<img class="logo" src="/api/logo?d=${ISSUER_DOM[i]}" onerror="this.style.display='none'" alt="">`:'';
+const chainLogo=n=>CHAIN_SLUG[n]?`<img class="logo" src="/api/logo?c=${CHAIN_SLUG[n]}" onerror="this.style.display='none'" alt="">`:'';
+const fmtUSD=v=> v==null?'—': v>=1e9?'$'+(v/1e9).toFixed(2)+'B': v>=1e6?'$'+(v/1e6).toFixed(2)+'M':
+  v>=1e3?'$'+(v/1e3).toFixed(0)+'K': v>0?'$'+(+v).toFixed(0):'$0';
+const fmtP=v=> v==null?'—':'$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtPct=v=> v==null?'<span style="color:var(--mut)">—</span>':`<span class="${v>=0?'up':'down'}">${v>=0?'+':''}${v.toFixed(2)}%</span>`;
+const clsTxt=c=> c==='etf'?t('cls_etf'):t('cls_stock');
+const aggIssuer=m=>{const o={};issuersList.forEach(i=>o[i]=ISSUER_AGG[i][m==='count'?'count':m==='mcap'?'mcap':'vol']);return o;};
+
+function marketStatus(){
+  const now=new Date(), et=new Date(now.getTime()-4*3600*1000);
+  const d=et.getUTCDay(), mins=et.getUTCHours()*60+et.getUTCMinutes();
+  if(d===0||d===6) return {k:'mkt_weekend',open:false};
+  if(mins>=570&&mins<960) return {k:'mkt_open',open:true};
+  if(mins>=240&&mins<570) return {k:'mkt_pre',open:false};
+  return {k:'mkt_closed',open:false};
+}
+
+/* ===================== RENDER ===================== */
+function renderHero(){
+  const ord=[...issuersList].sort((a,b)=>ISSUER_AGG[b].vol-ISSUER_AGG[a].vol);
+  const tp=ord[0], agg=ISSUER_AGG[tp], col=cv(IKEY[tp]);
+  const topTok=tokSource().sort((a,b)=>(b.vol||0)-(a.vol||0))[0]||{t:'—',vol:0};
+  const age=liveVolTs?relTime((Date.now()/1000-liveVolTs)/3600):'';
+  document.getElementById('hero').innerHTML=`
+    <div class="hero-card hero-lead" style="border-left-color:${col}">
+      <div class="hero-eyebrow">${t('hero_eyebrow')}</div>
+      <div class="hero-title">${tp}<span class="hero-big" style="color:${col}">${fmtUSD(agg.vol)}</span></div>
+      <div class="hero-sub">${topTok.t} ${fmtUSD(topTok.vol)} · ${agg.count}${t('u_tokens')} · Solana DEX</div>
+      <button class="hero-cta" style="background:${col};color:${txtOn(col)};box-shadow:0 5px 16px color-mix(in srgb,${col} 35%,transparent)" onclick="openIssuer('${tp}')">${t('hero_cta')}</button>
+    </div>
+    <div class="hero-card">
+      <div class="hero-eyebrow">${t('hero_pulse')}</div>
+      <div class="pulse-row" style="margin-top:8px"><span>${t('kpi_mcap')}</span><b>${fmtUSD(SECTOR.mcap)} <span class="down">▼${Math.abs(SECTOR.mcap30d)}%</span></b></div>
+      <div class="pulse-row"><span>${t('kpi_vol')}</span><b>${fmtUSD(SECTOR.monthlyVol)} <span class="up">▲${SECTOR.vol30d}%</span></b></div>
+      <div class="pulse-row" style="border:none"><span>${t('kpi_sol')}</span><b>95.6%</b></div>
+      <div class="pulse-live"><span class="dot"></span>${age?(t('vol_updated')+' '+age):'LIVE'}</div>
+    </div>`;
+}
+function renderMovers(){
+  const ch=ASSETS.filter(a=>typeof a.chg==='number');
+  const gain=[...ch].sort((a,b)=>b.chg-a.chg).slice(0,4);
+  const lose=[...ch].sort((a,b)=>a.chg-b.chg).slice(0,4);
+  const rowsOf=arr=>arr.map(a=>`<div class="mv-row"><span class="tk">${a.t}</span><span class="v">${fmtPct(a.chg)}</span></div>`).join('')||`<div class="mv-row" style="color:var(--mut)">—</div>`;
+  const news=LISTINGS[lang].map(l=>`<div class="mv-new"><span class="pill ${l[3]}">${l[0]}</span><span>${l[1]}</span><span class="d" style="margin-left:auto">${l[2]}</span></div>`).join('');
+  document.getElementById('movers').innerHTML=`
+    <div class="mv-card"><div class="mv-head"><h4>▲ ${t('mv_gain')}</h4></div>${rowsOf(gain)}</div>
+    <div class="mv-card"><div class="mv-head"><h4>▼ ${t('mv_lose')}</h4></div>${rowsOf(lose)}</div>
+    <div class="mv-card"><div class="mv-head"><h4>✦ ${t('mv_new')}</h4><button class="mv-link" onclick="showTab('news')">${t('tab_news')} →</button></div>${news}</div>`;
+}
+function renderTop(){
+  const chgMap={},clsMap={};ASSETS.forEach(a=>{chgMap[a.t]=a.chg;clsMap[a.t]=a.cls;});
+  const src=tokSource().sort((a,b)=>(b.vol||0)-(a.vol||0));
+  const PG=10,pages=Math.max(1,Math.ceil(src.length/PG));
+  topPage=Math.max(0,Math.min(topPage,pages-1));
+  const start=topPage*PG, slice=src.slice(start,start+PG), max=src[0]?(src[0].vol||1):1;
+  document.querySelector('#topTable tbody').innerHTML=slice.map((a,i)=>{const px=a.px!=null?a.px:a.price;
+    return `<tr>
+    <td class="rk">${start+i+1}</td>
+    <td class="c-tk">${starHtml(a.t)}${logoImg(a)}<span class="tk">${a.t}</span> <span class="nm">${a.n||''}</span></td>
+    <td><span class="pill ${a.issuer}">${a.issuer}</span></td>
+    <td><span class="tag">${clsTxt(clsMap[a.t]||'stock')}</span></td>
+    <td class="num" style="color:var(--mut);text-align:right">${a.chain||''}</td>
+    <td class="num">${fmtP(px)}</td>
+    <td class="num" style="text-align:right">${fmtPct(chgMap[a.t]!==undefined?chgMap[a.t]:null)}</td>
+    <td class="num vbar" style="text-align:right"><i style="width:${(a.vol||0)/max*100}%;background:${ISSUERS[a.issuer].color}"></i><span>${fmtUSD(a.vol)}</span></td>
+    <td class="num">${fmtUSD(a.liq)}</td></tr>`;}).join('');
+  const dis=c=>c?'disabled style="opacity:.35;cursor:default"':'';
+  document.getElementById('topPager').innerHTML=
+    `<button class="btn" onclick="topMove(-1)" ${dis(topPage===0)}>${t('m_prev')}</button>
+     <span class="mcov" style="margin:0">${t('m_page')} ${topPage+1} / ${pages}</span>
+     <button class="btn" onclick="topMove(1)" ${dis(topPage>=pages-1)}>${t('m_next')}</button>`;
+}
+function topMove(d){topPage+=d;renderTop();}
+let barChart,donut,chainMcapCh,chainVolCh;
+function renderShare(){
+  const cur=aggIssuer(shareMetric),tot=Object.values(cur).reduce((a,b)=>a+b,0);
+  const order=[...issuersList].sort((a,b)=>cur[b]-cur[a]);
+  document.getElementById('donutMetric').textContent=shareMetric==='count'?t('l_count'):shareMetric==='mcap'?t('l_mcap'):t('l_vol');
+  document.getElementById('shareNote').textContent=shareMetric==='count'?t('note_count'):shareMetric==='mcap'?t('note_mcap'):t('note_vol');
+  const bcfg={type:'bar',data:{labels:order,datasets:[{data:order.map(i=>cur[i]),backgroundColor:order.map(i=>ISSUERS[i].color),borderRadius:3,barThickness:34}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>(shareMetric==='count'?c.parsed.x+'':fmtUSD(c.parsed.x))+` · ${(c.parsed.x/tot*100).toFixed(1)}%`}}},
+      scales:{x:{grid:{color:cv('--chart-grid')},ticks:{color:cv('--mut'),font:{family:cv('--mono'),size:10},callback:v=>shareMetric==='count'?v:fmtUSD(v)}},
+        y:{grid:{display:false},ticks:{color:cv('--ink'),font:{family:cv('--mono'),weight:'600',size:12}}}}}};
+  if(barChart){barChart.data=bcfg.data;barChart.options=bcfg.options;barChart.update();}else barChart=new Chart(document.getElementById('barChart'),bcfg);
+  document.getElementById('shareLegend').innerHTML=order.map(i=>`<span>${issuerLogo(i)}<span class="sw" style="background:${ISSUERS[i].color}"></span>${i} <b>${(cur[i]/tot*100).toFixed(1)}%</b></span>`).join('');
+  const dcfg={type:'doughnut',data:{labels:order,datasets:[{data:order.map(i=>cur[i]),backgroundColor:order.map(i=>ISSUERS[i].color),borderColor:cv('--card'),borderWidth:3}]},
+    options:{cutout:'64%',onClick:(e,els)=>{if(els&&els.length)openIssuer(order[els[0].index]);},
+      onHover:(e,el)=>{if(e.native)e.native.target.style.cursor=el.length?'pointer':'default';},
+      plugins:{legend:{position:'bottom',labels:{color:cv('--ink'),padding:12,font:{family:cv('--mono'),size:11},
+      generateLabels:c=>order.map((l,idx)=>({text:`${l} ${(cur[l]/tot*100).toFixed(0)}%`,fillStyle:ISSUERS[l].color,strokeStyle:cv('--card'),lineWidth:1,index:idx}))}},
+      tooltip:{callbacks:{label:c=>`${c.label}: ${shareMetric==='count'?c.parsed:fmtUSD(c.parsed)}`}}}}};
+  if(donut){donut.data=dcfg.data;donut.options=dcfg.options;donut.update();}else donut=new Chart(document.getElementById('donut'),dcfg);
+}
+function chainDonut(id,arr,isPct,inst){
+  const cfg={type:'doughnut',data:{labels:arr.map(x=>x[0]),datasets:[{data:arr.map(x=>x[1]),backgroundColor:arr.map(x=>x[2]),borderColor:cv('--card'),borderWidth:3}]},
+    options:{cutout:'62%',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>isPct?c.parsed+'%':fmtUSD(c.parsed)}}}}};
+  if(inst){inst.data=cfg.data;inst.options=cfg.options;inst.update();return inst;}return new Chart(document.getElementById(id),cfg);
+}
+function renderChainLegend(elId,arr,isPct){const el=document.getElementById(elId);if(!el)return;
+  const tot=arr.reduce((s,x)=>s+x[1],0);
+  el.innerHTML=arr.map(x=>`<span>${chainLogo(x[0])}<span class="sw" style="background:${x[2]}"></span>${x[0]} <b>${isPct?x[1]+'%':(x[1]/tot*100).toFixed(0)+'%'}</b></span>`).join('');
+}
+function renderCross(){
+  const groups={};ASSETS.forEach(a=>{(groups[a.n]=groups[a.n]||[]).push(a);});
+  const multi=Object.entries(groups).filter(([n,arr])=>new Set(arr.map(a=>a.issuer)).size>=2)
+    .sort((x,y)=>y[1].reduce((s,a)=>s+a.vol,0)-x[1].reduce((s,a)=>s+a.vol,0));
+  document.querySelector('#crossTable tbody').innerHTML=multi.map(([n,arr])=>{
+    const prices=arr.map(a=>a.price).filter(p=>p!=null);
+    const gap=prices.length>=2?((Math.max(...prices)-Math.min(...prices))/Math.min(...prices)*100):null;
+    const chips=arr.map(a=>`<span class="pill ${a.issuer}" style="margin-right:8px">${a.t} ${fmtP(a.price)}</span>`).join('');
+    return `<tr><td><b>${n}</b></td><td>${chips}</td><td class="num" style="font-weight:600;color:${gap>1?'var(--down)':'var(--ink)'}">${gap==null?'—':gap.toFixed(2)+'%'}</td></tr>`;}).join('');
+}
+function tokSource(){
+  if(FULL){const all=[];issuersList.forEach(i=>(FULL[i]||[]).forEach(a=>all.push({...a,issuer:i})));return all;}
+  return ASSETS.slice();
+}
+function renderTable(){
+  const q=searchQ.trim().toLowerCase();
+  let rows=tokSource().filter(a=>issuerFilter==='all'||a.issuer===issuerFilter);
+  if(watchOnly) rows=rows.filter(a=>watch.has(a.t));
+  if(q) rows=rows.filter(a=>a.t.toLowerCase().includes(q)||(a.n||'').toLowerCase().includes(q));
+  const sk=tableSort==='liq'?'liq':tableSort==='mc'?'mc':'vol';
+  rows.sort((a,b)=>(b[sk]||0)-(a[sk]||0));
+  document.getElementById('tokLegend').innerHTML=`● ${t('legend_val')} &nbsp;&nbsp; ● ${t('legend_liq')}`;
+  const wb=document.getElementById('watchBtn');wb.textContent=t('watch_btn')+(watch.size?` (${watch.size})`:'');wb.classList.toggle('on',watchOnly);
+  const PG=10, pages=Math.max(1,Math.ceil(rows.length/PG));
+  tablePage=Math.max(0,Math.min(tablePage,pages-1));
+  const start=tablePage*PG, slice=rows.slice(start,start+PG);
+  document.querySelector('#tokTable tbody').innerHTML=slice.map((a,idx)=>`<tr>
+      <td class="rk">${start+idx+1}</td>
+      <td class="c-tk">${starHtml(a.t)}${logoImg(a)}<span class="tk">${a.t}</span> <span class="nm">${a.n||''}</span></td>
+      <td><span class="pill ${a.issuer}">${a.issuer}</span></td>
+      <td class="num" style="color:var(--mut);text-align:right">${a.chain||''}</td>
+      <td class="num">${fmtP(a.px!=null?a.px:a.price)}</td>
+      <td class="num">${fmtUSD(a.vol)}</td>
+      <td class="num">${fmtUSD(a.mc!=null?a.mc:a.mcap)}</td>
+      <td class="num">${fmtUSD(a.liq)}</td></tr>`).join('')
+    || `<tr><td colspan="8" style="text-align:center;color:var(--mut);padding:24px">${t('no_res')}</td></tr>`;
+  const dis=c=>c?'disabled style="opacity:.35;cursor:default"':'';
+  document.getElementById('tokPager').innerHTML=
+    `<button class="btn" onclick="tokPage(-1)" ${dis(tablePage===0)}>${t('m_prev')}</button>
+     <span class="mcov" style="margin:0">${rows.length.toLocaleString()}${lang==='ko'?'개':''} · ${t('m_page')} ${tablePage+1} / ${pages}</span>
+     <button class="btn" onclick="tokPage(1)" ${dis(tablePage>=pages-1)}>${t('m_next')}</button>`;
+  const info=document.getElementById('searchInfo');
+  if(q){const by={};rows.forEach(a=>by[a.issuer]=(by[a.issuer]||0)+1);
+    info.innerHTML=`${t('search_lbl')} "<b>${searchQ}</b>" → `+(rows.length?issuersList.filter(i=>by[i]).map(i=>`${i} ${by[i]}`).join(' · '):t('no_res'));
+    info.style.display='block';}
+  else info.style.display='none';
+}
+function tokPage(d){tablePage+=d;renderTable();}
+function renderIssuerCTA(){
+  const order=[...issuersList].sort((a,b)=>ISSUER_AGG[b].vol-ISSUER_AGG[a].vol);
+  document.getElementById('issuerCta').innerHTML=`<span class="lbl">${t('cta_lbl')}</span>`+
+    order.map(i=>{const a=ISSUER_AGG[i];
+      return `<button class="ibtn ${i}" onclick="openIssuer('${i}')">${i}
+        <span class="sub">${a.count.toLocaleString()}${lang==='ko'?'종목':''} · ${fmtUSD(a.vol)}</span>
+        <span class="ar">↗</span></button>`;}).join('');
+}
+const STRUCT_ORDER=['Backpack','xStocks','Ondo','Dinari'];
+const STRUCT={
+  ko:[{iss:'Backpack',col:'--bp',badge:'최초',b:[['IBKR 파트너','증권사'],['온체인 토큰','SPCX·MU·SNDK'],['지갑 · DEX','즉시 입출금']],c:[['실주식 송금',true],['입·출금',true]],key:'상환 가능 증권 · 실주식 1:1 양방향 (업계 최초)'},
+      {iss:'xStocks',col:'--xs',badge:'',b:[['Backed Finance','실주식 보관'],['토큰 AAPLx','현금가치 청구권'],['Solana DEX','2차 거래']],c:[['발행',false],['거래',false]],key:'실주식 인출 불가 · 현금으로만 상환'},
+      {iss:'Ondo',col:'--ondo',badge:'',b:[['브로커딜러','Alpaca 커스터디'],['토큰 TSLAon','배당 포함'],['기관 보유','24×5']],c:[['mint/redeem',true],['보유',false]],key:'기관 중심 · 24×5 발행/상환 · 리테일 제한'},
+      {iss:'Dinari',col:'--dinari',badge:'Base',b:[['SEC 브로커딜러','커스터디'],['토큰 AAPL.d','배당 포함'],['Base·Arbitrum','발행 초기']],c:[['mint/redeem',true],['보유',false]],key:'Base 중심 · SEC 등록 · DEX 유동성 얇음'}],
+  en:[{iss:'Backpack',col:'--bp',badge:'1ST',b:[['IBKR-partner','broker'],['On-chain token','SPCX·MU·SNDK'],['Wallet · DEX','instant in/out']],c:[['shares xfer',true],['deposit/out',true]],key:'Redeemable security · 1:1 real shares, bidirectional (first)'},
+      {iss:'xStocks',col:'--xs',badge:'',b:[['Backed Finance','holds shares'],['Token AAPLx','cash-value claim'],['Solana DEX','secondary']],c:[['issue',false],['trade',false]],key:'No share withdrawal · cash redemption only'},
+      {iss:'Ondo',col:'--ondo',badge:'',b:[['Broker-dealer','Alpaca custody'],['Token TSLAon','total-return'],['Institutional','24×5']],c:[['mint/redeem',true],['hold',false]],key:'Institutional · 24×5 mint/redeem · retail-limited'},
+      {iss:'Dinari',col:'--dinari',badge:'Base',b:[['SEC broker-dealer','custody'],['Token AAPL.d','total-return'],['Base·Arbitrum','early-stage']],c:[['mint/redeem',true],['hold',false]],key:'Base-first · SEC-registered · thin DEX liquidity'}]
+};
+function renderStruct(){
+  const rows=STRUCT[lang], W=680, rh=82, top=6, bw=168, bx=[90,290,490];
+  const ink=cv('--ink'),mut=cv('--mut'),card2=cv('--card2'),line=cv('--line2');
+  let s=`<svg viewBox="0 0 ${W} ${top+rows.length*rh+2}" width="100%" style="max-width:680px;display:block" xmlns="http://www.w3.org/2000/svg">`;
+  rows.forEach((r,i)=>{const ry=top+i*rh, col=cv(r.col);
+    s+=`<text x="6" y="${ry+26}" font-size="13" font-weight="700" fill="${col}" font-family="sans-serif">${r.iss}</text>`;
+    if(r.badge){const w=r.badge.length*7+12;s+=`<rect x="6" y="${ry+32}" width="${w}" height="15" rx="4" fill="${col}"/><text x="${6+w/2}" y="${ry+43}" font-size="9" fill="#fff" text-anchor="middle" font-weight="700" font-family="sans-serif">${r.badge}</text>`;}
+    r.b.forEach((ln,bi)=>{const x=bx[bi];
+      s+=`<rect x="${x}" y="${ry+4}" width="${bw}" height="50" rx="7" fill="${card2}" stroke="${bi===0?line:col}" stroke-width="1.3"/>`;
+      ln.forEach((t2,li)=>{s+=`<text x="${x+bw/2}" y="${ry+24+li*16}" text-anchor="middle" font-size="11" fill="${ink}" font-weight="${li===0?600:400}" font-family="sans-serif">${t2}</text>`;});});
+    r.c.forEach((cn,ci)=>{const x1=bx[ci]+bw+3, x2=bx[ci+1]-3, ym=ry+29;
+      s+=`<line x1="${x1}" y1="${ym}" x2="${x2}" y2="${ym}" stroke="${col}" stroke-width="1.7"/>`;
+      s+=`<path d="M${x2} ${ym} l-7 -4 v8 z" fill="${col}"/>`;
+      if(cn[1])s+=`<path d="M${x1} ${ym} l7 -4 v8 z" fill="${col}"/>`;
+      s+=`<text x="${(x1+x2)/2}" y="${ym-6}" text-anchor="middle" font-size="8.5" fill="${mut}" font-family="sans-serif">${cn[0]}</text>`;});
+    s+=`<text x="90" y="${ry+70}" font-size="10.5" fill="${mut}" font-family="sans-serif">▸ ${r.key}</text>`;});
+  s+=`</svg>`;
+  document.getElementById('structDiagram').innerHTML=s;
+}
+function renderCmp(){
+  renderStruct();
+  document.getElementById('issuerCmp').innerHTML=STRUCT_ORDER.map(i=>{const f=ISSUER_INFO[i],col=cv(IKEY[i]);
+    return `<div class="ic" style="border-top-color:${col}" onclick="openIssuer('${i}')">
+      <span class="ccorner">↗</span>
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><h3>${i}</h3><span class="cnt">${f.count[lang]}</span></div>
+      <div class="tag2">${f.tag[lang]}</div><div class="por">${f.por[lang]}</div>
+      <ul>${f.items[lang].map(([k,v])=>`<li><b>${k}</b> · ${v}</li>`).join('')}</ul>
+      <div class="view-btn" style="background:${col};color:${txtOn(col)}">${t('m_viewassets')}</div></div>`;}).join('');
+}
+let FULL=null, modalState={i:null,sort:'vol',page:0};
+const PAGE=10;
+function openIssuer(i){modalState={i:i,sort:'vol',page:0};renderModal();document.getElementById('modal').style.display='flex';}
+function setModalSort(s){modalState.sort=s;modalState.page=0;renderModal();}
+function modalPage(d){modalState.page+=d;renderModal();}
+function renderModal(){
+  const i=modalState.i, f=ISSUER_INFO[i], agg=ISSUER_AGG[i];
+  const list=(FULL&&FULL[i]&&FULL[i].length)?FULL[i]:ASSETS.filter(a=>a.issuer===i);
+  const msk=modalState.sort==='liq'?'liq':modalState.sort==='mc'?'mc':'vol';
+  const sorted=[...list].sort((a,b)=>(b[msk]||0)-(a[msk]||0));
+  const pages=Math.max(1,Math.ceil(sorted.length/PAGE));
+  modalState.page=Math.max(0,Math.min(modalState.page,pages-1));
+  const start=modalState.page*PAGE, slice=sorted.slice(start,start+PAGE);
+  const totAll=issuersList.reduce((s,x)=>s+ISSUER_AGG[x].vol,0);
+  const share=(agg.vol/totAll*100).toFixed(1);
+  const stat=(l,v)=>`<div class="mstat"><div class="l">${l}</div><div class="v">${v}</div></div>`;
+  const rows=slice.map((a,idx)=>`<tr>
+    <td class="rk">${start+idx+1}</td>
+    <td class="c-tk">${starHtml(a.t)}${logoImg({...a,issuer:i})}<span class="tk">${a.t}</span> <span class="nm">${a.n||''}</span></td>
+    <td class="num" style="color:var(--mut);text-align:right">${a.chain||''}</td>
+    <td class="num">${fmtP(a.px!=null?a.px:a.price)}</td>
+    <td class="num">${fmtUSD(a.vol)}</td>
+    <td class="num">${fmtUSD(a.mc!=null?a.mc:a.mcap)}</td>
+    <td class="num">${fmtUSD(a.liq)}</td></tr>`).join('');
+  const seg=(s,lab)=>`<button class="${modalState.sort===s?'on':''}" onclick="setModalSort('${s}')">${lab}</button>`;
+  const dis=c=>c?'disabled style="opacity:.35;cursor:default"':'';
+  document.getElementById('modalBody').innerHTML=`
+    <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+      <span style="width:14px;height:14px;border-radius:3px;background:${f.color};display:inline-block"></span>
+      <h2>${i}</h2><span style="font-family:var(--mono);font-size:12px;color:var(--mut)">${f.tag[lang]}</span></div>
+    <div class="por" style="color:var(--up);font-family:var(--mono);font-size:11px;margin-top:6px">${f.por[lang]}</div>
+    <div class="mstats">
+      ${stat(t('m_total_tokens'),agg.count.toLocaleString())}
+      ${stat(t('m_vol24'),fmtUSD(agg.vol))}
+      ${stat(t('m_mcap2'),fmtUSD(agg.mcap))}
+      ${stat(t('m_share'),share+'%')}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:2px 0 10px;flex-wrap:wrap;gap:8px">
+      <span class="mcov" style="margin:0">${sorted.length}${lang==='ko'?'개 발행 자산':' assets'}</span>
+      <div class="seg">${seg('vol',t('m_sort_vol'))}${seg('mc',t('m_sort_mc'))}${seg('liq',t('m_sort_tvl'))}</div></div>
+    <div class="mcov" style="margin:0 0 8px">● ${t('legend_val')} &nbsp; ● ${t('legend_liq')}</div>
+    <table><thead><tr><th>#</th><th>${t('c_ticker')}</th><th>${t('c_chain')}</th>
+      <th>${t('c_price')}</th><th>${t('c_vol')}</th><th>${t('c_mcap')}</th><th>${t('c_liq')}</th></tr></thead><tbody>${rows}</tbody></table>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+      <button class="btn" onclick="modalPage(-1)" ${dis(modalState.page===0)}>${t('m_prev')}</button>
+      <span class="mcov" style="margin:0">${t('m_page')} ${modalState.page+1} / ${pages}</span>
+      <button class="btn" onclick="modalPage(1)" ${dis(modalState.page>=pages-1)}>${t('m_next')}</button></div>`;
+}
+function closeModal(){document.getElementById('modal').style.display='none';}
+function renderNews(){
+  document.getElementById('listings').innerHTML=LISTINGS[lang].map(l=>`<span class="lst"><b>${l[0]}</b> ${l[1]} <span class="d">· ${l[2]} · ${l[3]}</span></span>`).join('');
+  renderTokenMcap();renderCEX();renderRecommended();
+  if(typeof newsData!=='undefined'&&newsData.length)renderNewsList();
+}
+const ISSUER_TOKENS=[
+  {tk:'$ONDO',sub:'Ondo Finance',cgid:'ondo-finance',chain:'Ethereum',color:'#5a51b0',mc:1.483e9,chg:null},
+  {tk:'$BP',sub:'Backpack',cgid:'backpack',chain:'Solana',color:'#e5383b',mc:132.9e6,chg:null},
+  {tk:'$XSTOCKS',sub:'Backed / xStocks',cgid:null,chain:'—',color:'#2f5fc0',mc:null,chg:null},
+];
+function renderTokenMcap(){
+  document.getElementById('tokmcGrid').innerHTML=ISSUER_TOKENS.map(x=>`
+    <div class="ic" style="border-top-color:${x.color};cursor:default">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><h3>${x.tk}</h3><span class="cnt">${x.chain}</span></div>
+      <div class="tag2">${x.sub}</div>
+      <div style="font-family:var(--serif);font-weight:600;font-size:25px;margin:10px 0 2px;color:${x.color}">${x.cgid?fmtUSD(x.mc):t('no_token')}</div>
+      <div class="tag2">${x.cgid?(t('tokenmc')+(x.chg!=null?' · '+fmtPct(x.chg):'')):'—'}</div>
+    </div>`).join('');
+}
+async function refreshTokenMcap(){
+  const ids=ISSUER_TOKENS.filter(x=>x.cgid).map(x=>x.cgid).join(',');
+  try{const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_market_cap=true&include_24hr_change=true`,{cache:'no-store'});
+    if(r.ok){const j=await r.json();ISSUER_TOKENS.forEach(x=>{if(x.cgid&&j[x.cgid]){if(j[x.cgid].usd_market_cap)x.mc=j[x.cgid].usd_market_cap;x.chg=j[x.cgid].usd_24h_change;}});}
+  }catch(e){}
+}
+const BINANCE_STOCKS=[['SPCX','SPCXBUSDT'],['SNDK','SNDKBUSDT'],['NVDA','NVDABUSDT'],['CRCL','CRCLBUSDT'],
+  ['INTC','INTCBUSDT'],['MSTR','MSTRBUSDT'],['AMD','AMDBUSDT'],['TSLA','TSLABUSDT'],['EWY','EWYBUSDT']];
+let BIN={SPCX:28.49e6,SNDK:6.61e6,NVDA:1.10e6,CRCL:1.77e6,INTC:1.45e6,MSTR:0.52e6,AMD:0.37e6,TSLA:0.27e6,EWY:0.21e6};
+let BINSP={}; // live Binance spread bps per ticker
+const BACKPACK_CEX={SPCX:57.75e6,MU:37.08e6,SNDK:17.27e6};
+const BACKPACK_SP={SPCX:8,MU:10,SNDK:14}; // on-chain DEX effective spread (est, bps)
+async function refreshCEX(){
+  try{const syms=BINANCE_STOCKS.map(x=>x[1]);
+    const r=await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+encodeURIComponent(JSON.stringify(syms)),{cache:'no-store'});
+    if(r.ok){const j=await r.json();const by={};j.forEach(t=>by[t.symbol]=t);
+      BINANCE_STOCKS.forEach(([tk,sym])=>{const d=by[sym];if(d){BIN[tk]=parseFloat(d.quoteVolume);
+        const bid=parseFloat(d.bidPrice),ask=parseFloat(d.askPrice);
+        if(bid>0&&ask>0)BINSP[tk]=(ask-bid)/((ask+bid)/2)*1e4;}});}
+  }catch(e){}
+}
+function spreadCell(bps){
+  if(bps==null)return '<td class="num" style="color:var(--mut)">—</td>';
+  const c=bps<=10?'var(--up)':bps<=30?'var(--gold)':'var(--down)';
+  return `<td class="num" style="color:${c};font-weight:600">${bps.toFixed(1)} bp</td>`;
+}
+function renderCEX(){
+  document.getElementById('cexNote').textContent=t('cex_note');
+  const tickers=[...new Set([...Object.keys(BIN),...Object.keys(BACKPACK_CEX)])]
+    .sort((a,b)=>Math.max(BIN[b]||0,BACKPACK_CEX[b]||0)-Math.max(BIN[a]||0,BACKPACK_CEX[a]||0));
+  const binTot=Object.values(BIN).reduce((s,v)=>s+v,0), bpTot=Object.values(BACKPACK_CEX).reduce((s,v)=>s+v,0);
+  const spVals=Object.values(BINSP); const binSpAvg=spVals.length?spVals.reduce((s,v)=>s+v,0)/spVals.length:null;
+  const bpSpVals=Object.values(BACKPACK_SP); const bpSpAvg=bpSpVals.reduce((s,v)=>s+v,0)/bpSpVals.length;
+  const head=`<thead><tr><th>${t('c_ticker')}</th>
+    <th class="num" style="text-align:right">Binance ${t('cex_spread')}</th>
+    <th class="num" style="text-align:right">Binance ${t('cex_vol')}</th>
+    <th class="num" style="text-align:right">Backpack ${t('cex_spread')}</th>
+    <th class="num" style="text-align:right">Backpack ${t('cex_vol')}</th></tr></thead>`;
+  const body=tickers.map(tk=>`<tr>
+    <td><span class="tk">${tk}</span></td>
+    ${spreadCell(BINSP[tk]!=null?BINSP[tk]:null)}
+    <td class="num">${BIN[tk]!=null?fmtUSD(BIN[tk]):'—'}</td>
+    ${spreadCell(BACKPACK_SP[tk]!=null?BACKPACK_SP[tk]:null)}
+    <td class="num">${BACKPACK_CEX[tk]!=null?fmtUSD(BACKPACK_CEX[tk]):'—'}</td></tr>`).join('');
+  const foot=`<tr style="border-top:2px solid var(--ink)"><td><b>${t('cex_total')}</b></td>
+    <td class="num" style="font-weight:700">${binSpAvg!=null?binSpAvg.toFixed(1)+' bp':'—'}</td>
+    <td class="num" style="font-weight:700;color:#c79a2e">${fmtUSD(binTot)}</td>
+    <td class="num" style="font-weight:700">${bpSpAvg.toFixed(1)} bp</td>
+    <td class="num" style="font-weight:700;color:var(--bp)">${fmtUSD(bpTot)}</td></tr>`;
+  document.getElementById('cexTable').innerHTML=head+'<tbody>'+body+foot+'</tbody>';
+}
+const RECOMMENDED={
+  ko:[['Backed bTokens','Base · ETH · Gnosis','LIVE','주식 · bCOIN 등 "b" 접미사 ~55종목 (xStocks의 EVM 라인) · 공개 토큰리스트 없어 미추적'],
+      ['Coinbase','Base','SOON','주식 · 2026-06 발표 · 비미국 · ~8월 출시 예정 (SEC 면제 대기)'],
+      ['Swarm','Polygon · Base','SOON','주식 (plain 티커) · 소규모·유동성 얇음 → 추적 예정'],
+      ['Centrifuge','Base · ETH · 9체인','LIVE','RWA 신용/펀드 · 토큰화 미국채(JTRSY)·CLO(JAAA) ~$1.6B · 주식 아님 · deRWA로 DEX화'],
+      ['BlackRock BUIDL','ETH +8체인','LIVE','토큰화 MMF · <b>최대 RWA 펀드 ~$2.85B</b> (Securitize 발행)'],
+      ['Maple','ETH · Base · Sol','LIVE','기관 신용 · syrupUSDC ~$1.3B · TVL ~$2.1B'],
+      ['Superstate','ETH · Sol · Plume','LIVE','토큰화 국채 USTB ~$967M · 캐리 USCC'],
+      ['Franklin Templeton BENJI','8체인','LIVE','정부 MMF(FOBXX) ~$830M'],
+      ['Paxos PAXG (금)','ETH · Solana','LIVE','토큰화 금 1oz≈$4,040 · <b>Sunrise DeFi가 Solana로 라우팅</b>(Backpack 인프라 파트너) · 발행사=Paxos, Backpack 아님'],
+      ['Robinhood','Arbitrum','제한적','주식 ~2000 · 인앱 전송제한 → 온체인 데이터 빈약'],
+      ['Binance Bstock','BNB · CEX','추적 중','주식 9종목 CEX (위 비교 포함)']],
+  en:[['Backed bTokens','Base · ETH · Gnosis','LIVE','Stocks · bCOIN etc "b" prefix ~55 (xStocks EVM line) · no public token list → untracked'],
+      ['Coinbase','Base','SOON','Stocks · announced 2026-06 · non-US · ~Aug launch (awaiting SEC relief)'],
+      ['Swarm','Polygon · Base','SOON','Stocks (plain ticker) · small · thin liquidity → soon'],
+      ['Centrifuge','Base · ETH · 9 chains','LIVE','RWA credit/funds · T-bills (JTRSY)·CLO (JAAA) ~$1.6B · no stocks · deRWA wrappers on DEX'],
+      ['BlackRock BUIDL','ETH +8 chains','LIVE','Tokenized MMF · <b>largest RWA fund ~$2.85B</b> (issued by Securitize)'],
+      ['Maple','ETH · Base · Sol','LIVE','Institutional credit · syrupUSDC ~$1.3B · TVL ~$2.1B'],
+      ['Superstate','ETH · Sol · Plume','LIVE','Tokenized treasuries USTB ~$967M · carry USCC'],
+      ['Franklin Templeton BENJI','8 chains','LIVE','Gov MMF (FOBXX) ~$830M'],
+      ['Paxos PAXG (gold)','ETH · Solana','LIVE','Tokenized gold 1oz≈$4,040 · <b>routed to Solana via Sunrise DeFi</b> (Backpack infra partner) · issuer=Paxos, not Backpack'],
+      ['Robinhood','Arbitrum','GATED','Stocks ~2000 · in-app transfer-gated → sparse on-chain data'],
+      ['Binance Bstock','BNB · CEX','TRACKED','9 stocks on CEX (in comparison above)']],
+};
+/* Chinese (zh) data fallback — reuse English content for data-heavy blocks so nothing throws.
+   UI chrome is fully translated via TR_ZH; these are dense reference tables. */
+[LISTINGS,RECOMMENDED,NEWS,STRUCT].forEach(o=>{if(o&&!o.zh)o.zh=o.en;});
+Object.values(ISSUER_INFO).forEach(f=>{['count','tag','por','items'].forEach(k=>{if(f[k]&&!f[k].zh)f[k].zh=f[k].en;});});
+function renderRecommended(){
+  document.getElementById('recGrid').innerHTML=RECOMMENDED[lang].map(r=>`
+    <div class="ic" style="border-top-color:var(--gold);cursor:default">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="font-size:15px">${r[0]}</h3>
+        <span class="badge ${r[2]==='LIVE'?'live':'sample'}">${r[2]}</span></div>
+      <div class="tag2">${r[1]}</div><ul><li style="border:none;padding-top:8px">${r[3]}</li></ul></div>`).join('');
+}
+function relTime(ageH){
+  if(ageH==null)return '';
+  if(ageH<1){const m=Math.max(1,Math.round(ageH*60));return lang==='ko'?m+'분 전':(lang==='zh'?m+'分钟前':m+'m ago');}
+  if(ageH<24){const h=Math.round(ageH);return lang==='ko'?h+'시간 전':(lang==='zh'?h+'小时前':h+'h ago');}
+  const d=Math.round(ageH/24);return lang==='ko'?d+'일 전':(lang==='zh'?d+'天前':d+'d ago');
+}
+function toggleNews(el){const s=el.nextElementSibling;const open=s.style.display==='block';
+  s.style.display=open?'none':'block';el.classList.toggle('open',!open);}
+let newsData=[];
+function renderNewsList(){
+  const box=document.getElementById('newsLive');if(!newsData.length)return;
+  box.innerHTML=newsData.map(n=>{const cat=n.score>=15?'milestone':n.score>=10?'launch':'entrant';
+    const title=(lang==='ko'&&n.title_ko)?n.title_ko:((lang==='zh'&&n.title_zh)?n.title_zh:n.title);
+    const sum=((lang==='ko'&&n.summary_ko)?n.summary_ko:((lang==='zh'&&n.summary_zh)?n.summary_zh:(n.summary||''))).trim().replace(/"/g,'&quot;');
+    return `<div class="ni-item">
+      <div class="ni" onclick="toggleNews(this)">
+        <span class="cat ${cat}">${n.cluster>1?'×'+n.cluster:'NEWS'}</span>
+        <h4 style="flex:1">${title}</h4>
+        <span class="meta">${n.source} · ${relTime(n.age_h)}</span>
+        <span class="ni-caret">▾</span></div>
+      <div class="ni-summary" style="display:none">
+        <p>${sum||(lang==='ko'?'요약 없음 — 원문에서 확인':'No summary — see source')}</p>
+        <a href="${n.link}" target="_blank">${lang==='ko'?'원문 기사 →':'Read source →'}</a></div>
+    </div>`;}).join('');
+}
+async function loadNews(){
+  const box=document.getElementById('newsLive');
+  if(!newsData.length)box.innerHTML=`<div style="padding:18px;color:var(--mut);font-family:var(--mono);font-size:12px">${t('news_loading')}</div>`;
+  try{const r=await fetch('/api/news',{cache:'no-store'});const j=await r.json();
+    if(j&&j.items&&j.items.length){newsData=j.items;renderNewsList();}
+  }catch(e){if(!newsData.length)box.innerHTML=NEWS[lang].map(n=>`<div class="ni"><span class="cat ${n.c}">${n.l}</span><h4>${n.t}</h4><span class="meta" style="margin-left:auto">${n.m}</span></div>`).join('');}
+}
+function showTab(name){
+  document.querySelectorAll('[data-tab]').forEach(el=>{if(el.closest('#tabbar'))return;el.style.display=el.dataset.tab===name?'':'none';});
+  document.querySelectorAll('#tabbar .tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
+  window.scrollTo(0,0);
+  if(name==='main')renderTable();
+  if(name==='news')loadNews();
+}
+function applyStatic(){
+  document.querySelectorAll('[data-t]').forEach(el=>el.innerHTML=t(el.dataset.t));
+  document.getElementById('search').placeholder=t('search_ph');
+  document.getElementById('foot').innerHTML=t('foot');
+  document.documentElement.lang=lang;
+  [...document.querySelectorAll('#langSeg button')].forEach(b=>b.classList.toggle('on',b.dataset.lang===lang));
+}
+
+/* ===================== LIVE ===================== */
+async function refreshPrices(){
+  const ids=ASSETS.filter(a=>a.addr).map(a=>a.ck+':'+a.addr);
+  try{const r=await fetch('https://coins.llama.fi/prices/current/'+ids.join(','),{cache:'no-store'});
+    if(!r.ok)throw 0;const j=await r.json();let hit=0;
+    ASSETS.forEach(a=>{const k=a.ck+':'+a.addr;if(j.coins&&j.coins[k]?.price){a.price=j.coins[k].price;a._live=true;hit++;}});
+    if(hit){priceLive=true;}
+  }catch(e){priceLive=false;}
+  try{const r=await fetch('https://coins.llama.fi/percentage/'+ids.join(',')+'?period=24h',{cache:'no-store'});
+    if(r.ok){const j=await r.json();ASSETS.forEach(a=>{const v=j.coins&&j.coins[a.ck+':'+a.addr];if(typeof v==='number')a.chg=v;});}}catch(e){}
+}
+async function refreshBirdeye(){
+  const key=localStorage.getItem('birdeyeKey');if(!key)return;
+  for(const a of ASSETS.filter(x=>x.ck==='solana')){
+    try{const r=await fetch('https://public-api.birdeye.so/defi/token_overview?address='+a.addr,{headers:{'X-API-KEY':key,'x-chain':'solana'}});
+      if(r.ok){const j=(await r.json()).data;if(j){if(j.v24hUSD)a.vol=j.v24hUSD;if(j.liquidity)a.liq=j.liquidity;if(j.price)a.price=j.price;if(j.v24hChangePercent!=null)a.chg=j.v24hChangePercent;}}
+      await new Promise(s=>setTimeout(s,1100));}catch(e){}}
+}
+async function refreshLive(){
+  try{const r=await fetch('/api/live',{cache:'no-store'});const j=await r.json();
+    if(!j||!j.tokens||!j.generated)return; const T=j.tokens; liveVolTs=j.generated;
+    if(FULL){
+      const known=new Set();
+      ['Backpack','xStocks'].forEach(k=>(FULL[k]||[]).forEach(a=>{known.add(a.t);const d=T[a.t];
+        if(d){if(d.vol!=null)a.vol=d.vol;if(d.liq!=null)a.liq=d.liq;if(d.mc!=null)a.mc=d.mc;if(d.px!=null)a.px=d.px;}}));
+      // auto-detect a freshly launched token (e.g. new Backpack listing) and add it live
+      Object.keys(T).forEach(sym=>{const d=T[sym],iss=d.issuer;
+        if(iss&&FULL[iss]&&!known.has(sym)&&((d.vol||0)>0||(d.liq||0)>0)){
+          FULL[iss].push({t:sym,n:sym,vol:d.vol||0,liq:d.liq||0,mc:d.mc||null,px:d.px||null,chain:d.chain||'Solana'});
+          if(ISSUER_AGG[iss])ISSUER_AGG[iss].count++;}});
+    }
+    ASSETS.forEach(a=>{const d=T[a.t];if(d){if(d.vol!=null)a.vol=d.vol;if(d.liq!=null)a.liq=d.liq;}});
+  }catch(e){}
+}
+function renderAll(){
+  applyStatic();
+  const loc=lang==='ko'?'ko-KR':(lang==='zh'?'zh-CN':'en-US');
+  document.getElementById('editionDate').textContent='LIVE · '+new Date().toLocaleString(loc,{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderCross();renderTable();renderCmp();renderNews();
+  chainMcapCh=chainDonut('chainMcap',CHAIN_MCAP,false,chainMcapCh);
+  chainVolCh=chainDonut('chainVol',CHAIN_VOL,true,chainVolCh);
+  renderChainLegend('chainMcapLeg',CHAIN_MCAP,false);renderChainLegend('chainVolLeg',CHAIN_VOL,true);
+}
+async function tick(){await refreshPrices();await refreshBirdeye();await refreshLive();await refreshTokenMcap();await refreshCEX();renderAll();}
+
+/* ===================== EVENTS ===================== */
+document.getElementById('langSeg').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;
+  lang=e.target.dataset.lang;localStorage.setItem('lang',lang);renderAll();});
+document.getElementById('shareSeg').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));e.target.classList.add('on');shareMetric=e.target.dataset.m;renderShare();});
+document.getElementById('issuerFilter').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));e.target.classList.add('on');issuerFilter=e.target.dataset.i;tablePage=0;renderTable();});
+document.getElementById('tableSort').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));e.target.classList.add('on');tableSort=e.target.dataset.s;tablePage=0;renderTable();});
+document.getElementById('shareBtn').addEventListener('click',async()=>{
+  const url=location.href, title='OnchainEquities — Tokenized Stock & RWA Tracker';
+  const txt=lang==='ko'?'토큰화 주식·RWA 실시간 온체인 트래커':'Live tokenized-stock & RWA tracker';
+  try{if(navigator.share){await navigator.share({title,text:txt,url});}
+    else{await navigator.clipboard.writeText(url);const b=document.getElementById('shareBtn'),o=b.textContent;
+      b.textContent=lang==='ko'?'✓ 링크 복사됨':'✓ Link copied';setTimeout(()=>b.textContent=o,1600);}}catch(e){}});
+document.getElementById('watchBtn').addEventListener('click',()=>{watchOnly=!watchOnly;tablePage=0;
+  if(watchOnly){issuerFilter='all';[...document.querySelectorAll('#issuerFilter button')].forEach(b=>b.classList.toggle('on',b.dataset.i==='all'));}
+  renderTable();});
+document.getElementById('search').addEventListener('input',e=>{searchQ=e.target.value;tablePage=0;renderTable();});
+document.getElementById('searchClr').addEventListener('click',()=>{searchQ='';document.getElementById('search').value='';tablePage=0;renderTable();});
+document.getElementById('modalX').addEventListener('click',closeModal);
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+document.getElementById('tabbar').addEventListener('click',e=>{if(e.target.dataset.tab)showTab(e.target.dataset.tab);});
+document.getElementById('newsRefresh').addEventListener('click',()=>{document.getElementById('newsLive').dataset.loaded='';loadNews();});
+
+/* ===================== INIT ===================== */
+const savedTheme=localStorage.getItem('theme')||'editorial';
+document.body.className=savedTheme==='editorial'?'':'t-'+savedTheme;
+syncChartTheme();
+fetch('./assets.json',{cache:'no-store'}).then(r=>r.json()).then(j=>{FULL=j;renderTable();if(document.getElementById('modal').style.display==='flex')renderModal();}).catch(()=>{});
+renderAll();showTab('main');tick();setInterval(tick,30000);
+</script>
+</body>
+</html>
