@@ -2,6 +2,7 @@
 """OnchainEquities backend: serves static files + /api/news RWA news aggregator.
 No external deps (urllib + xml.etree). Run: python server.py [port]"""
 import sys, os, json, re, time, math, threading
+import concurrent.futures as _cf
 import urllib.request, urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from xml.etree import ElementTree as ET
@@ -392,6 +393,95 @@ def _cex_loop():
             sys.stderr.write(f"cex loop: {e}\n")
         time.sleep(60)
 
+# ---- securities spread vs Nasdaq: Backpack universe (paginated) + Nasdaq benchmark + Binance/Backpack venues ----
+SEC_PAGE = 30
+_sec = {'sorted': [], 't': 0}     # full Backpack securities universe, comparable tickers first
+_nq_cache = {}                    # ticker -> (ts, quote)
+
+def _money(s):
+    try:
+        v = float(str(s).replace('$', '').replace(',', '').strip())
+        return v or None
+    except Exception:
+        return None
+
+def _load_universe():
+    try:
+        s = json.loads(_get("https://api.backpack.exchange/api/v1/securities", 25))
+        out = []
+        for x in s:
+            tk = (x.get('asset') or '').split('.')[0]
+            if tk:
+                out.append({'ticker': tk, 'name': x.get('name', tk)})
+        return out
+    except Exception as e:
+        sys.stderr.write(f"universe: {e}\n"); return []
+
+def _cex_map():
+    with _lock:
+        rows = (_cex['data'] or {}).get('rows', [])
+    return {r['ticker']: r for r in rows}
+
+def _ensure_universe():
+    if _sec['sorted'] and time.time() - _sec['t'] < 3600:
+        return
+    uni = _load_universe()
+    cm = _cex_map()
+    covered = set(cm.keys())   # tickers Binance/Backpack list -> show first (the comparable ones)
+    uni.sort(key=lambda r: (0 if r['ticker'] in covered else 1, r['ticker']))
+    if uni:
+        _sec['sorted'] = uni; _sec['t'] = time.time()
+
+def _nasdaq_quote(tk):
+    now = time.time()
+    c = _nq_cache.get(tk)
+    if c and now - c[0] < 60:
+        return c[1]
+    out = None
+    for ac in ('stocks', 'etf'):
+        try:
+            d = json.loads(_get(f"https://api.nasdaq.com/api/quote/{urllib.parse.quote(tk)}/info?assetclass={ac}", 8))
+            pd = (d.get('data') or {}).get('primaryData') or {}
+            bid = _money(pd.get('bidPrice')); ask = _money(pd.get('askPrice')); last = _money(pd.get('lastSalePrice'))
+            if last or (bid and ask):
+                out = {'bid': bid, 'ask': ask, 'last': last,
+                       'spread': _spread_bps(bid, ask) if (bid and ask) else None}
+                break
+        except Exception:
+            continue
+    _nq_cache[tk] = (now, out)
+    return out
+
+def build_spreads(page):
+    _ensure_universe()
+    uni = _sec['sorted']
+    total = len(uni)
+    pages = max(1, (total + SEC_PAGE - 1) // SEC_PAGE)
+    page = max(0, min(page, pages - 1))
+    chunk = uni[page * SEC_PAGE:(page + 1) * SEC_PAGE]
+    cm = _cex_map()
+    # fetch Nasdaq quotes for the 30 visible tickers concurrently (cached 60s)
+    nq = {}
+    if chunk:
+        with _cf.ThreadPoolExecutor(max_workers=8) as ex:
+            for tk, q in zip([r['ticker'] for r in chunk],
+                             ex.map(lambda r: _nasdaq_quote(r['ticker']), chunk)):
+                nq[tk] = q
+    rows = []
+    for r in chunk:
+        tk = r['ticker']; c = cm.get(tk, {}); n = nq.get(tk)
+        rows.append({
+            'ticker': tk, 'name': r['name'],
+            'nasdaq': ({'px': n.get('last') or (((n.get('bid') or 0) + (n.get('ask') or 0)) / 2 or None),
+                        'spread': n.get('spread')} if n else None),
+            'binance': ({'spread': c.get('bn_spread'), 'px': c.get('bn_price'), 'vol': c.get('bn_vol')}
+                        if (c.get('bn_spread') is not None or c.get('bn_vol')) else None),
+            'backpack': ({'spread': c.get('bp_spread'), 'px': c.get('bp_price'), 'vol': c.get('bp_vol'),
+                          'ob': True} if c.get('bp_listed') else {'ob': False}),
+        })
+    return {'generated': int(time.time()), 'page': page, 'pages': pages, 'total': total,
+            'page_size': SEC_PAGE, 'rows': rows}
+
 # ---- logo proxy + cache: ?t=ticker (stock) / ?d=domain (issuer) / ?c=chain ----
 _logo_cache = {}
 def _fetch_url(url):
@@ -443,6 +533,14 @@ class H(BaseHTTPRequestHandler):
         if path == '/api/cex':
             with _lock:
                 self._send(200, json.dumps(_cex['data'] or {'rows': [], 'generated': 0}), 'application/json')
+            return
+        if path == '/api/spreads':
+            try:
+                q = urllib.parse.parse_qs(self.path.split('?', 1)[1]) if '?' in self.path else {}
+                page = int((q.get('page', ['0']))[0])
+                self._send(200, json.dumps(build_spreads(page)), 'application/json')
+            except Exception as e:
+                self._send(500, json.dumps({'error': str(e), 'rows': []}), 'application/json')
             return
         if path == '/api/geo':
             # Country from the CDN edge (Cloudflare sets CF-IPCountry; others vary). Used only to

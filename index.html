@@ -360,6 +360,7 @@
       <div class="desc" data-t="sec_cex_d"></div></div>
     <div id="cexNote" class="mcov" style="margin:0 0 10px"></div>
     <table id="cexTable"></table>
+    <div id="cexPager" style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:14px"></div>
   </section>
 
   <section data-tab="main">
@@ -535,8 +536,8 @@ const TR={
   tab_main:{ko:'Main',en:'Main'}, tab_news:{ko:'RWA 뉴스 · 리서치',en:'RWA News · Research'}, tab_issuers:{ko:'발행사별 구조',en:'Issuers'}, tab_cex:{ko:'거래소 비교',en:'Exchanges'},
   sec_tokmc_h:{ko:'발행사 토큰 시가총액',en:'Issuer Token Market Cap'},
   sec_tokmc_d:{ko:'토큰화 주식의 온체인 발행액과 별개 — 발행사 자체 토큰',en:"Distinct from tokenized-stock value — the issuers' own tokens"},
-  sec_cex_h:{ko:'거래소 오더북 현물 주식 스프레드 — Backpack vs Binance',en:'Order-Book Stock Spreads — Backpack vs Binance'},
-  sec_cex_d:{ko:'각 거래소 자체 오더북의 실시간 bid/ask 스프레드 (온체인 DEX 아님)',en:"Live bid/ask spread from each exchange's own order book (not the on-chain DEX)"},
+  sec_cex_h:{ko:'현물 주식 스프레드 — Nasdaq vs Backpack vs Binance',en:'Stock Spreads — Nasdaq vs Backpack vs Binance'},
+  sec_cex_d:{ko:'Nasdaq 실시간 호가를 기준으로 거래소별 스프레드 비교 · 1,112종 전체',en:'Each venue\'s spread vs the live Nasdaq quote · all 1,112 securities'},
   sec_news_h:{ko:'RWA · 토큰화 주식 뉴스',en:'RWA · Tokenized-Stock News'},
   sec_news_d:{ko:'다중 소스 RSS 실시간 집계 · 중요도 랭킹',en:'Multi-source RSS · ranked by importance'},
   sec_rec_h:{ko:'추천: 추가할 발행사',en:'Recommended Issuers to Add'},
@@ -547,8 +548,9 @@ const TR={
   cex_total:{ko:'평균 / 합계',en:'Avg / Total'}, cex_venue:{ko:'거래 장소',en:'Venue'},
   cex_spread:{ko:'스프레드',en:'Spread'}, cex_vol:{ko:'24h 거래량',en:'24h Vol'},
   cex_closed:{ko:'장 마감',en:'mkt closed'}, cex_unlisted:{ko:'미상장',en:'not listed'},
-  cex_explain:{ko:'Backpack과 Binance <b>거래소 자체 오더북</b>의 실시간 호가(bid/ask) 스프레드 — 온체인 DEX가 아님. 현재 <b>Backpack 오더북 상장 {bp}종</b> · <b>Binance 토큰화 주식 {bn}종</b>. ※ Backpack Securities 브로커리지(6,700+종)는 <b>단일호가(quote)식이라 오더북 스프레드 자체가 없음</b> — 이 표는 Backpack <b>거래소</b> 오더북 마켓(.US) 기준. 미국장 시간외엔 호가가 비어 "장 마감"으로 표시됨.',
-    en:'Live bid/ask spread from <b>each exchange\'s own order book</b> (not the on-chain DEX). Currently <b>{bp} Backpack order-book listings</b> · <b>{bn} Binance tokenized-stock pairs</b>. ⚠ The Backpack Securities brokerage (6,700+ stocks) is <b>quote-based — it has no order-book spread</b>; this table uses Backpack\'s <b>exchange</b> order-book markets (.US). Outside US market hours quotes are empty → shown as "mkt closed".'},
+  cex_quote:{ko:'호가식(앱)',en:'quote-based'}, cex_closest:{ko:'Nasdaq 근접',en:'Closest to Nasdaq'},
+  cex_explain:{ko:'<b>Nasdaq 실시간 호가(bid/ask) 스프레드를 기준</b>으로, 같은 종목이 Backpack·Binance에서 얼마나 다른 스프레드로 거래되는지 비교. Backpack 상장 <b>전체 종목(1,112개)</b>을 30개씩 — 비교 가능한 종목(Binance·Backpack 오더북)부터 위로. ⚠ Backpack Securities는 <b>단일호가(quote)식이라 공개 스프레드가 없음</b> → SPCX·MU(오더북)만 실측, 나머지는 "호가식". 미국장 시간외엔 호가가 넓음(프리장). Nasdaq=벤치마크, 숫자 작을수록 좋음.',
+    en:'<b>Benchmarked to Nasdaq\'s live bid/ask spread</b> — see how the same stock trades at different spreads on Backpack vs Binance. All <b>1,112 Backpack-listed securities</b>, 30 per page, comparable ones (Binance/Backpack order book) first. ⚠ Backpack Securities is <b>quote-based with no public spread</b> → only SPCX·MU (order book) are measured; the rest show "quote-based". Spreads are wide outside US market hours (pre/post). Nasdaq = benchmark; lower is tighter.'},
   onchainval:{ko:'온체인 발행액',en:'On-chain Value'}, tokenmc:{ko:'토큰 시총',en:'Token Mcap'},
   m_coverage:{ko:'추적 {n}/{total}개 종목 (거래량 상위 위주)',en:'Showing {n}/{total} tracked (top by volume)'},
   foot:{ko:'데이터 · <b>24h 볼륨·유동성 = 전 체인 온체인 DEX</b> (Solana <a href="https://www.tokens.xyz" target="_blank">tokens.xyz/Sunrise</a> + EVM <a href="https://www.geckoterminal.com" target="_blank">GeckoTerminal</a>, 06-26 스냅샷; xStocks EVM·Ondo 전 체인 ≈$0 확인) / 종목수 <a href="https://api.backed.fi/api/v2/public/assets" target="_blank">api.backed.fi</a> · Ondo <a href="https://github.com/ondoprotocol/ondo-global-markets-token-list" target="_blank">token-list</a> / 온체인 발행액 <a href="https://app.rwa.xyz/stocks" target="_blank">RWA.xyz</a> 06-25 / 가격 라이브 <a href="https://defillama.com" target="_blank">DefiLlama</a><br>정보 제공용 · 투자 자문 아님 · 온체인 데이터 지연·부정확 가능 · Backpack Securities 미·영·UAE·일·EU 미제공',
@@ -600,14 +602,14 @@ const TR_ZH={
   m_sort_vol:'按成交量', m_sort_tvl:'按 TVL', m_page:'页', m_prev:'← 上一页', m_next:'下一页 →',
   tab_main:'Main', tab_news:'RWA 新闻 · 研究', tab_issuers:'发行方结构', tab_cex:'交易所对比',
   sec_tokmc_h:'发行方代币市值', sec_tokmc_d:'与代币化股票发行额无关 — 发行方自身代币',
-  sec_cex_h:'交易所订单簿现货股票价差 — Backpack vs Binance',
-  sec_cex_d:'各交易所自身订单簿的实时买卖盘价差（非链上 DEX）',
+  sec_cex_h:'现货股票价差 — Nasdaq vs Backpack vs Binance',
+  sec_cex_d:'以 Nasdaq 实时报价为基准对比各交易所价差 · 全部 1,112 只',
   sec_news_h:'RWA · 代币化股票新闻', sec_news_d:'多源 RSS 实时聚合 · 按重要性排序',
   sec_rec_h:'推荐：可加入的发行方', sec_rec_d:'Base·BNB 等链上代币化股票发行方候选',
   no_token:'无发行方代币', news_loading:'加载新闻中…', news_refresh:'↻ 刷新',
   cex_total:'平均 / 合计', cex_venue:'交易场所', cex_spread:'价差', cex_vol:'24h 成交量',
-  cex_closed:'休市', cex_unlisted:'未上架',
-  cex_explain:'Backpack 与 Binance <b>交易所自身订单簿</b>的实时买卖盘价差 — 非链上 DEX。当前 <b>Backpack 订单簿上架 {bp} 只</b> · <b>Binance 代币化股票 {bn} 只</b>。⚠ Backpack Securities 经纪业务（6,700+ 只）为<b>单一报价(quote)制，没有订单簿价差</b>；本表采用 Backpack <b>交易所</b>订单簿市场(.US)。美股休市时段无报价 → 显示"休市"。',
+  cex_closed:'休市', cex_unlisted:'未上架', cex_quote:'报价制(App)', cex_closest:'最接近 Nasdaq',
+  cex_explain:'<b>以 Nasdaq 实时买卖盘价差为基准</b>，对比同一只股票在 Backpack 与 Binance 的价差差异。涵盖 Backpack 上架<b>全部 1,112 只证券</b>，每页 30 只，可对比的（Binance/Backpack 订单簿）优先靠前。⚠ Backpack Securities 为<b>单一报价(quote)制，无公开价差</b> → 仅 SPCX·MU（订单簿）有实测，其余显示"报价制"。美股盘前/盘后价差较宽。Nasdaq=基准，数值越小越好。',
   onchainval:'链上发行额', tokenmc:'代币市值',
   m_coverage:'显示 {n}/{total} 个追踪代币（按成交量靠前）',
   foot:'数据 · <b>24h 成交量·流动性 = 全链链上 DEX</b>（Solana <a href="https://www.tokens.xyz" target="_blank">tokens.xyz/Sunrise</a> + EVM <a href="https://www.geckoterminal.com" target="_blank">GeckoTerminal</a>，06-26 快照；xStocks EVM 与 Ondo 全链 ≈$0 已核实）/ 数量 <a href="https://api.backed.fi/api/v2/public/assets" target="_blank">api.backed.fi</a> · Ondo <a href="https://github.com/ondoprotocol/ondo-global-markets-token-list" target="_blank">token-list</a> / 链上发行额 <a href="https://app.rwa.xyz/stocks" target="_blank">RWA.xyz</a> 06-25 / 实时价格 <a href="https://defillama.com" target="_blank">DefiLlama</a><br>仅供参考 · 非投资建议 · 链上数据可能延迟/不准确 · Backpack Securities 不向 美/英/UAE/日/欧盟 提供',
@@ -992,42 +994,56 @@ async function refreshTokenMcap(){
     if(r.ok){const j=await r.json();ISSUER_TOKENS.forEach(x=>{if(x.cgid&&j[x.cgid]){if(j[x.cgid].usd_market_cap)x.mc=j[x.cgid].usd_market_cap;x.chg=j[x.cgid].usd_24h_change;}});}
   }catch(e){}
 }
-// Live exchange order-book spreads from /api/cex (server fetches Backpack .US + Binance stock pairs).
-let cexData=null;
-async function refreshCEX(){
-  try{const r=await fetch('/api/cex',{cache:'no-store'});const j=await r.json();
-    if(j&&Array.isArray(j.rows))cexData=j;}catch(e){}
+// Spread vs Nasdaq: paginated over Backpack's 1,112-security universe (server /api/spreads).
+let spreadsData=null, spreadsPage=0, spreadsLoading=false;
+const escHtml=s=>String(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+async function loadSpreads(p){
+  if(spreadsLoading)return; spreadsLoading=true;
+  try{const r=await fetch('/api/spreads?page='+p,{cache:'no-store'});const j=await r.json();
+    if(j&&Array.isArray(j.rows)){spreadsData=j;spreadsPage=j.page;}}catch(e){}
+  spreadsLoading=false; renderCEX();
 }
-function spreadCell(bps,placeholder){
-  if(bps==null)return `<td class="num" style="color:var(--mut)">${placeholder||'—'}</td>`;
-  const c=bps<=10?'var(--up)':bps<=30?'var(--gold)':'var(--down)';
-  return `<td class="num" style="color:${c};font-weight:600">${bps.toFixed(1)} bp</td>`;
+async function refreshCEX(){           // re-pull current page (live spreads) only while the tab is open
+  if(!spreadsData)return; const sec=document.getElementById('s-cex');
+  if(sec&&sec.style.display!=='none')await loadSpreads(spreadsPage);
+}
+function spreadHtml(bps,muted){
+  if(bps==null)return '<span style="color:var(--mut)">—</span>';
+  const c=muted?'var(--ink2)':bps<=10?'var(--up)':bps<=30?'var(--gold)':'var(--down)';
+  return `<span style="color:${c};font-weight:600">${bps.toFixed(1)} bp</span>`;
 }
 function renderCEX(){
-  const rows=(cexData&&cexData.rows)||[];
-  document.getElementById('cexNote').innerHTML=t('cex_explain')
-    .replace('{bp}',(cexData&&cexData.bp_count)||0).replace('{bn}',(cexData&&cexData.bn_count)||0);
-  const head=`<thead><tr><th>${t('c_ticker')}</th>
-    <th class="num" style="text-align:right;color:var(--bp)">Backpack ${t('cex_spread')}</th>
-    <th class="num" style="text-align:right">Backpack ${t('cex_vol')}</th>
-    <th class="num" style="text-align:right;color:#c79a2e">Binance ${t('cex_spread')}</th>
-    <th class="num" style="text-align:right">Binance ${t('cex_vol')}</th></tr></thead>`;
-  const body=rows.length?rows.map(r=>`<tr>
-    <td class="c-tk" style="text-align:left">${logoImg({t:r.ticker,issuer:'Backpack'})}<span class="tk">${r.ticker}</span></td>
-    ${spreadCell(r.bp_spread!=null?r.bp_spread:null,r.bp_listed?t('cex_closed'):t('cex_unlisted'))}
-    <td class="num">${r.bp_vol?fmtUSD(r.bp_vol):'—'}</td>
-    ${spreadCell(r.bn_spread!=null?r.bn_spread:null,t('cex_unlisted'))}
-    <td class="num">${r.bn_vol?fmtUSD(r.bn_vol):'—'}</td></tr>`).join('')
-    :`<tr><td colspan="5" style="color:var(--mut)">${t('news_loading')}</td></tr>`;
-  const bpS=rows.map(r=>r.bp_spread).filter(v=>v!=null), bnS=rows.map(r=>r.bn_spread).filter(v=>v!=null);
-  const bpVol=rows.reduce((s,r)=>s+(r.bp_vol||0),0), bnVol=rows.reduce((s,r)=>s+(r.bn_vol||0),0);
-  const avg=a=>a.length?(a.reduce((s,v)=>s+v,0)/a.length).toFixed(1)+' bp':'—';
-  const foot=`<tr style="border-top:2px solid var(--ink)"><td><b>${t('cex_total')}</b></td>
-    <td class="num" style="font-weight:700">${avg(bpS)}</td>
-    <td class="num" style="font-weight:700;color:var(--bp)">${bpVol?fmtUSD(bpVol):'—'}</td>
-    <td class="num" style="font-weight:700">${avg(bnS)}</td>
-    <td class="num" style="font-weight:700;color:#c79a2e">${bnVol?fmtUSD(bnVol):'—'}</td></tr>`;
-  document.getElementById('cexTable').innerHTML=head+'<tbody>'+body+foot+'</tbody>';
+  document.getElementById('cexNote').innerHTML=t('cex_explain');
+  const d=spreadsData, tbl=document.getElementById('cexTable'), pg=document.getElementById('cexPager');
+  if(!d){tbl.innerHTML=`<tbody><tr><td style="color:var(--mut);padding:14px">${t('news_loading')}</td></tr></tbody>`;if(pg)pg.innerHTML='';return;}
+  const head=`<thead><tr>
+    <th style="text-align:left">${t('c_ticker')}</th>
+    <th class="num" style="text-align:right">Nasdaq ${t('cex_spread')}</th>
+    <th class="num" style="text-align:right;color:var(--bp)">Backpack</th>
+    <th class="num" style="text-align:right;color:#c79a2e">Binance Bstock</th>
+    <th class="num" style="text-align:right">${t('cex_closest')}</th></tr></thead>`;
+  const body=d.rows.map((r,i)=>{
+    const n=r.nasdaq,bp=r.backpack,bn=r.binance;
+    const nsp=n&&n.spread!=null?n.spread:null, bnsp=bn&&bn.spread!=null?bn.spread:null, bpsp=bp&&bp.spread!=null?bp.spread:null;
+    let close='—',cc='var(--mut)';
+    // only declare a "closest to Nasdaq" winner when BOTH venues have a real spread to compare
+    if(nsp!=null&&bpsp!=null&&bnsp!=null){
+      const cand=[['Backpack',Math.abs(bpsp-nsp),'var(--bp)'],['Binance',Math.abs(bnsp-nsp),'#c79a2e']];
+      cand.sort((a,b)=>a[1]-b[1]);close=cand[0][0];cc=cand[0][2];}
+    const bpCell=bpsp!=null?spreadHtml(bpsp):`<span style="color:var(--mut)">${bp&&bp.ob?t('cex_closed'):t('cex_quote')}</span>`;
+    const bnCell=bnsp!=null?spreadHtml(bnsp):`<span style="color:var(--mut)">${t('cex_unlisted')}</span>`;
+    return `<tr>
+      <td class="c-tk" style="text-align:left"><span class="d" style="color:var(--mut);font-size:11px">${d.page*d.page_size+i+1}</span> <span class="tk">${r.ticker}</span> <span class="d" style="color:var(--mut)">${escHtml(r.name).slice(0,24)}</span></td>
+      <td class="num">${nsp!=null?spreadHtml(nsp,true):(n&&n.px?('$'+n.px.toFixed(2)):'—')}</td>
+      <td class="num">${bpCell}</td>
+      <td class="num">${bnCell}</td>
+      <td class="num" style="font-weight:600;color:${cc}">${close}</td></tr>`;
+  }).join('');
+  tbl.innerHTML=head+'<tbody>'+body+'</tbody>';
+  const unit=lang==='ko'?'종':lang==='zh'?' 只':' securities';
+  pg.innerHTML=`<button class="btn" ${d.page<=0?'disabled':''} onclick="loadSpreads(${d.page-1})">${t('m_prev')}</button>
+    <span class="mcov" style="margin:0">${t('m_page')} ${d.page+1} / ${d.pages} · ${d.total}${unit}</span>
+    <button class="btn" ${d.page>=d.pages-1?'disabled':''} onclick="loadSpreads(${d.page+1})">${t('m_next')}</button>`;
 }
 const RECOMMENDED={
   ko:[['Backed bTokens','Base · ETH · Gnosis','LIVE','주식 · bCOIN 등 "b" 접미사 ~55종목 (xStocks의 EVM 라인) · 공개 토큰리스트 없어 미추적'],
@@ -1102,6 +1118,7 @@ function showTab(name){
   window.scrollTo(0,0);
   if(name==='main')renderTable();
   if(name==='news')loadNews();
+  if(name==='cex'&&!spreadsData)loadSpreads(0);
 }
 function applyStatic(){
   document.querySelectorAll('[data-t]').forEach(el=>el.innerHTML=t(el.dataset.t));
