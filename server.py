@@ -57,6 +57,19 @@ def score(title, summary):
         if term in text: s *= m
     return s
 
+# topical gate (word-boundary): an item must genuinely be about crypto/RWA/finance,
+# otherwise substring scoring can let off-topic headlines (e.g. sports) slip through.
+CORE_RE = re.compile(
+    r'token(?:iz|ized|ization)|\brwa\b|real[\s-]?world asset|xstock|backpack|\bondo\b|dinari|'
+    r'securitize|backed finance|buidl|on[\s-]?chain equit|onchain equit|\bsec\b|\betfs?\b|'
+    r'stablecoin|\bcustod|blackrock|franklin templeton|robinhood|\bkraken\b|nasdaq|\bdtcc\b|'
+    r'tokenized (?:stock|equit|securit|treasur|fund|share|bond|credit)|treasur(?:y|ies)|'
+    r'\bequit(?:y|ies)\b|\bsecuriti(?:es|zation)\b|brokerage|\bcusip\b|prime broker|'
+    r'\bmica\b|money market fund|\bmmf\b|asset manager|institutional')
+
+def is_relevant(title, summary):
+    return bool(CORE_RE.search((title + ' ' + summary).lower()))
+
 _cache = {"t": 0, "data": []}
 _lock = threading.Lock()
 
@@ -127,13 +140,14 @@ def build_news():
         best['age_h'] = round(age_h, 1)
         best['cluster'] = len(c['items'])
         best['score'] = round(final, 1)
-        # only keep RWA-relevant items
-        if best['raw_score'] >= 6:
+        # keep only items that pass BOTH the score AND the topical gate (drops off-topic leaks)
+        if best['raw_score'] >= 6 and is_relevant(best['title'], best.get('summary', '')):
             ranked.append(best)
-    ranked.sort(key=lambda x: -x['score'])
-    for r in ranked:
-        r.pop('ts', None); r.pop('raw_score', None)
+    # show newest first (common sense for a news feed); relevance filter + dedup already applied above
+    ranked.sort(key=lambda x: -(x.get('ts') or 0))
     top = ranked[:45]
+    for r in top:
+        r.pop('ts', None); r.pop('raw_score', None)
     for r in top:                       # pre-translate to Korean + Chinese (free, server-side)
         r['title_ko'] = _translate(r['title'], 'ko')
         r['summary_ko'] = _translate(r.get('summary', ''), 'ko')
