@@ -27,20 +27,20 @@ cloudflared tunnel --url http://localhost:8765
 
 Railway / Fly.io / Koyeb 도 동일한 Dockerfile로 바로 배포됩니다.
 
-## 도메인 onchainequity.com 연결
-사이트 메타(canonical·OG)는 이미 `https://onchainequity.com` 기준으로 설정돼 있습니다.
+## 도메인 onchainequity.io 연결
+사이트 메타(canonical·OG)는 이미 `https://onchainequity.io` 기준으로 설정돼 있습니다.
 연결하려면 (도메인은 **본인이 등록·소유**해야 함 — 제가 대신 구매 불가):
 
-1. **등록**: Namecheap / Cloudflare Registrar / 가비아 등에서 `onchainequity.com` 구매
+1. **등록**: Namecheap / Cloudflare Registrar / 가비아 등에서 `onchainequity.io` 구매
    (※ `onchainequities.com` 복수형도 같이 잡아 리다이렉트 권장)
 2. **호스트에 커스텀 도메인 추가**: 예) Render → 서비스 → Settings → Custom Domains →
-   `onchainequity.com` + `www.onchainequity.com` 추가
+   `onchainequity.io` + `www.onchainequity.io` 추가
 3. **DNS 설정** (등록처에서):
    - `@` (root) → Render가 알려주는 A 레코드(또는 ALIAS/ANAME)
    - `www` → CNAME → `onchain-equities.onrender.com`
    - Cloudflare를 쓰면 프록시(주황 구름) ON → 무료 SSL + `CF-IPCountry` 헤더로
      **지역별 언어 자동선택**(한국→한국어 / 중국→중국어 / 그 외→영어)이 그대로 동작
-4. 전파 후 `https://onchainequity.com` 접속 → 자동 HTTPS.
+4. 전파 후 `https://onchainequity.io` 접속 → 자동 HTTPS.
 
 > 지역 자동 언어는 CDN의 국가 헤더(Cloudflare `CF-IPCountry`)를 사용합니다.
 > 헤더가 없는 호스트(예: Cloudflare 미경유)에서는 브라우저 언어/시간대로 폴백합니다.
