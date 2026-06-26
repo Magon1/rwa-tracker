@@ -292,6 +292,106 @@ def _live_loop():
             sys.stderr.write(f"live loop: {e}\n")
         time.sleep(180)
 
+# ---- CEX securities spread: Backpack (.US order book) vs Binance (tokenized-stock pairs), both LIVE ----
+_cex = {'t': 0, 'data': {}}
+_bn_stock_syms = None  # discovered once (ticker -> binance symbol)
+# allowlist so we never pick up a crypto whose symbol ends in 'B' (e.g. SHIB)
+EQUITY_TICKERS = {'SPCX','NVDA','TSLA','MSTR','CRCL','SNDK','AMD','INTC','EWY','MU','AAPL','META',
+                  'GOOGL','AMZN','MSFT','COIN','HOOD','QQQ','SPY','PLTR','SMCI','NFLX','AVGO'}
+
+def _spread_bps(bid, ask):
+    try:
+        bid = float(bid); ask = float(ask)
+        if bid > 0 and ask > 0 and ask >= bid:
+            return round((ask - bid) / ((ask + bid) / 2) * 1e4, 1)
+    except Exception:
+        pass
+    return None
+
+def _discover_binance_stocks():
+    try:
+        d = json.loads(_get("https://api.binance.com/api/v3/exchangeInfo", 25))
+        out = {}
+        for s in d.get('symbols', []):
+            if s.get('status') != 'TRADING' or s.get('quoteAsset') != 'USDT':
+                continue
+            b = s.get('baseAsset', '')
+            if b.endswith('B') and b[:-1] in EQUITY_TICKERS:
+                out[b[:-1]] = s['symbol']
+        return out
+    except Exception as e:
+        sys.stderr.write(f"bn discover: {e}\n"); return {}
+
+def _backpack_securities():
+    # Backpack Exchange CEX order-book securities: symbols like 'SPCX.US_USDC'
+    try:
+        m = json.loads(_get("https://api.backpack.exchange/api/v1/markets", 20))
+        return [x['symbol'] for x in m if '.US' in x.get('symbol', '') and x.get('quoteSymbol') == 'USDC']
+    except Exception as e:
+        sys.stderr.write(f"bp sec: {e}\n"); return []
+
+def build_cex():
+    global _bn_stock_syms
+    rows = {}
+    # --- Binance: tokenized-stock pairs, order-book spread + 24h quote volume ---
+    if _bn_stock_syms is None:
+        _bn_stock_syms = _discover_binance_stocks() or {}
+    bn = _bn_stock_syms
+    if bn:
+        syms = json.dumps(list(bn.values()), separators=(',', ':'))
+        books, t24 = {}, {}
+        try:
+            books = {x['symbol']: x for x in json.loads(_get(
+                "https://api.binance.com/api/v3/ticker/bookTicker?symbols=" + urllib.parse.quote(syms), 20))}
+            t24 = {x['symbol']: x for x in json.loads(_get(
+                "https://api.binance.com/api/v3/ticker/24hr?symbols=" + urllib.parse.quote(syms), 25))}
+        except Exception as e:
+            sys.stderr.write(f"bn quote: {e}\n")
+        for tk, sym in bn.items():
+            r = rows.setdefault(tk, {'ticker': tk})
+            bt = books.get(sym)
+            if bt:
+                r['bn_spread'] = _spread_bps(bt.get('bidPrice'), bt.get('askPrice'))
+                r['bn_price'] = float(bt.get('askPrice') or 0) or None
+            td = t24.get(sym)
+            if td:
+                r['bn_vol'] = float(td.get('quoteVolume') or 0)
+    # --- Backpack: CEX .US order-book securities, real bid/ask (populated in US market hours) ---
+    for sym in _backpack_securities():
+        tk = sym.split('.')[0]
+        r = rows.setdefault(tk, {'ticker': tk}); r['bp_listed'] = True
+        try:
+            dep = json.loads(_get("https://api.backpack.exchange/api/v1/depth?symbol=" + urllib.parse.quote(sym), 12))
+            bids = dep.get('bids') or []; asks = dep.get('asks') or []
+            bb = float(bids[-1][0]) if bids else 0   # backpack depth: best bid = last of bids
+            ba = float(asks[0][0]) if asks else 0    #                  best ask = first of asks
+            r['bp_spread'] = _spread_bps(bb, ba)
+            if bb and ba: r['bp_price'] = (bb + ba) / 2
+        except Exception:
+            pass
+        try:
+            tkr = json.loads(_get("https://api.backpack.exchange/api/v1/ticker?symbol=" + urllib.parse.quote(sym), 10))
+            if isinstance(tkr, dict) and tkr.get('quoteVolume'):
+                r['bp_vol'] = float(tkr['quoteVolume'])
+        except Exception:
+            pass
+    return {'generated': int(time.time()),
+            'rows': sorted(rows.values(), key=lambda r: -((r.get('bn_vol') or 0) + (r.get('bp_vol') or 0))),
+            'bn_count': len(bn),
+            'bp_count': sum(1 for r in rows.values() if r.get('bp_listed'))}
+
+def _cex_loop():
+    while True:
+        try:
+            d = build_cex()
+            if d:
+                with _lock:
+                    _cex['t'] = time.time(); _cex['data'] = d
+                sys.stderr.write(f"cex: {len(d.get('rows', []))} tickers (bn {d.get('bn_count')}, bp {d.get('bp_count')})\n")
+        except Exception as e:
+            sys.stderr.write(f"cex loop: {e}\n")
+        time.sleep(60)
+
 # ---- logo proxy + cache: ?t=ticker (stock) / ?d=domain (issuer) / ?c=chain ----
 _logo_cache = {}
 def _fetch_url(url):
@@ -340,6 +440,10 @@ class H(BaseHTTPRequestHandler):
             with _lock:
                 self._send(200, json.dumps({'generated': int(_live['t']), 'tokens': _live['data']}), 'application/json')
             return
+        if path == '/api/cex':
+            with _lock:
+                self._send(200, json.dumps(_cex['data'] or {'rows': [], 'generated': 0}), 'application/json')
+            return
         if path == '/api/geo':
             # Country from the CDN edge (Cloudflare sets CF-IPCountry; others vary). Used only to
             # auto-pick UI language (KR->ko, CN->zh, else en). No IP stored.
@@ -383,4 +487,5 @@ if __name__ == '__main__':
     print(f"OnchainEquities backend on http://localhost:{PORT}  (/api/news + /api/live)")
     threading.Thread(target=_news_loop, daemon=True).start()
     threading.Thread(target=_live_loop, daemon=True).start()
+    threading.Thread(target=_cex_loop, daemon=True).start()
     ThreadingHTTPServer(('0.0.0.0', PORT), H).serve_forever()
