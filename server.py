@@ -196,9 +196,6 @@ BP_MINTS = {'SPCX': 'SPCXxcqXj6e5dJDVNovHN8744zkbhM2bYudU45BimGb',
             'MU': 'MUxEsUKSMACyw5fZf68wxf5FLnZVhtU9CwH8uNNGay1',
             'SNDK': 'SNDKbwMUQvZhnLnxLduradgLHG5KrPuKwpnrkkGRhfH',
             'DRAM': 'DRAMjSWR7HRfJKjRkvQWYL2bcaejaVhuxEcjf4pAY4Cw'}  # Roundhill Memory ETF (new)
-TXYZ = {'spacex': 'SPCX', 'micron': 'MU', 'sandisk': 'SNDK'}
-OV_VOL = {'SPYx': (10.47e6, 5.33e6), 'CRCLx': (3.90e6, 3.94e6), 'NVDAx': (3.43e6, 3.61e6),
-          'QQQx': (2.97e6, 3.21e6), 'SPCXx': (2.92e6, 1.28e6), 'TSLAx': (2.61e6, 3.63e6)}
 _addr_map = None
 _bp_syms = set(BP_MINTS)
 _live = {'t': 0, 'data': {}}
@@ -260,21 +257,29 @@ def _gt_multi(addrs):
         time.sleep(4)
     return out
 
-_TXP = re.compile(r'"price":([0-9.eE+\-]+),"liquidity":([0-9.eE+\-]+),"volume1hUSD":([0-9.eE+\-]+),"volume24hUSD":([0-9.eE+\-]+)')
-_TXM = re.compile(r'"(?:baseMint|tokenMint|mint|address)":"([1-9A-HJ-NP-Za-km-z]{32,44})"')
-def _txyz(slug, mint):
+# Headline tokens to source from DexScreener (accurate all-pool aggregate, user-verifiable):
+# Backpack securities + the most-traded xStocks. The long tail uses GeckoTerminal (tiny volumes).
+DEX_ACCURATE = ['SPCX', 'MU', 'SNDK', 'DRAM', 'SPYx', 'CRCLx', 'NVDAx', 'QQQx', 'SPCXx', 'TSLAx',
+                'METAx', 'AAPLx', 'AMZNx', 'COINx', 'MSTRx', 'GOOGLx', 'HOODx']
+def _dex_token(mint):
+    # aggregate all Solana DEX pairs for one token (single-token endpoint avoids the 30-pair batch cap)
     try:
-        s = _get(f"https://www.tokens.xyz/{slug}?solana={mint}").replace('\\"', '"')
-        mints = [(mm.start(), mm.group(1)) for mm in _TXM.finditer(s)]
-        best = None
-        for mm in _TXP.finditer(s):
-            px, liq, v1, v24 = map(float, mm.groups())
-            near = [x for (p, x) in mints if p < mm.start()]
-            if near and near[-1] == mint and (best is None or v24 > best[0]):
-                best = (v24, liq, px)
-        return best
+        prs = json.loads(_get("https://api.dexscreener.com/latest/dex/tokens/" + mint, 12)).get('pairs') or []
     except Exception:
         return None
+    if not prs:
+        return None
+    vol = liq = 0.0; px = None; mc = None; topliq = -1.0
+    for p in prs:
+        if p.get('chainId') != 'solana' or (p.get('baseToken', {}) or {}).get('address') != mint:
+            continue
+        vol += (p.get('volume', {}) or {}).get('h24', 0) or 0
+        l = (p.get('liquidity', {}) or {}).get('usd', 0) or 0
+        liq += l
+        if l > topliq and p.get('priceUsd'):
+            topliq = l; px = float(p['priceUsd'])
+            m = p.get('marketCap') or p.get('fdv'); mc = float(m) if m else None
+    return {'vol': vol, 'liq': liq, 'px': px, 'mc': mc}
 
 def _build_live():
     global _addr_map
@@ -286,11 +291,18 @@ def _build_live():
     for sym, addr in _addr_map.items():
         g = by_addr.get(addr.lower())
         if g: data[sym] = {**g, 'chain': 'Solana'}
-    for sym, (v, l) in OV_VOL.items():  # keep accurate tokens.xyz vol for top xStocks
-        if sym in data: data[sym]['vol'] = v; data[sym]['liq'] = l
-    for slug, sym in TXYZ.items():      # Backpack: accurate Solana DEX aggregate
-        b = _txyz(slug, BP_MINTS[sym])
-        if b: data.setdefault(sym, {}).update({'vol': b[0], 'liq': b[1], 'px': b[2], 'chain': 'Solana'})
+    # Override the headline tokens with DexScreener (all-pool aggregate — matches CoinGecko/
+    # DexScreener that users cross-check; GeckoTerminal token-level over-reports thin tokens).
+    for sym in DEX_ACCURATE:
+        mint = BP_MINTS.get(sym) or _addr_map.get(sym)
+        if not mint: continue
+        dx = _dex_token(mint)
+        if dx:
+            d = data.setdefault(sym, {})
+            d['vol'] = dx['vol']; d['liq'] = dx['liq']; d['chain'] = 'Solana'
+            if dx.get('px'): d['px'] = dx['px']
+            if dx.get('mc'): d['mc'] = dx['mc']
+        time.sleep(0.25)
     for sym in data:                    # tag issuer so the frontend can auto-add new tokens
         data[sym]['issuer'] = 'Backpack' if sym in _bp_syms else 'xStocks'
     return data
