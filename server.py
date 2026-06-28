@@ -257,30 +257,6 @@ def _gt_multi(addrs):
         time.sleep(4)
     return out
 
-# Headline tokens to source from DexScreener (accurate all-pool aggregate, user-verifiable):
-# Backpack securities + the most-traded xStocks. The long tail uses GeckoTerminal (tiny volumes).
-DEX_ACCURATE = ['SPCX', 'MU', 'SNDK', 'DRAM', 'SPYx', 'CRCLx', 'NVDAx', 'QQQx', 'SPCXx', 'TSLAx',
-                'METAx', 'AAPLx', 'AMZNx', 'COINx', 'MSTRx', 'GOOGLx', 'HOODx']
-def _dex_token(mint):
-    # aggregate all Solana DEX pairs for one token (single-token endpoint avoids the 30-pair batch cap)
-    try:
-        prs = json.loads(_get("https://api.dexscreener.com/latest/dex/tokens/" + mint, 12)).get('pairs') or []
-    except Exception:
-        return None
-    if not prs:
-        return None
-    vol = liq = 0.0; px = None; mc = None; topliq = -1.0
-    for p in prs:
-        if p.get('chainId') != 'solana' or (p.get('baseToken', {}) or {}).get('address') != mint:
-            continue
-        vol += (p.get('volume', {}) or {}).get('h24', 0) or 0
-        l = (p.get('liquidity', {}) or {}).get('usd', 0) or 0
-        liq += l
-        if l > topliq and p.get('priceUsd'):
-            topliq = l; px = float(p['priceUsd'])
-            m = p.get('marketCap') or p.get('fdv'); mc = float(m) if m else None
-    return {'vol': vol, 'liq': liq, 'px': px, 'mc': mc}
-
 def _build_live():
     global _addr_map
     if _addr_map is None:
@@ -291,18 +267,9 @@ def _build_live():
     for sym, addr in _addr_map.items():
         g = by_addr.get(addr.lower())
         if g: data[sym] = {**g, 'chain': 'Solana'}
-    # Override the headline tokens with DexScreener (all-pool aggregate — matches CoinGecko/
-    # DexScreener that users cross-check; GeckoTerminal token-level over-reports thin tokens).
-    for sym in DEX_ACCURATE:
-        mint = BP_MINTS.get(sym) or _addr_map.get(sym)
-        if not mint: continue
-        dx = _dex_token(mint)
-        if dx:
-            d = data.setdefault(sym, {})
-            d['vol'] = dx['vol']; d['liq'] = dx['liq']; d['chain'] = 'Solana'
-            if dx.get('px'): d['px'] = dx['px']
-            if dx.get('mc'): d['mc'] = dx['mc']
-        time.sleep(0.25)
+    # Volume source = GeckoTerminal token-level h24, which sums ALL pools including private/prop
+    # AMMs (ZeroFi, SolFi, HumidiFi…) that fill ~40-65% of Jupiter-routed Solana volume. DexScreener
+    # omits those private AMMs, so it UNDER-counts these tokens — we intentionally do not use it here.
     for sym in data:                    # tag issuer so the frontend can auto-add new tokens
         data[sym]['issuer'] = 'Backpack' if sym in _bp_syms else 'xStocks'
     return data

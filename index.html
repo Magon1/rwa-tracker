@@ -727,9 +727,12 @@ function marketStatus(){
 
 /* ===================== RENDER ===================== */
 function renderHero(){
-  const ord=[...issuersList].sort((a,b)=>ISSUER_AGG[b].vol-ISSUER_AGG[a].vol);
+  // Hero = #1 by live DEX swap volume. Only Backpack/xStocks trade on DEX; Ondo/Dinari move via
+  // mint/redeem & institutional transfers (a different metric), so they don't compete here.
+  const DEX_ISS=['Backpack','xStocks'].filter(i=>ISSUER_AGG[i]);
+  const ord=DEX_ISS.sort((a,b)=>ISSUER_AGG[b].vol-ISSUER_AGG[a].vol);
   const tp=ord[0], agg=ISSUER_AGG[tp], col=cv(IKEY[tp]);
-  const topTok=tokSource().sort((a,b)=>(b.vol||0)-(a.vol||0))[0]||{t:'—',vol:0};
+  const topTok=tokSource().filter(a=>a.issuer===tp).sort((a,b)=>(b.vol||0)-(a.vol||0))[0]||{t:'—',vol:0};
   const age=liveVolTs?relTime((Date.now()/1000-liveVolTs)/3600):'';
   document.getElementById('hero').innerHTML=`
     <div class="hero-card hero-lead" style="border-left-color:${col}">
