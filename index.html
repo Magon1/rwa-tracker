@@ -218,6 +218,22 @@
   .ni-summary{padding:0 4px 14px 102px}
   .ni-summary p{margin:0 0 8px;font-size:12.5px;color:var(--ink2);line-height:1.55}
   .ni-summary a{font-family:var(--mono);font-size:11px;color:var(--accent)}
+  .ni-flash{animation:niflash 1.6s ease}
+  @keyframes niflash{0%,100%{background:transparent}25%{background:color-mix(in srgb,var(--accent) 14%,transparent)}}
+  .sidecols{align-items:start}
+  #earningsCard h3,#newsfeedCard h3{margin:0 0 10px;font-size:15px}
+  .ec-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-top:1px solid var(--line2);font-size:13px}
+  .ec-row:first-child{border-top:none}
+  .ec-date{font-family:var(--mono);font-size:11px;color:var(--accent);min-width:48px;font-weight:600}
+  .ec-t{font-family:var(--mono);font-size:9.5px;color:var(--mut);text-transform:uppercase;border:1px solid var(--line2);border-radius:4px;padding:1px 4px}
+  .nf-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line2);cursor:pointer;font-size:13px}
+  .nf-row:first-child{border-top:none}
+  .nf-row:hover .nf-title{color:var(--accent)}
+  .nf-title{flex:1;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .nf-row .d{font-family:var(--mono);font-size:10px;color:var(--mut);white-space:nowrap}
+  .nf-dot{width:7px;height:7px;border-radius:50%;background:var(--down);flex:none}
+  .nf-dot.off{background:var(--line2)}
+  .nf-badge{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--down)}
   .foot{margin-top:46px;border-top:2px solid var(--ink);padding-top:14px;font-family:var(--mono);font-size:11px;color:var(--mut);line-height:1.7}
   .ic{cursor:pointer;transition:box-shadow .15s,transform .15s}
   .ic:hover{box-shadow:0 6px 22px rgba(28,27,23,.12);transform:translateY(-2px)}
@@ -297,9 +313,9 @@
   <div class="hero" id="hero" data-tab="main"></div>
   <div class="movers" id="movers" data-tab="main"></div>
 
-  <div class="callout" data-tab="main">
-    <div class="q" data-t="callout_q"></div>
-    <div class="a" data-t="callout_a"></div>
+  <div class="g2 sidecols" data-tab="main" style="margin:0 0 26px">
+    <div class="panel" id="earningsCard"></div>
+    <div class="panel" id="newsfeedCard"></div>
   </div>
 
   <div class="issuer-cta" id="issuerCta" data-tab="issuers"></div>
@@ -377,7 +393,7 @@
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
       <div class="seg" id="issuerFilter">
         <button data-i="all" class="on" data-t="f_all"></button>
-        <button data-i="Backpack">Backpack</button><button data-i="xStocks">xStocks</button><button data-i="Ondo">Ondo</button><button data-i="Dinari">Dinari</button>
+        <button data-i="Backpack">Backpack</button><button data-i="xStocks">xStocks</button><button data-i="Ondo">Ondo</button>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn" id="watchBtn" data-t="watch_btn"></button>
@@ -429,7 +445,7 @@
 
 <script>
 const cv=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
-const IKEY={xStocks:'--xs',Backpack:'--bp',Ondo:'--ondo',Dinari:'--dinari'};
+const IKEY={xStocks:'--xs',Backpack:'--bp',Ondo:'--ondo'};
 function syncChartTheme(){if(window.Chart){Chart.defaults.font.family=cv('--sans')||'Inter';Chart.defaults.color=cv('--ink2')||'#403d35';}
   if(typeof issuersList!=='undefined')issuersList.forEach(i=>{if(ISSUERS[i])ISSUERS[i].color=cv(IKEY[i]);});}
 function applyTheme(name){
@@ -545,6 +561,10 @@ const TR={
   no_token:{ko:'발행사 토큰 없음',en:'No issuer token'},
   news_loading:{ko:'뉴스 불러오는 중…',en:'Loading news…'},
   news_refresh:{ko:'↻ 새로고침',en:'↻ Refresh'},
+  earn_h:{ko:'미국 실적 발표 일정',en:'US Earnings Calendar'},
+  earn_empty:{ko:'예정된 추적 종목 실적 없음',en:'No upcoming earnings for tracked tickers'},
+  earn_pre:{ko:'장전',en:'pre'}, earn_after:{ko:'장후',en:'after'},
+  newsfeed_h:{ko:'최신 뉴스',en:'Latest News'}, news_new:{ko:'새 뉴스',en:'NEW'},
   cex_total:{ko:'평균 / 합계',en:'Avg / Total'}, cex_venue:{ko:'거래 장소',en:'Venue'},
   cex_spread:{ko:'스프레드',en:'Spread'}, cex_vol:{ko:'24h 거래량',en:'24h Vol'},
   cex_closed:{ko:'장 마감',en:'mkt closed'}, cex_unlisted:{ko:'미상장',en:'not listed'},
@@ -607,6 +627,8 @@ const TR_ZH={
   sec_news_h:'RWA · 代币化股票新闻', sec_news_d:'多源 RSS 实时聚合 · 按重要性排序',
   sec_rec_h:'推荐：可加入的发行方', sec_rec_d:'Base·BNB 等链上代币化股票发行方候选',
   no_token:'无发行方代币', news_loading:'加载新闻中…', news_refresh:'↻ 刷新',
+  earn_h:'美股财报日历', earn_empty:'追踪标的暂无即将公布的财报', earn_pre:'盘前', earn_after:'盘后',
+  newsfeed_h:'最新新闻', news_new:'新',
   cex_total:'平均 / 合计', cex_venue:'交易场所', cex_spread:'价差', cex_vol:'24h 成交量',
   cex_closed:'休市', cex_unlisted:'未上架', cex_quote:'报价制(App)', cex_closest:'最接近 Nasdaq',
   cex_explain:'<b>以 Nasdaq 实时买卖盘价差为基准</b>，对比同一只股票在 Backpack 与 Binance 的价差差异。涵盖 Backpack 上架<b>全部 1,112 只证券</b>，每页 30 只，可对比的（Binance/Backpack 订单簿）优先靠前。⚠ Backpack Securities 为<b>单一报价(quote)制，无公开价差</b> → 仅 SPCX·MU（订单簿）有实测，其余显示"报价制"。美股盘前/盘后价差较宽。Nasdaq=基准，数值越小越好。',
@@ -618,13 +640,12 @@ Object.keys(TR_ZH).forEach(k=>{if(TR[k])TR[k].zh=TR_ZH[k];else TR[k]={zh:TR_ZH[k
 const t=k=>(TR[k]&&(TR[k][lang]||TR[k].en))||k;
 
 /* ===================== DATA ===================== */
-const ISSUERS={ xStocks:{color:'#2f6fed'}, Backpack:{color:'#e5383b'}, Ondo:{color:'#6366f1'}, Dinari:{color:'#0891b2'} };
+const ISSUERS={ xStocks:{color:'#2f6fed'}, Backpack:{color:'#e5383b'}, Ondo:{color:'#6366f1'} };
 const issuersList=Object.keys(ISSUERS);
 const ISSUER_AGG={  // 2026-06-26
   Ondo:    {count:439, mcap:899.4e6, vol:12.93e6},  // 온체인 전송 거래량(Blockscout ETH, 트랜잭션 합산) · DEX 스왑은 ~0
   xStocks: {count:166, mcap:507.7e6, vol:29e6},     // Solana DEX 스왑(tokens.xyz)
   Backpack:{count:4,   mcap:17.6e6,  vol:112.1e6},  // SPCX·MU·SNDK·DRAM(신규) · Solana DEX 스왑(tokens.xyz)
-  Dinari:  {count:10,  mcap:0,       vol:0},        // Base · 발행 초기 · DEX 거래/시세 데이터 미미(mint/redeem)
 };
 const SECTOR={mcap:1.52e9, assets:2480, monthlyVol:8.02e9, mcap30d:-6.6, vol30d:127};
 const CHAIN_MCAP=[['Ethereum',614.3e6,'#627EEA'],['Solana',442.6e6,'#9945FF'],['BNB Chain',432.2e6,'#F0B90B'],['Other',31e6,'#9aa0ab']];
@@ -671,11 +692,6 @@ const ISSUER_INFO={
     por:{ko:'✓ 브로커딜러(Alpaca) 1:1 커스터디',en:'✓ Broker-dealer (Alpaca) 1:1 custody'},
     items:{ko:[['온체인 발행액','<b>발행액 1위</b> $899M (추적 4사 중 ~59%)'],['종목','ETH 439 + BNB 439 + Solana 200+'],['거래','<b>DEX 2차거래 거의 없음</b> — mint/redeem 중심'],['상환','24×5 mint/redeem · 리테일은 파트너']],
       en:[['On-chain Value','<b>#1 by value</b> $899M (~59% of 4 tracked)'],['Tokens','ETH 439 + BNB 439 + Solana 200+'],['Trading','<b>Almost no DEX volume</b> — mint/redeem model'],['Redemption','24×5 mint/redeem · retail via partners']]}},
-  Dinari:{color:'#0891b2',
-    count:{ko:'10 종목',en:'10 tokens'}, tag:{ko:'Dinari · dShares · ".d" 접미사',en:'Dinari · dShares · ".d" suffix'},
-    por:{ko:'✓ SEC 등록 브로커딜러 1:1 백킹',en:'✓ SEC-registered broker-dealer 1:1'},
-    items:{ko:[['체인','<b>Base</b> · Arbitrum · ETH (~50종목 listable)'],['구조','mint/redeem · 배당 포함'],['거래','<b>발행 초기</b> — DEX 유동성·시세 데이터 미미'],['특징','Gemini EU가 Dinari 인프라 사용']],
-      en:[['Chains','<b>Base</b> · Arbitrum · ETH (~50 listable)'],['Structure','mint/redeem · total-return'],['Trading','<b>Early-stage</b> — minimal DEX/price data'],['Notes','Gemini EU runs on Dinari infra']]}},
 };
 const LISTINGS={ko:[['SNDK','SanDisk','06-24','Backpack'],['MU','Micron','06-22','Backpack'],['+173','Ondo 대량 상장','06-17','Ondo'],['SPCX','SpaceX','06-12','Backpack']],
   en:[['SNDK','SanDisk','06-24','Backpack'],['MU','Micron','06-22','Backpack'],['+173','Ondo bulk listing','06-17','Ondo'],['SPCX','SpaceX','06-12','Backpack']]};
@@ -884,16 +900,14 @@ function renderIssuerCTA(){
         <span class="sub">${a.count.toLocaleString()}${lang==='ko'?'종목':''} · ${fmtUSD(a.vol)}</span>
         <span class="ar">↗</span></button>`;}).join('');
 }
-const STRUCT_ORDER=['Backpack','xStocks','Ondo','Dinari'];
+const STRUCT_ORDER=['Backpack','xStocks','Ondo'];
 const STRUCT={
   ko:[{iss:'Backpack',col:'--bp',badge:'최초',b:[['IBKR 파트너','증권사'],['온체인 토큰','SPCX·MU·SNDK'],['지갑 · DEX','즉시 입출금']],c:[['실주식 송금',true],['입·출금',true]],key:'상환 가능 증권 · 실주식 1:1 양방향 (업계 최초)'},
       {iss:'xStocks',col:'--xs',badge:'',b:[['Backed Finance','실주식 보관'],['토큰 AAPLx','현금가치 청구권'],['Solana DEX','2차 거래']],c:[['발행',false],['거래',false]],key:'실주식 인출 불가 · 현금으로만 상환'},
-      {iss:'Ondo',col:'--ondo',badge:'',b:[['브로커딜러','Alpaca 커스터디'],['토큰 TSLAon','배당 포함'],['기관 보유','24×5']],c:[['mint/redeem',true],['보유',false]],key:'기관 중심 · 24×5 발행/상환 · 리테일 제한'},
-      {iss:'Dinari',col:'--dinari',badge:'Base',b:[['SEC 브로커딜러','커스터디'],['토큰 AAPL.d','배당 포함'],['Base·Arbitrum','발행 초기']],c:[['mint/redeem',true],['보유',false]],key:'Base 중심 · SEC 등록 · DEX 유동성 얇음'}],
+      {iss:'Ondo',col:'--ondo',badge:'',b:[['브로커딜러','Alpaca 커스터디'],['토큰 TSLAon','배당 포함'],['기관 보유','24×5']],c:[['mint/redeem',true],['보유',false]],key:'기관 중심 · 24×5 발행/상환 · 리테일 제한'}],
   en:[{iss:'Backpack',col:'--bp',badge:'1ST',b:[['IBKR-partner','broker'],['On-chain token','SPCX·MU·SNDK'],['Wallet · DEX','instant in/out']],c:[['shares xfer',true],['deposit/out',true]],key:'Redeemable security · 1:1 real shares, bidirectional (first)'},
       {iss:'xStocks',col:'--xs',badge:'',b:[['Backed Finance','holds shares'],['Token AAPLx','cash-value claim'],['Solana DEX','secondary']],c:[['issue',false],['trade',false]],key:'No share withdrawal · cash redemption only'},
-      {iss:'Ondo',col:'--ondo',badge:'',b:[['Broker-dealer','Alpaca custody'],['Token TSLAon','total-return'],['Institutional','24×5']],c:[['mint/redeem',true],['hold',false]],key:'Institutional · 24×5 mint/redeem · retail-limited'},
-      {iss:'Dinari',col:'--dinari',badge:'Base',b:[['SEC broker-dealer','custody'],['Token AAPL.d','total-return'],['Base·Arbitrum','early-stage']],c:[['mint/redeem',true],['hold',false]],key:'Base-first · SEC-registered · thin DEX liquidity'}]
+      {iss:'Ondo',col:'--ondo',badge:'',b:[['Broker-dealer','Alpaca custody'],['Token TSLAon','total-return'],['Institutional','24×5']],c:[['mint/redeem',true],['hold',false]],key:'Institutional · 24×5 mint/redeem · retail-limited'}]
 };
 function renderStruct(){
   const rows=STRUCT[lang], W=680, rh=82, top=6, bw=168, bx=[90,290,490];
@@ -1059,6 +1073,7 @@ const RECOMMENDED={
       ['Franklin Templeton BENJI','8체인','LIVE','정부 MMF(FOBXX) ~$830M'],
       ['Paxos PAXG (금)','ETH · Solana','LIVE','토큰화 금 1oz≈$4,040 · <b>Sunrise DeFi가 Solana로 라우팅</b>(Backpack 인프라 파트너) · 발행사=Paxos, Backpack 아님'],
       ['Robinhood','Arbitrum','제한적','주식 ~2000 · 인앱 전송제한 → 온체인 데이터 빈약'],
+      ['Dinari (dShares)','Base · Arbitrum','초기','SEC 등록 브로커딜러 · ".d" 토큰 ~10+ · <b>온체인 시총·거래량 ≈$0</b>(사실상 미가동) → 추적 보류'],
       ['Binance Bstock','BNB · CEX','추적 중','주식 9종목 CEX (위 비교 포함)']],
   en:[['Backed bTokens','Base · ETH · Gnosis','LIVE','Stocks · bCOIN etc "b" prefix ~55 (xStocks EVM line) · no public token list → untracked'],
       ['Coinbase','Base','SOON','Stocks · announced 2026-06 · non-US · ~Aug launch (awaiting SEC relief)'],
@@ -1070,6 +1085,7 @@ const RECOMMENDED={
       ['Franklin Templeton BENJI','8 chains','LIVE','Gov MMF (FOBXX) ~$830M'],
       ['Paxos PAXG (gold)','ETH · Solana','LIVE','Tokenized gold 1oz≈$4,040 · <b>routed to Solana via Sunrise DeFi</b> (Backpack infra partner) · issuer=Paxos, not Backpack'],
       ['Robinhood','Arbitrum','GATED','Stocks ~2000 · in-app transfer-gated → sparse on-chain data'],
+      ['Dinari (dShares)','Base · Arbitrum','EARLY','SEC-registered broker-dealer · ~10+ ".d" tokens · <b>on-chain mcap & volume ≈$0</b> (effectively inactive) → not tracked'],
       ['Binance Bstock','BNB · CEX','TRACKED','9 stocks on CEX (in comparison above)']],
 };
 /* Chinese (zh) data fallback — reuse English content for data-heavy blocks so nothing throws.
@@ -1089,31 +1105,89 @@ function relTime(ageH){
   if(ageH<24){const h=Math.round(ageH);return lang==='ko'?h+'시간 전':(lang==='zh'?h+'小时前':h+'h ago');}
   const d=Math.round(ageH/24);return lang==='ko'?d+'일 전':(lang==='zh'?d+'天前':d+'d ago');
 }
-function toggleNews(el){const s=el.nextElementSibling;const open=s.style.display==='block';
-  s.style.display=open?'none':'block';el.classList.toggle('open',!open);}
+const expandedNews=new Set();   // links currently expanded — persists across re-renders
+function toggleNews(el){const item=el.closest('.ni-item');const link=item&&item.dataset.link;
+  const s=el.nextElementSibling;const open=s.style.display==='block';
+  s.style.display=open?'none':'block';el.classList.toggle('open',!open);
+  if(link){open?expandedNews.delete(link):expandedNews.add(link);}}
 let newsData=[];
+const newsTitle=n=>(lang==='ko'&&n.title_ko)?n.title_ko:((lang==='zh'&&n.title_zh)?n.title_zh:n.title);
 function renderNewsList(){
   const box=document.getElementById('newsLive');if(!newsData.length)return;
   box.innerHTML=newsData.map(n=>{const cat=n.score>=15?'milestone':n.score>=10?'launch':'entrant';
-    const title=(lang==='ko'&&n.title_ko)?n.title_ko:((lang==='zh'&&n.title_zh)?n.title_zh:n.title);
+    const title=newsTitle(n), open=expandedNews.has(n.link);
     const sum=((lang==='ko'&&n.summary_ko)?n.summary_ko:((lang==='zh'&&n.summary_zh)?n.summary_zh:(n.summary||''))).trim().replace(/"/g,'&quot;');
-    return `<div class="ni-item">
-      <div class="ni" onclick="toggleNews(this)">
+    return `<div class="ni-item" data-link="${escHtml(n.link)}">
+      <div class="ni${open?' open':''}" onclick="toggleNews(this)">
         <span class="cat ${cat}">${n.cluster>1?'×'+n.cluster:'NEWS'}</span>
         <h4 style="flex:1">${title}</h4>
         <span class="meta">${n.source} · ${relTime(n.age_h)}</span>
         <span class="ni-caret">▾</span></div>
-      <div class="ni-summary" style="display:none">
+      <div class="ni-summary" style="display:${open?'block':'none'}">
         <p>${sum||(lang==='ko'?'요약 없음 — 원문에서 확인':'No summary — see source')}</p>
         <a href="${n.link}" target="_blank">${lang==='ko'?'원문 기사 →':'Read source →'}</a></div>
     </div>`;}).join('');
 }
 async function loadNews(){
   const box=document.getElementById('newsLive');
-  if(!newsData.length)box.innerHTML=`<div style="padding:18px;color:var(--mut);font-family:var(--mono);font-size:12px">${t('news_loading')}</div>`;
+  if(box&&!newsData.length)box.innerHTML=`<div style="padding:18px;color:var(--mut);font-family:var(--mono);font-size:12px">${t('news_loading')}</div>`;
   try{const r=await fetch('/api/news',{cache:'no-store'});const j=await r.json();
-    if(j&&j.items&&j.items.length){newsData=j.items;renderNewsList();}
-  }catch(e){if(!newsData.length)box.innerHTML=NEWS[lang].map(n=>`<div class="ni"><span class="cat ${n.c}">${n.l}</span><h4>${n.t}</h4><span class="meta" style="margin-left:auto">${n.m}</span></div>`).join('');}
+    if(j&&j.items&&j.items.length){newsData=j.items;renderNewsList();renderNewsFeed();}
+  }catch(e){if(box&&!newsData.length)box.innerHTML=NEWS[lang].map(n=>`<div class="ni"><span class="cat ${n.c}">${n.l}</span><h4>${n.t}</h4><span class="meta" style="margin-left:auto">${n.m}</span></div>`).join('');}
+}
+/* ---- main-page "Latest News" feed + NEW notification (click → news tab, auto-expand) ---- */
+function seenLinks(){try{return new Set(JSON.parse(localStorage.getItem('seenNews')||'[]'));}catch(e){return new Set();}}
+function markNewsSeen(){localStorage.setItem('seenNews',JSON.stringify(newsData.slice(0,60).map(n=>n.link)));}
+function renderNewsFeed(){
+  const el=document.getElementById('newsfeedCard');if(!el)return;
+  if(!newsData.length){el.innerHTML=`<h3>📰 ${t('newsfeed_h')}</h3><div style="color:var(--mut);font-family:var(--mono);font-size:12px;padding:8px 0">${t('news_loading')}</div>`;return;}
+  const seen=seenLinks(), newCount=newsData.filter(n=>!seen.has(n.link)).length;
+  const badge=newCount>0?`<span class="nf-badge">🔴 ${t('news_new')} ${newCount}</span>`:'';
+  const rows=newsData.slice(0,5).map(n=>{const isNew=!seen.has(n.link);
+    return `<div class="nf-row" onclick="openNews('${encodeURIComponent(n.link)}')">
+      <span class="nf-dot${isNew?'':' off'}"></span>
+      <span class="nf-title">${escHtml(newsTitle(n))}</span>
+      <span class="d">${relTime(n.age_h)}</span></div>`;}).join('');
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h3>📰 ${t('newsfeed_h')}</h3>${badge}</div>
+    <div class="nf-list">${rows}</div>
+    <button class="mv-link" style="margin-top:8px" onclick="openNews('')">${t('mv_all')}</button>`;
+}
+function openNews(enc){
+  const link=enc?decodeURIComponent(enc):null;
+  if(link)expandedNews.add(link);   // mark expanded BEFORE render so it renders open (survives re-renders)
+  markNewsSeen();
+  showTab('news');                  // showTab→loadNews→renderNewsList renders it open
+  renderNewsFeed();
+  if(!link)return;
+  let tries=0;                      // wait for the (async) news render, then scroll to it
+  const iv=setInterval(()=>{
+    const tgt=[...document.querySelectorAll('#newsLive .ni-item')].find(it=>it.dataset.link===link);
+    if(tgt){clearInterval(iv);tgt.scrollIntoView({behavior:'smooth',block:'center'});
+      tgt.classList.add('ni-flash');setTimeout(()=>tgt.classList.remove('ni-flash'),1600);}
+    if(++tries>25)clearInterval(iv);
+  },120);
+}
+/* ---- US earnings calendar (left card) ---- */
+let earnData=null;
+async function loadEarnings(){
+  try{const r=await fetch('/api/earnings',{cache:'no-store'});const j=await r.json();if(j&&j.items)earnData=j.items;}catch(e){}
+  renderEarnings();
+}
+function renderEarnings(){
+  const el=document.getElementById('earningsCard');if(!el)return;
+  const loc=lang==='ko'?'ko-KR':lang==='zh'?'zh-CN':'en-US';
+  const items=earnData||[];
+  const fmtD=ds=>{try{return new Date(ds+'T00:00:00').toLocaleDateString(loc,{month:'short',day:'numeric'});}catch(e){return ds;}};
+  const tl=tm=>tm&&tm.includes('pre')?t('earn_pre'):tm&&tm.includes('after')?t('earn_after'):'';
+  const rows=items.slice(0,10).map(e=>`<div class="ec-row">
+      <span class="ec-date">${fmtD(e.date)}</span>
+      <img class="logo" src="/api/logo?t=${encodeURIComponent(e.symbol)}" onerror="this.style.display='none'" alt="">
+      <span class="tk">${escHtml(e.symbol)}</span>
+      <span class="d" style="flex:1;color:var(--mut);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(e.name)}</span>
+      ${e.eps?`<span class="d" style="font-family:var(--mono);font-size:10px;color:var(--mut)">EPS ${escHtml(String(e.eps))}</span>`:''}
+      ${tl(e.time)?`<span class="ec-t">${tl(e.time)}</span>`:''}</div>`).join('')
+    ||`<div style="color:var(--mut);font-family:var(--mono);font-size:12px;padding:8px 0">${t('earn_empty')}</div>`;
+  el.innerHTML=`<h3>📅 ${t('earn_h')}</h3><div class="ec-list">${rows}</div>`;
 }
 function showTab(name){
   document.querySelectorAll('[data-tab]').forEach(el=>{if(el.closest('#tabbar'))return;el.style.display=el.dataset.tab===name?'':'none';});
@@ -1170,12 +1244,12 @@ function renderAll(){
   recomputeAgg();
   const loc=lang==='ko'?'ko-KR':(lang==='zh'?'zh-CN':'en-US');
   document.getElementById('editionDate').textContent='LIVE · '+new Date().toLocaleString(loc,{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-  renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderCross();renderTable();renderCmp();renderNews();
+  renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderCross();renderTable();renderCmp();renderNews();renderEarnings();renderNewsFeed();
   chainMcapCh=chainDonut('chainMcap',CHAIN_MCAP,false,chainMcapCh);
   chainVolCh=chainDonut('chainVol',CHAIN_VOL,true,chainVolCh);
   renderChainLegend('chainMcapLeg',CHAIN_MCAP,false);renderChainLegend('chainVolLeg',CHAIN_VOL,true);
 }
-async function tick(){await refreshPrices();await refreshBirdeye();await refreshLive();await refreshTokenMcap();await refreshCEX();renderAll();}
+async function tick(){await refreshPrices();await refreshBirdeye();await refreshLive();await refreshTokenMcap();await refreshCEX();renderAll();loadNews();}
 
 /* ===================== EVENTS ===================== */
 document.getElementById('langSeg').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;
@@ -1208,7 +1282,7 @@ const savedTheme=localStorage.getItem('theme')||'editorial';
 document.body.className=savedTheme==='editorial'?'':'t-'+savedTheme;
 syncChartTheme();
 fetch('./assets.json',{cache:'no-store'}).then(r=>r.json()).then(j=>{FULL=j;renderTable();if(document.getElementById('modal').style.display==='flex')renderModal();}).catch(()=>{});
-renderAll();showTab('main');tick();setInterval(tick,30000);confirmGeoLang();
+renderAll();showTab('main');tick();setInterval(tick,30000);confirmGeoLang();loadNews();loadEarnings();
 </script>
 </body>
 </html>

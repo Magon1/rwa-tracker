@@ -284,7 +284,47 @@ def _live_loop():
                 sys.stderr.write(f"live: refreshed {len(d)} tokens\n")
         except Exception as e:
             sys.stderr.write(f"live loop: {e}\n")
-        time.sleep(180)
+        time.sleep(60)   # refresh volumes/prices every 60s so the charts stay close to real-time
+
+# ---- US equity earnings calendar (Nasdaq) — upcoming dates for tokenized-stock tickers ----
+_earn = {'t': 0, 'data': []}
+EARN_WATCH = {'NVDA','TSLA','AAPL','MSFT','META','AMZN','GOOGL','GOOG','MU','SNDK','COIN','MSTR',
+              'CRCL','INTC','AMD','HOOD','PLTR','AVGO','NFLX','SMCI','MSTR','QCOM','ORCL','CRM'}
+def build_earnings():
+    import datetime as _dt
+    out = {}
+    base = _dt.datetime.utcnow().date()
+    for off in range(0, 45):                       # scan ~6 weeks of weekdays
+        day = base + _dt.timedelta(days=off)
+        if day.weekday() >= 5:                      # skip weekends
+            continue
+        ds = day.isoformat()
+        try:
+            d = json.loads(_get("https://api.nasdaq.com/api/calendar/earnings?date=" + ds, 10))
+            rows = (d.get('data') or {}).get('rows') or []
+        except Exception:
+            rows = []
+        for r in rows:
+            sym = (r.get('symbol') or '').upper()
+            if sym in EARN_WATCH and sym not in out:   # keep the soonest date per ticker
+                out[sym] = {'symbol': sym, 'name': r.get('name', sym), 'date': ds,
+                            'time': r.get('time', ''), 'eps': r.get('epsForecast', '')}
+        if len(out) >= 14:                          # enough upcoming names
+            break
+        time.sleep(0.2)
+    return sorted(out.values(), key=lambda x: x['date'])
+
+def _earn_loop():
+    while True:
+        try:
+            d = build_earnings()
+            if d:
+                with _lock:
+                    _earn['t'] = time.time(); _earn['data'] = d
+                sys.stderr.write(f"earnings: {len(d)} upcoming\n")
+        except Exception as e:
+            sys.stderr.write(f"earnings loop: {e}\n")
+        time.sleep(6 * 3600)   # earnings dates change slowly — refresh every 6h
 
 # ---- CEX securities spread: Backpack (.US order book) vs Binance (tokenized-stock pairs), both LIVE ----
 _cex = {'t': 0, 'data': {}}
@@ -535,6 +575,10 @@ class H(BaseHTTPRequestHandler):
             except Exception as e:
                 self._send(500, json.dumps({'error': str(e), 'rows': []}), 'application/json')
             return
+        if path == '/api/earnings':
+            with _lock:
+                self._send(200, json.dumps({'generated': int(_earn['t']), 'items': _earn['data']}), 'application/json')
+            return
         if path == '/api/geo':
             # Country from the CDN edge (Cloudflare sets CF-IPCountry; others vary). Used only to
             # auto-pick UI language (KR->ko, CN->zh, else en). No IP stored.
@@ -579,4 +623,5 @@ if __name__ == '__main__':
     threading.Thread(target=_news_loop, daemon=True).start()
     threading.Thread(target=_live_loop, daemon=True).start()
     threading.Thread(target=_cex_loop, daemon=True).start()
+    threading.Thread(target=_earn_loop, daemon=True).start()
     ThreadingHTTPServer(('0.0.0.0', PORT), H).serve_forever()
