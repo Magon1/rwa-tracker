@@ -438,6 +438,13 @@
     <div class="cmp" id="issuerCmp"></div>
   </section>
 
+  <section id="s-revenue" data-tab="issuers">
+    <div class="sec-head"><div><div class="sec-label">07 · Revenue</div><h2 data-t="rev_h"></h2></div>
+      <div class="desc" data-t="rev_d"></div></div>
+    <table id="revTable"></table>
+    <div id="revNote" class="mcov" style="margin:12px 0 0"></div>
+  </section>
+
   <section id="s-news" data-tab="news">
     <div class="sec-head"><div><div class="sec-label">LIVE · Newsflow</div><h2 data-t="sec_news_h"></h2></div>
       <div class="desc" data-t="sec_news_d"></div></div>
@@ -526,6 +533,12 @@ const TR={
   struct_h:{ko:'구조 흐름 비교',en:'Structure Flow'},
   struct_cap:{ko:'Backpack은 IBKR 파트너 증권사로 <b>실주식 송금</b> + <b>온체인 즉시 입출금</b>이 양방향으로 되는 업계 최초 구조. xStocks는 현금가치 청구권(실주식 인출 불가), Ondo는 기관 mint/redeem 중심.',
     en:'Backpack is the first structure where <b>real shares transfer</b> (IBKR-partner broker) and <b>instant on-chain in/out</b> both work bidirectionally. xStocks = cash-value claim (no share withdrawal); Ondo = institutional mint/redeem.'},
+  rev_h:{ko:'수익 모델 — 어디서 얼마나 버나',en:'Revenue Model — Where the Money Comes From'},
+  rev_d:{ko:'검증 가능한 공개 데이터 기준 · 비공개는 솔직히 "비공개"로 표기',en:'Publicly verifiable data only · undisclosed shown honestly as "not public"'},
+  rev_biz:{ko:'핵심 사업',en:'Core business'}, rev_src:{ko:'수익원',en:'Revenue source'},
+  rev_amt:{ko:'검증된 수익(공개)',en:'Verified revenue'}, rev_tok:{ko:'자체 토큰',en:'Own token'},
+  rev_note:{ko:'※ "검증된 수익"은 DefiLlama 등으로 집계 가능한 실수치만. 거래소(Backpack)·사기업(xStocks)은 수익을 공개하지 않아 "비공개". <b>거래량 ≠ 수익</b> — 발행사마다 돈 버는 곳이 다름: Backpack=거래 수수료, xStocks=발행 스프레드, Ondo=국채 이자(주식 아님). 출처: <a href="https://defillama.com/protocol/ondo-finance" target="_blank">DefiLlama</a>, 각사 공식 수수료·토큰 문서.',
+    en:'"Verified revenue" = figures aggregatable via DefiLlama etc. Exchanges (Backpack) & private firms (xStocks) don\'t disclose revenue → "not public". <b>Volume ≠ revenue</b> — each earns differently: Backpack=trading fees, xStocks=issuance spread, Ondo=treasury yield (not stocks). Sources: <a href="https://defillama.com/protocol/ondo-finance" target="_blank">DefiLlama</a>, each issuer\'s official fee/token docs.'},
   sec6_h:{ko:'발행사 구조 & 백킹',en:'Issuer Structure & Backing'},
   sec6_d:{ko:'갯수 · 권리 · 상환 · 준비금이 전부 다름 — 카드 클릭 시 발행 자산 전체',en:'Count, rights, redemption all differ — click a card for its full asset list'},
   sec7_h:{ko:'최근 상장 · 규제 · 신규 진입',en:'Listings · Regulation · New Entrants'},
@@ -1129,6 +1142,37 @@ function renderRecommended(){
         <span class="badge ${r[2]==='LIVE'?'live':'sample'}">${r[2]}</span></div>
       <div class="tag2">${r[1]}</div><ul><li style="border:none;padding-top:8px">${r[3]}</li></ul></div>`).join('');
 }
+/* Revenue / business model — HARDCODED, verifiable sources only. "Not public" stated honestly. */
+const REVENUE=[
+  {iss:'Backpack', key:'--bp',
+    biz:{ko:'거래소 + 증권 브로커리지',en:'Exchange + securities brokerage'},
+    src:{ko:'거래 수수료(현물 0.08%/0.10% maker/taker · 무기한·마진 이자·MM 스프레드)',en:'Trading fees (spot 0.08/0.10% maker/taker · perps · margin interest · MM spread)'},
+    rev:{ko:'비공개 (CEX)',en:'Not public (CEX)'},
+    tok:{ko:'BP: 수수료 할인·스테이킹·우선참여·지분 교환권 (※"40% 수수료 소각"은 공식 문서 미확인)',en:'BP: fee discount · staking · priority · equity-purchase option (note: "40% fee burn" not in official docs)'}},
+  {iss:'xStocks', key:'--xs',
+    biz:{ko:'토큰화 주식 발행사 (2025-12 Kraken 인수)',en:'Tokenized-stock issuer (acquired by Kraken, Dec 2025)'},
+    src:{ko:'발행/상환 스프레드 + 커스터디 수수료 + DeFi 수익공유 (거래 수수료는 Kraken 0.25/0.40%로 귀속)',en:'Issuance/redemption spread + custody fees + DeFi rev-share (trading fees accrue to Kraken 0.25/0.40%)'},
+    rev:{ko:'비공개 (Kraken 소유 사기업) · 누적 거래량 $25B+',en:'Not public (private, Kraken-owned) · $25B+ cumulative volume'},
+    tok:{ko:'자체 토큰 없음',en:'No own token'}},
+  {iss:'Ondo', key:'--ondo',
+    biz:{ko:'기관 RWA (토큰화 국채 + 주식)',en:'Institutional RWA (tokenized treasuries + stocks)'},
+    src:{ko:'<b>국채가 핵심</b>: USDY 이자 스프레드 · OUSG 0.15% 관리비 · 주식은 mint/redeem(스왑 ≈0)',en:'<b>Treasuries are the core</b>: USDY yield spread · OUSG 0.15% mgmt fee · stocks via mint/redeem (≈0 swaps)'},
+    rev:{ko:'<b>~$65M/년</b> (DefiLlama · 30일 $5.45M, 국채 부문) · 누적 $21M+',en:'<b>~$65M/yr</b> (DefiLlama · $5.45M/30d, treasuries) · $21M+ cumulative'},
+    tok:{ko:'ONDO: 거버넌스 (현재 수익 분배 X · fee-switch 투표 2026 H2 예정)',en:'ONDO: governance (no revenue share yet · fee-switch vote H2 2026)'}},
+];
+function renderRevenue(){
+  const el=document.getElementById('revTable');if(!el)return;
+  const L=o=>o[lang]||o.en;
+  const head=`<thead><tr><th>${t('c_issuer')}</th><th>${t('rev_biz')}</th><th>${t('rev_src')}</th><th>${t('rev_amt')}</th><th>${t('rev_tok')}</th></tr></thead>`;
+  const body=REVENUE.map(r=>`<tr>
+    <td><span class="tk" style="color:${cv(r.key)};font-weight:700">${r.iss}</span></td>
+    <td style="font-size:12.5px">${L(r.biz)}</td>
+    <td style="font-size:11.5px;color:var(--ink2);line-height:1.5">${L(r.src)}</td>
+    <td style="font-size:12.5px;line-height:1.5">${L(r.rev)}</td>
+    <td style="font-size:11px;color:var(--mut);line-height:1.5">${L(r.tok)}</td></tr>`).join('');
+  el.innerHTML=head+'<tbody>'+body+'</tbody>';
+  const rn=document.getElementById('revNote');if(rn)rn.innerHTML=t('rev_note');
+}
 function relTime(ageH){
   if(ageH==null)return '';
   if(ageH<1){const m=Math.max(1,Math.round(ageH*60));return lang==='ko'?m+'분 전':(lang==='zh'?m+'分钟前':m+'m ago');}
@@ -1279,7 +1323,7 @@ function renderAll(){
   recomputeAgg();
   const loc=lang==='ko'?'ko-KR':(lang==='zh'?'zh-CN':'en-US');
   document.getElementById('editionDate').textContent='LIVE · '+new Date().toLocaleString(loc,{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-  renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderCross();renderTable();renderCmp();renderNews();renderEarnings();renderNewsFeed();
+  renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderCross();renderTable();renderCmp();renderNews();renderEarnings();renderNewsFeed();renderRevenue();
   chainMcapCh=chainDonut('chainMcap',CHAIN_MCAP,false,chainMcapCh);
   chainVolCh=chainDonut('chainVol',CHAIN_VOL,true,chainVolCh);
   renderChainLegend('chainMcapLeg',CHAIN_MCAP,false);renderChainLegend('chainVolLeg',CHAIN_VOL,true);
