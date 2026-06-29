@@ -70,6 +70,14 @@ CORE_RE = re.compile(
 def is_relevant(title, summary):
     return bool(CORE_RE.search((title + ' ' + summary).lower()))
 
+# regulation / license / legal-action news → flagged red on the frontend (highest reader priority)
+REGFLAG_RE = re.compile(
+    r'regulat|licen[sc]|\bsec\b|\bcftc\b|\bdoj\b|\bfca\b|\besma\b|\bmica\b|lawsuit|\bsue[sd]?\b|'
+    r'\bcourt\b|\bban\b|banned|sanction|enforce|crackdown|complian|\bfine[sd]?\b|penalt|settlement|'
+    r'\bfraud|investigat|subpoena|approv|crimina|illegal|probe|charges|halt(?:ed|s)?\b|delist')
+def news_flag(title, summary):
+    return 'reg' if REGFLAG_RE.search((title + ' ' + summary).lower()) else ''
+
 _cache = {"t": 0, "data": []}
 _lock = threading.Lock()
 
@@ -140,6 +148,7 @@ def build_news():
         best['age_h'] = round(age_h, 1)
         best['cluster'] = len(c['items'])
         best['score'] = round(final, 1)
+        best['flag'] = news_flag(best['title'], best.get('summary', ''))
         # keep only items that pass BOTH the score AND the topical gate (drops off-topic leaks)
         if best['raw_score'] >= 6 and is_relevant(best['title'], best.get('summary', '')):
             ranked.append(best)

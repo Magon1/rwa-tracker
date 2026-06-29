@@ -80,7 +80,18 @@
   section{scroll-margin-top:64px}
   a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line2)}
   a:hover{border-color:var(--ink)}
-  .wrap{max-width:1180px;margin:0 auto;padding:0 22px 40vh}
+  .wrap{max-width:1480px;margin:0 auto;padding:0 22px 40vh}
+  /* main page: sticky earnings (left) + news (right) rails flanking the content */
+  .layout{display:grid;grid-template-columns:216px minmax(0,1fr) 288px;gap:22px;align-items:start}
+  .layout.solo{display:block}
+  .rail{position:sticky;top:14px;align-self:start;max-height:calc(100vh - 26px);overflow-y:auto;overflow-x:hidden}
+  .rail::-webkit-scrollbar{width:6px}.rail::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+  .rail .panel{padding:14px 15px}
+  @media(max-width:1240px){
+    .layout{display:flex;flex-direction:column}
+    .center{order:0}.rail-l{order:1}.rail-r{order:2}
+    .rail{position:static;max-height:none;width:100%}
+  }
   .mast{padding:22px 0 14px;border-bottom:2px solid var(--ink)}
   .mast-top{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap}
   .title{font-family:var(--serif);font-weight:600;font-size:40px;letter-spacing:-.5px;line-height:.95}
@@ -201,7 +212,10 @@
   .news{display:grid;gap:0;border-top:1px solid var(--line2)}
   .ni{display:flex;gap:14px;padding:13px 2px;border-bottom:1px solid var(--line);align-items:baseline}
   .ni .cat{font-family:var(--mono);font-size:10px;letter-spacing:.5px;padding:2px 7px;border-radius:3px;white-space:nowrap;width:88px;text-align:center}
-  .cat.reg{color:var(--down);background:color-mix(in srgb,var(--down) 14%,transparent)}
+  .cat.reg{color:#fff;background:var(--down);font-weight:700}
+  .ni-item.reg{border-left:3px solid var(--down);padding-left:9px;background:color-mix(in srgb,var(--down) 5%,transparent)}
+  .ni-item.reg h4{color:var(--down);font-weight:600}
+  .ni-legend{font-family:var(--mono);font-size:11px;color:var(--mut);padding:6px 2px 12px;line-height:1.5}
   .cat.entrant{color:var(--xs);background:color-mix(in srgb,var(--xs) 14%,transparent)}
   .cat.launch{color:var(--up);background:color-mix(in srgb,var(--up) 14%,transparent)}
   .cat.milestone{color:var(--gold);background:color-mix(in srgb,var(--gold) 16%,transparent)}
@@ -222,10 +236,13 @@
   @keyframes niflash{0%,100%{background:transparent}25%{background:color-mix(in srgb,var(--accent) 14%,transparent)}}
   .sidecols{align-items:start}
   #earningsCard h3,#newsfeedCard h3{margin:0 0 10px;font-size:15px}
-  .ec-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-top:1px solid var(--line2);font-size:13px}
+  .ec-row{display:flex;align-items:center;gap:7px;padding:6.5px 0;border-top:1px solid var(--line2);font-size:12.5px}
   .ec-row:first-child{border-top:none}
-  .ec-date{font-family:var(--mono);font-size:11px;color:var(--accent);min-width:48px;font-weight:600}
-  .ec-t{font-family:var(--mono);font-size:9.5px;color:var(--mut);text-transform:uppercase;border:1px solid var(--line2);border-radius:4px;padding:1px 4px}
+  .ec-row .logo{width:15px;height:15px;flex:none}
+  .ec-row .tk{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ec-date{font-family:var(--mono);font-size:10px;color:var(--accent);min-width:30px;font-weight:700;flex:none}
+  .ec-eps{font-family:var(--mono);font-size:10px;color:var(--mut);flex:none}
+  .ec-t{font-family:var(--mono);font-size:9px;color:var(--mut);text-transform:uppercase;border:1px solid var(--line2);border-radius:4px;padding:1px 3px;flex:none}
   .nf-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line2);cursor:pointer;font-size:13px}
   .nf-row:first-child{border-top:none}
   .nf-row:hover .nf-title{color:var(--accent)}
@@ -234,6 +251,8 @@
   .nf-dot{width:7px;height:7px;border-radius:50%;background:var(--down);flex:none}
   .nf-dot.off{background:var(--line2)}
   .nf-badge{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--down)}
+  .nf-row.reg .nf-title{color:var(--down);font-weight:600}
+  .nf-reg{font-family:var(--mono);font-size:9px;font-weight:700;color:#fff;background:var(--down);border-radius:3px;padding:1px 4px;flex:none}
   .foot{margin-top:46px;border-top:2px solid var(--ink);padding-top:14px;font-family:var(--mono);font-size:11px;color:var(--mut);line-height:1.7}
   .ic{cursor:pointer;transition:box-shadow .15s,transform .15s}
   .ic:hover{box-shadow:0 6px 22px rgba(28,27,23,.12);transform:translateY(-2px)}
@@ -303,6 +322,10 @@
     <button class="tab" data-tab="cex" data-t="tab_cex"></button>
   </nav>
 
+  <div class="layout" id="layout">
+  <aside class="rail rail-l" data-tab="main"><div class="panel" id="earningsCard"></div></aside>
+  <div class="center">
+
   <div class="searchbar" data-tab="main">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
     <input id="search" autocomplete="off" />
@@ -312,11 +335,6 @@
 
   <div class="hero" id="hero" data-tab="main"></div>
   <div class="movers" id="movers" data-tab="main"></div>
-
-  <div class="g2 sidecols" data-tab="main" style="margin:0 0 26px">
-    <div class="panel" id="earningsCard"></div>
-    <div class="panel" id="newsfeedCard"></div>
-  </div>
 
   <div class="issuer-cta" id="issuerCta" data-tab="issuers"></div>
 
@@ -436,6 +454,10 @@
     <div class="cmp" id="recGrid"></div>
   </section>
 
+  </div><!-- /center -->
+  <aside class="rail rail-r" data-tab="main"><div class="panel" id="newsfeedCard"></div></aside>
+  </div><!-- /layout -->
+
   <div class="foot" id="foot"></div>
 </div>
 
@@ -494,7 +516,7 @@ const TR={
   sec1_h:{ko:'현재 가장 활발한 토큰화 주식',en:'Most Active Tokenized Stocks'},
   sec1_d:{ko:'24h 온체인 DEX 거래량 상위 10 — 종목 · 발행사 · 등락',en:'Top 10 by 24h on-chain DEX volume — asset · issuer · change'},
   sec2_h:{ko:'발행사 점유율',en:'Issuer Market Share'},
-  sec2_d:{ko:'추적 4개 발행사 기준 · 볼륨은 Backpack, 온체인 발행액은 Ondo가 우위',en:'Across 4 tracked issuers · Backpack leads volume, Ondo leads on-chain value'},
+  sec2_d:{ko:'추적 3개 발행사 · 거래량(DEX 스왑)은 Backpack, 온체인 발행액은 Ondo가 1위',en:'3 tracked issuers · Backpack leads DEX volume, Ondo leads on-chain value'},
   sec3_h:{ko:'체인별 분포',en:'By Chain'},
   sec3_d:{ko:'가치는 Ethereum·BNB에, 거래는 Solana에 — 분리해서 봐야 함',en:'Value sits on Ethereum/BNB, trading on Solana — read them separately'},
   sec4_h:{ko:'같은 종목, 다른 발행사 — 가격차',en:'Same Stock, Different Issuers — Price Gap'},
@@ -510,7 +532,7 @@ const TR={
   sec7_d:{ko:'검증된 사건 타임라인',en:'Verified event timeline'},
   share_by:{ko:'발행사별 비중',en:'Share by Issuer'}, dist:{ko:'분포',en:'Distribution'},
   m_vol:{ko:'볼륨',en:'Volume'}, m_count:{ko:'종목 수',en:'Tokens'}, m_mcap:{ko:'온체인 발행액',en:'On-chain Value'},
-  note_vol:{ko:'24h 온체인 거래량 · Backpack·xStocks=Solana DEX 스왑(tokens.xyz), Ondo=온체인 전송(Blockscout)',en:'24h on-chain volume · Backpack·xStocks=Solana DEX swaps (tokens.xyz), Ondo=on-chain transfers (Blockscout)'},
+  note_vol:{ko:'24h DEX 스왑 거래량 (GeckoTerminal, 프롭 AMM 포함) · Ondo는 DEX 거래 ≈0(mint/redeem 중심)이라 별도 전송량 $12.93M',en:'24h DEX-swap volume (GeckoTerminal, incl. prop AMMs) · Ondo trades ≈0 on DEX (mint/redeem); its $12.93M transfer volume is separate'},
   note_count:{ko:'발행사별 토큰 갯수',en:'Tokens per issuer'},
   note_mcap:{ko:'온체인 발행액 (RWA.xyz 06-25)',en:'On-chain Value (RWA.xyz 06-25)'},
   l_vol:{ko:'볼륨',en:'Volume'}, l_count:{ko:'종목 수',en:'Tokens'}, l_mcap:{ko:'온체인 발행액',en:'On-chain Value'},
@@ -565,6 +587,11 @@ const TR={
   earn_empty:{ko:'예정된 추적 종목 실적 없음',en:'No upcoming earnings for tracked tickers'},
   earn_pre:{ko:'장전',en:'pre'}, earn_after:{ko:'장후',en:'after'},
   newsfeed_h:{ko:'최신 뉴스',en:'Latest News'}, news_new:{ko:'새 뉴스',en:'NEW'},
+  news_reg:{ko:'규제',en:'REG'},
+  news_src:{ko:'개 매체',en:' sources'}, news_src1:{ko:'단독',en:'NEWS'},
+  news_src_tip:{ko:'같은 뉴스를 보도한 매체 수 (많을수록 중요)',en:'Outlets reporting this story (more = bigger)'},
+  news_legend:{ko:'🔴 빨강 = 정부 규제·라이선스 관련 중요 뉴스 · "N개 매체" = 같은 뉴스를 N곳이 보도(교차검증 = 중요도)',
+    en:'🔴 red = government regulation / license alerts · "N sources" = N outlets reported it (corroboration = importance)'},
   cex_total:{ko:'평균 / 합계',en:'Avg / Total'}, cex_venue:{ko:'거래 장소',en:'Venue'},
   cex_spread:{ko:'스프레드',en:'Spread'}, cex_vol:{ko:'24h 거래량',en:'24h Vol'},
   cex_closed:{ko:'장 마감',en:'mkt closed'}, cex_unlisted:{ko:'미상장',en:'not listed'},
@@ -593,7 +620,7 @@ const TR_ZH={
   sec7_h:'上市 · 监管 · 新进入者', sec7_d:'已核实事件时间线',
   share_by:'按发行方占比', dist:'分布',
   m_vol:'成交量', m_count:'代币数', m_mcap:'链上发行额',
-  note_vol:'24h链上成交量 · Backpack·xStocks=Solana DEX 兑换(tokens.xyz)，Ondo=链上转账(Blockscout)',
+  note_vol:'24h DEX 兑换成交量（GeckoTerminal，含自营 AMM）· Ondo 在 DEX ≈0（以铸造/赎回为主），其 $12.93M 转账量另计',
   note_count:'各发行方代币数量', note_mcap:'链上发行额 (RWA.xyz 06-25)',
   l_vol:'成交量', l_count:'代币数', l_mcap:'链上发行额',
   chain_mcap_h:'各链链上发行额', chain_vol_h:'各链成交量占比', chain_vol_d:'Solana 约 95.6% 集中',
@@ -629,6 +656,9 @@ const TR_ZH={
   no_token:'无发行方代币', news_loading:'加载新闻中…', news_refresh:'↻ 刷新',
   earn_h:'美股财报日历', earn_empty:'追踪标的暂无即将公布的财报', earn_pre:'盘前', earn_after:'盘后',
   newsfeed_h:'最新新闻', news_new:'新',
+  news_reg:'监管', news_src:'家报道', news_src1:'单独',
+  news_src_tip:'报道该新闻的媒体数（越多越重要）',
+  news_legend:'🔴 红色 = 政府监管/牌照相关重要新闻 · "N家报道" = N家媒体报道（交叉验证 = 重要度）',
   cex_total:'平均 / 合计', cex_venue:'交易场所', cex_spread:'价差', cex_vol:'24h 成交量',
   cex_closed:'休市', cex_unlisted:'未上架', cex_quote:'报价制(App)', cex_closest:'最接近 Nasdaq',
   cex_explain:'<b>以 Nasdaq 实时买卖盘价差为基准</b>，对比同一只股票在 Backpack 与 Binance 的价差差异。涵盖 Backpack 上架<b>全部 1,112 只证券</b>，每页 30 只，可对比的（Binance/Backpack 订单簿）优先靠前。⚠ Backpack Securities 为<b>单一报价(quote)制，无公开价差</b> → 仅 SPCX·MU（订单簿）有实测，其余显示"报价制"。美股盘前/盘后价差较宽。Nasdaq=基准，数值越小越好。',
@@ -643,7 +673,7 @@ const t=k=>(TR[k]&&(TR[k][lang]||TR[k].en))||k;
 const ISSUERS={ xStocks:{color:'#2f6fed'}, Backpack:{color:'#e5383b'}, Ondo:{color:'#6366f1'} };
 const issuersList=Object.keys(ISSUERS);
 const ISSUER_AGG={  // 2026-06-26
-  Ondo:    {count:439, mcap:899.4e6, vol:12.93e6},  // 온체인 전송 거래량(Blockscout ETH, 트랜잭션 합산) · DEX 스왑은 ~0
+  Ondo:    {count:439, mcap:899.4e6, vol:0, xfer:12.93e6},  // DEX 스왑 ≈0 (검증) · 전송량(transfer) $12.93M는 별도 metric
   xStocks: {count:166, mcap:507.7e6, vol:29e6},     // Solana DEX 스왑(tokens.xyz)
   Backpack:{count:4,   mcap:17.6e6,  vol:112.1e6},  // SPCX·MU·SNDK·DRAM(신규) · Solana DEX 스왑(tokens.xyz)
 };
@@ -690,8 +720,8 @@ const ISSUER_INFO={
   Ondo:{color:'#5a51b0',
     count:{ko:'439 티커',en:'439 tickers'}, tag:{ko:'Ondo Global Markets · "on" 접미사',en:'Ondo Global Markets · "on" suffix'},
     por:{ko:'✓ 브로커딜러(Alpaca) 1:1 커스터디',en:'✓ Broker-dealer (Alpaca) 1:1 custody'},
-    items:{ko:[['온체인 발행액','<b>발행액 1위</b> $899M (추적 4사 중 ~59%)'],['종목','ETH 439 + BNB 439 + Solana 200+'],['거래','<b>DEX 2차거래 거의 없음</b> — mint/redeem 중심'],['상환','24×5 mint/redeem · 리테일은 파트너']],
-      en:[['On-chain Value','<b>#1 by value</b> $899M (~59% of 4 tracked)'],['Tokens','ETH 439 + BNB 439 + Solana 200+'],['Trading','<b>Almost no DEX volume</b> — mint/redeem model'],['Redemption','24×5 mint/redeem · retail via partners']]}},
+    items:{ko:[['온체인 발행액','<b>발행액 1위</b> $899M (추적 3사 중 ~63%)'],['종목','ETH 439 + BNB 439 + Solana 200+'],['거래','<b>DEX 스왑 ≈$0</b> — 전송량 ~$13M/24h(mint/redeem·기관 이동)'],['상환','24×5 mint/redeem · 리테일은 파트너']],
+      en:[['On-chain Value','<b>#1 by value</b> $899M (~63% of 3 tracked)'],['Tokens','ETH 439 + BNB 439 + Solana 200+'],['Trading','<b>DEX swaps ≈$0</b> — ~$13M/24h transfers (mint/redeem & institutional)'],['Redemption','24×5 mint/redeem · retail via partners']]}},
 };
 const LISTINGS={ko:[['SNDK','SanDisk','06-24','Backpack'],['MU','Micron','06-22','Backpack'],['+173','Ondo 대량 상장','06-17','Ondo'],['SPCX','SpaceX','06-12','Backpack']],
   en:[['SNDK','SanDisk','06-24','Backpack'],['MU','Micron','06-22','Backpack'],['+173','Ondo bulk listing','06-17','Ondo'],['SPCX','SpaceX','06-12','Backpack']]};
@@ -1114,12 +1144,15 @@ let newsData=[];
 const newsTitle=n=>(lang==='ko'&&n.title_ko)?n.title_ko:((lang==='zh'&&n.title_zh)?n.title_zh:n.title);
 function renderNewsList(){
   const box=document.getElementById('newsLive');if(!newsData.length)return;
-  box.innerHTML=newsData.map(n=>{const cat=n.score>=15?'milestone':n.score>=10?'launch':'entrant';
+  box.innerHTML=`<div class="ni-legend">${t('news_legend')}</div>`+newsData.map(n=>{
+    const reg=n.flag==='reg';
+    const cat=reg?'reg':(n.score>=15?'milestone':n.score>=10?'launch':'entrant');
+    const badge=reg?t('news_reg'):(n.cluster>1?(n.cluster+t('news_src')):t('news_src1'));
     const title=newsTitle(n), open=expandedNews.has(n.link);
     const sum=((lang==='ko'&&n.summary_ko)?n.summary_ko:((lang==='zh'&&n.summary_zh)?n.summary_zh:(n.summary||''))).trim().replace(/"/g,'&quot;');
-    return `<div class="ni-item" data-link="${escHtml(n.link)}">
+    return `<div class="ni-item${reg?' reg':''}" data-link="${escHtml(n.link)}">
       <div class="ni${open?' open':''}" onclick="toggleNews(this)">
-        <span class="cat ${cat}">${n.cluster>1?'×'+n.cluster:'NEWS'}</span>
+        <span class="cat ${cat}" ${n.cluster>1&&!reg?`title="${t('news_src_tip')}"`:''}>${badge}</span>
         <h4 style="flex:1">${title}</h4>
         <span class="meta">${n.source} · ${relTime(n.age_h)}</span>
         <span class="ni-caret">▾</span></div>
@@ -1143,9 +1176,10 @@ function renderNewsFeed(){
   if(!newsData.length){el.innerHTML=`<h3>📰 ${t('newsfeed_h')}</h3><div style="color:var(--mut);font-family:var(--mono);font-size:12px;padding:8px 0">${t('news_loading')}</div>`;return;}
   const seen=seenLinks(), newCount=newsData.filter(n=>!seen.has(n.link)).length;
   const badge=newCount>0?`<span class="nf-badge">🔴 ${t('news_new')} ${newCount}</span>`:'';
-  const rows=newsData.slice(0,5).map(n=>{const isNew=!seen.has(n.link);
-    return `<div class="nf-row" onclick="openNews('${encodeURIComponent(n.link)}')">
+  const rows=newsData.slice(0,5).map(n=>{const isNew=!seen.has(n.link), reg=n.flag==='reg';
+    return `<div class="nf-row${reg?' reg':''}" onclick="openNews('${encodeURIComponent(n.link)}')">
       <span class="nf-dot${isNew?'':' off'}"></span>
+      ${reg?`<span class="nf-reg">${t('news_reg')}</span>`:''}
       <span class="nf-title">${escHtml(newsTitle(n))}</span>
       <span class="d">${relTime(n.age_h)}</span></div>`;}).join('');
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h3>📰 ${t('newsfeed_h')}</h3>${badge}</div>
@@ -1179,17 +1213,18 @@ function renderEarnings(){
   const items=earnData||[];
   const fmtD=ds=>{try{return new Date(ds+'T00:00:00').toLocaleDateString(loc,{month:'short',day:'numeric'});}catch(e){return ds;}};
   const tl=tm=>tm&&tm.includes('pre')?t('earn_pre'):tm&&tm.includes('after')?t('earn_after'):'';
-  const rows=items.slice(0,10).map(e=>`<div class="ec-row">
-      <span class="ec-date">${fmtD(e.date)}</span>
+  const fmtMD=ds=>{try{return new Date(ds+'T00:00:00').toLocaleDateString('en-US',{month:'numeric',day:'numeric'});}catch(e){return ds;}};
+  const rows=items.slice(0,12).map(e=>`<div class="ec-row" title="${escHtml(e.name)}">
+      <span class="ec-date">${fmtMD(e.date)}</span>
       <img class="logo" src="/api/logo?t=${encodeURIComponent(e.symbol)}" onerror="this.style.display='none'" alt="">
-      <span class="tk">${escHtml(e.symbol)}</span>
-      <span class="d" style="flex:1;color:var(--mut);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(e.name)}</span>
-      ${e.eps?`<span class="d" style="font-family:var(--mono);font-size:10px;color:var(--mut)">EPS ${escHtml(String(e.eps))}</span>`:''}
+      <span class="tk" style="flex:1">${escHtml(e.symbol)}</span>
+      ${e.eps?`<span class="ec-eps">$${escHtml(String(e.eps))}</span>`:''}
       ${tl(e.time)?`<span class="ec-t">${tl(e.time)}</span>`:''}</div>`).join('')
     ||`<div style="color:var(--mut);font-family:var(--mono);font-size:12px;padding:8px 0">${t('earn_empty')}</div>`;
   el.innerHTML=`<h3>📅 ${t('earn_h')}</h3><div class="ec-list">${rows}</div>`;
 }
 function showTab(name){
+  const ly=document.getElementById('layout');if(ly)ly.classList.toggle('solo',name!=='main');
   document.querySelectorAll('[data-tab]').forEach(el=>{if(el.closest('#tabbar'))return;el.style.display=el.dataset.tab===name?'':'none';});
   document.querySelectorAll('#tabbar .tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
   window.scrollTo(0,0);
