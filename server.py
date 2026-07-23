@@ -222,19 +222,51 @@ GLOSS = [
     (r'bridges?',                  '브리지',            '跨链桥'),
 ]
 _GLOSS_RE = [(re.compile(r'\b(?:' + p + r')\b', re.I), ko, zh) for p, ko, zh in GLOSS]
-_PH_RE = re.compile(r'XQV\s*(\d+)\s*XQ', re.I)
+# company/protocol names Google mistranslates as common nouns (Strategy→전략, Jupiter→목성,
+# Backpack→배낭, Circle→원…). Case-SENSITIVE match; restored verbatim in every language.
+_ENTITIES = ['Backpack', 'Jupiter', 'Circle', 'Strategy', 'Sunrise', 'Backed', 'Phantom',
+             'Kamino', 'Raydium', 'Mirror', 'Sonic', 'Sky']
+_ENT_RE = re.compile(r'\b(' + '|'.join(_ENTITIES) + r')\b')
+# placeholder + optional trailing Korean particle (josa) so we can re-agree it with the
+# restored word's final consonant (받침): 온체인+가 → 온체인이, 강세장+를 → 강세장을
+_PH_RE = re.compile(r'XQV\s*(\d+)\s*XQ(으로|이|가|을|를|은|는|과|와|로)?', re.I)
+
+# English names: particle follows Korean PRONUNCIATION (Circle=서클→이, Backpack=백팩→이)
+_ENT_JOSA = {'Backpack': (True, False), 'Circle': (True, True), 'Phantom': (True, False),
+             'Raydium': (True, False), 'Sonic': (True, False)}   # (has-batchim, ends-in-ㄹ)
+
+def _josa_fix(term, josa):
+    if not josa:
+        return ''
+    if term in _ENT_JOSA:
+        b, rieul = _ENT_JOSA[term]
+        jong = 8 if rieul else (1 if b else 0)
+    else:
+        jong = None
+        for ch in reversed(term):      # last Hangul syllable decides the particle form
+            o = ord(ch)
+            if 0xAC00 <= o <= 0xD7A3:
+                jong = (o - 0xAC00) % 28
+                break
+    b = (jong is not None and jong != 0)   # Latin/digit endings → treat as no-batchim
+    if josa in ('이', '가'):  return '이' if b else '가'
+    if josa in ('을', '를'):  return '을' if b else '를'
+    if josa in ('은', '는'):  return '은' if b else '는'
+    if josa in ('과', '와'):  return '과' if b else '와'
+    if josa in ('으로', '로'): return '로' if (not b or jong == 8) else '으로'
+    return josa
 
 def _translate(text, tl='ko'):
     text = (text or '').strip()
     if not text:
         return ''
-    # 1) protect glossary terms so the MT engine can't literalize them
+    # 1) protect entity names (verbatim) + glossary terms so the MT can't literalize them
     lang_i = 0 if tl.startswith('ko') else 1
     repl = []
     def _sub(m, term):
         repl.append(term)
         return f'XQV{len(repl)-1}XQ'
-    prot = text
+    prot = _ENT_RE.sub(lambda m: _sub(m, m.group(0)), text)   # keep names as-is (Strategy, Jupiter…)
     for rx, ko, zh in _GLOSS_RE:
         term = (ko, zh)[lang_i]
         if not term:
@@ -247,8 +279,17 @@ def _translate(text, tl='ko'):
         out = ''.join(seg[0] for seg in d[0] if seg and seg[0])
         if not out:
             return text
-        # 2) restore protected terms (tolerate spacing the MT may add inside the placeholder)
-        out = _PH_RE.sub(lambda m: repl[int(m.group(1))] if int(m.group(1)) < len(repl) else m.group(0), out)
+        out = re.sub(r'XQ(?=XQV)', 'XQ ', out, flags=re.I)   # re-split glued adjacent placeholders
+        # 2) restore terms; for Korean, re-agree the trailing particle with the word's 받침
+        def _restore(m):
+            i = int(m.group(1)); josa = m.group(2) or ''
+            if i >= len(repl):
+                return m.group(0)
+            term = repl[i]
+            if tl.startswith('ko'):
+                return term + _josa_fix(term, josa)
+            return term + (josa or '')
+        out = _PH_RE.sub(_restore, out)
         return out
     except Exception:
         return text  # graceful fallback to English
