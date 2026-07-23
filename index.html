@@ -1089,8 +1089,9 @@ function renderCEX(){
     if(nsp!=null&&bpsp!=null&&bnsp!=null){
       const cand=[['Backpack',Math.abs(bpsp-nsp),'var(--bp)'],['Binance',Math.abs(bnsp-nsp),'#c79a2e']];
       cand.sort((a,b)=>a[1]-b[1]);close=cand[0][0];cc=cand[0][2];}
-    const bpCell=bpsp!=null?spreadHtml(bpsp):`<span style="color:var(--mut)">${bp&&bp.ob?t('cex_closed'):t('cex_quote')}</span>`;
-    const bnCell=bnsp!=null?spreadHtml(bnsp):`<span style="color:var(--mut)">${t('cex_unlisted')}</span>`;
+    const volSub=v=>v?`<div style="font-family:var(--mono);font-size:9.5px;color:var(--mut)">${fmtUSD(v)}</div>`:'';
+    const bpCell=bpsp!=null?spreadHtml(bpsp)+volSub(bp&&bp.vol):`<span style="color:var(--mut)">${bp&&bp.ob?t('cex_closed'):t('cex_quote')}</span>`;
+    const bnCell=bnsp!=null?spreadHtml(bnsp)+volSub(bn&&bn.vol):`<span style="color:var(--mut)">${t('cex_unlisted')}</span>`;
     return `<tr>
       <td class="c-tk" style="text-align:left"><span class="d" style="color:var(--mut);font-size:11px">${d.page*d.page_size+i+1}</span> <span class="tk">${r.ticker}</span> <span class="d" style="color:var(--mut)">${escHtml(r.name).slice(0,24)}</span></td>
       <td class="num">${nsp!=null?spreadHtml(nsp,true):(n&&n.px?('$'+n.px.toFixed(2)):'—')}</td>

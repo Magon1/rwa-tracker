@@ -506,7 +506,7 @@ _cex = {'t': 0, 'data': {}}
 _bn_stock_syms = None  # discovered once (ticker -> binance symbol)
 # allowlist so we never pick up a crypto whose symbol ends in 'B' (e.g. SHIB)
 EQUITY_TICKERS = {'SPCX','NVDA','TSLA','MSTR','CRCL','SNDK','AMD','INTC','EWY','MU','AAPL','META',
-                  'GOOGL','AMZN','MSFT','COIN','HOOD','QQQ','SPY','PLTR','SMCI','NFLX','AVGO'}
+                  'GOOGL','AMZN','MSFT','COIN','HOOD','QQQ','SPY','PLTR','SMCI','NFLX','AVGO','SKHY'}
 
 def _spread_bps(bid, ask):
     try:
@@ -566,6 +566,15 @@ def build_cex():
             if td:
                 r['bn_vol'] = float(td.get('quoteVolume') or 0)
     # --- Backpack: CEX .US order-book securities, real bid/ask (populated in US market hours) ---
+    # /api/v1/tickers now includes .US markets (verified 07-24) → ONE batch call gives 24h volume
+    # + change% for every listed security; per-symbol depth still needed for the live spread.
+    bp_tk = {}
+    try:
+        for x in json.loads(_get("https://api.backpack.exchange/api/v1/tickers", 15)):
+            if '.US' in x.get('symbol', ''):
+                bp_tk[x['symbol']] = x
+    except Exception as e:
+        sys.stderr.write(f"bp tickers: {e}\n")
     for sym in _backpack_securities():
         tk = sym.split('.')[0]
         r = rows.setdefault(tk, {'ticker': tk}); r['bp_listed'] = True
@@ -578,12 +587,13 @@ def build_cex():
             if bb and ba: r['bp_price'] = (bb + ba) / 2
         except Exception:
             pass
-        try:
-            tkr = json.loads(_get("https://api.backpack.exchange/api/v1/ticker?symbol=" + urllib.parse.quote(sym), 10))
-            if isinstance(tkr, dict) and tkr.get('quoteVolume'):
-                r['bp_vol'] = float(tkr['quoteVolume'])
-        except Exception:
-            pass
+        t = bp_tk.get(sym)
+        if t:
+            if t.get('quoteVolume'): r['bp_vol'] = float(t['quoteVolume'])
+            if t.get('lastPrice') and not r.get('bp_price'): r['bp_price'] = float(t['lastPrice'])
+            if t.get('priceChangePercent') is not None:
+                try: r['bp_chg'] = round(float(t['priceChangePercent']) * 100, 2)
+                except Exception: pass
     return {'generated': int(time.time()),
             'rows': sorted(rows.values(), key=lambda r: -((r.get('bn_vol') or 0) + (r.get('bp_vol') or 0))),
             'bn_count': len(bn),
@@ -685,7 +695,7 @@ def build_spreads(page):
             'binance': ({'spread': c.get('bn_spread'), 'px': c.get('bn_price'), 'vol': c.get('bn_vol')}
                         if (c.get('bn_spread') is not None or c.get('bn_vol')) else None),
             'backpack': ({'spread': c.get('bp_spread'), 'px': c.get('bp_price'), 'vol': c.get('bp_vol'),
-                          'ob': True} if c.get('bp_listed') else {'ob': False}),
+                          'chg': c.get('bp_chg'), 'ob': True} if c.get('bp_listed') else {'ob': False}),
         })
     return {'generated': int(time.time()), 'page': page, 'pages': pages, 'total': total,
             'page_size': SEC_PAGE, 'rows': rows}
