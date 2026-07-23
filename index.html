@@ -545,9 +545,9 @@ const TR={
   sec7_d:{ko:'검증된 사건 타임라인',en:'Verified event timeline'},
   share_by:{ko:'발행사별 비중',en:'Share by Issuer'}, dist:{ko:'분포',en:'Distribution'},
   m_vol:{ko:'볼륨',en:'Volume'}, m_count:{ko:'종목 수',en:'Tokens'}, m_mcap:{ko:'온체인 발행액',en:'On-chain Value'},
-  note_vol:{ko:'24h DEX 스왑 거래량 (GeckoTerminal, 프롭 AMM 포함) · Ondo는 DEX 거래 ≈0(mint/redeem 중심)이라 별도 전송량 $12.93M',en:'24h DEX-swap volume (GeckoTerminal, incl. prop AMMs) · Ondo trades ≈0 on DEX (mint/redeem); its $12.93M transfer volume is separate'},
+  note_vol:{ko:'24h DEX 스왑 거래량 (GeckoTerminal, 프롭 AMM 포함) · Ondo는 DEX 거래 ≈0(mint/redeem 중심)(mint/redeem·전송 중심)',en:'24h DEX-swap volume (GeckoTerminal, incl. prop AMMs) · Ondo trades ≈0 on DEX (mint/redeem) (mint/redeem & transfers)'},
   note_count:{ko:'발행사별 토큰 갯수',en:'Tokens per issuer'},
-  note_mcap:{ko:'온체인 발행액 (RWA.xyz 06-25)',en:'On-chain Value (RWA.xyz 06-25)'},
+  note_mcap:{ko:'온체인 발행액 (RWA.xyz 07-22)',en:'On-chain Value (RWA.xyz 07-22)'},
   l_vol:{ko:'볼륨',en:'Volume'}, l_count:{ko:'종목 수',en:'Tokens'}, l_mcap:{ko:'온체인 발행액',en:'On-chain Value'},
   chain_mcap_h:{ko:'체인별 온체인 발행액',en:'On-chain Value by Chain'},
   chain_vol_h:{ko:'체인별 거래량 점유율',en:'Volume Share by Chain'},
@@ -562,6 +562,7 @@ const TR={
   f_all:{ko:'전체',en:'All'},
   kpi_mcap:{ko:'섹터 총 온체인 발행액',en:'Sector On-chain Value'}, kpi_vol:{ko:'섹터 월 거래량',en:'Monthly Volume'},
   kpi_top:{ko:'24h 최다 거래 토큰',en:'Top 24h Volume'}, kpi_sol:{ko:'Solana 거래량 점유율',en:'Solana Volume Share'},
+  kpi_holders:{ko:'홀더 수 (30d)',en:'Holders (30d)'},
   u_assets:{ko:'개',en:' assets'}, u_most:{ko:'온체인 거래의 대부분',en:'Most on-chain volume'},
   cls_stock:{ko:'주식',en:'Stock'}, cls_etf:{ko:'ETF',en:'ETF'},
   search_lbl:{ko:'검색',en:'Search'}, no_res:{ko:'결과 없음',en:'no results'},
@@ -613,8 +614,8 @@ const TR={
     en:'<b>Benchmarked to Nasdaq\'s live bid/ask spread</b> — see how the same stock trades at different spreads on Backpack vs Binance. All <b>1,112 Backpack-listed securities</b>, 30 per page, comparable ones (Binance/Backpack order book) first. ⚠ Backpack Securities is <b>quote-based with no public spread</b> → only SPCX·MU (order book) are measured; the rest show "quote-based". Spreads are wide outside US market hours (pre/post). Nasdaq = benchmark; lower is tighter.'},
   onchainval:{ko:'온체인 발행액',en:'On-chain Value'}, tokenmc:{ko:'토큰 시총',en:'Token Mcap'},
   m_coverage:{ko:'추적 {n}/{total}개 종목 (거래량 상위 위주)',en:'Showing {n}/{total} tracked (top by volume)'},
-  foot:{ko:'데이터 · <b>24h 볼륨·유동성 = 전 체인 온체인 DEX</b> (Solana <a href="https://www.tokens.xyz" target="_blank">tokens.xyz/Sunrise</a> + EVM <a href="https://www.geckoterminal.com" target="_blank">GeckoTerminal</a>, 06-26 스냅샷; xStocks EVM·Ondo 전 체인 ≈$0 확인) / 종목수 <a href="https://api.backed.fi/api/v2/public/assets" target="_blank">api.backed.fi</a> · Ondo <a href="https://github.com/ondoprotocol/ondo-global-markets-token-list" target="_blank">token-list</a> / 온체인 발행액 <a href="https://app.rwa.xyz/stocks" target="_blank">RWA.xyz</a> 06-25 / 가격 라이브 <a href="https://defillama.com" target="_blank">DefiLlama</a><br>정보 제공용 · 투자 자문 아님 · 온체인 데이터 지연·부정확 가능 · Backpack Securities 미·영·UAE·일·EU 미제공',
-    en:'Data · <b>24h volume·liquidity = all-chain on-chain DEX</b> (Solana <a href="https://www.tokens.xyz" target="_blank">tokens.xyz/Sunrise</a> + EVM <a href="https://www.geckoterminal.com" target="_blank">GeckoTerminal</a>, 06-26 snapshot; xStocks EVM & Ondo all-chain ≈$0 verified) / counts <a href="https://api.backed.fi/api/v2/public/assets" target="_blank">api.backed.fi</a> · Ondo <a href="https://github.com/ondoprotocol/ondo-global-markets-token-list" target="_blank">token-list</a> / on-chain value <a href="https://app.rwa.xyz/stocks" target="_blank">RWA.xyz</a> 06-25 / live price <a href="https://defillama.com" target="_blank">DefiLlama</a><br>Informational only · not investment advice · on-chain data may be delayed/inaccurate · Backpack Securities unavailable in US/UK/UAE/JP/EU'},
+  foot:{ko:'데이터 · <b>24h 볼륨·유동성 = 전 체인 온체인 DEX</b> (Solana <a href="https://www.tokens.xyz" target="_blank">tokens.xyz/Sunrise</a> + EVM <a href="https://www.geckoterminal.com" target="_blank">GeckoTerminal</a>, 07-23 스냅샷; xStocks EVM·Ondo 전 체인 ≈$0 확인) / 종목수 <a href="https://api.backed.fi/api/v2/public/assets" target="_blank">api.backed.fi</a> · Ondo <a href="https://github.com/ondoprotocol/ondo-global-markets-token-list" target="_blank">token-list</a> / 온체인 발행액 <a href="https://app.rwa.xyz/stocks" target="_blank">RWA.xyz</a> 07-22 / 가격 라이브 <a href="https://defillama.com" target="_blank">DefiLlama</a><br>정보 제공용 · 투자 자문 아님 · 온체인 데이터 지연·부정확 가능 · Backpack Securities 미·영·UAE·일·EU 미제공',
+    en:'Data · <b>24h volume·liquidity = all-chain on-chain DEX</b> (Solana <a href="https://www.tokens.xyz" target="_blank">tokens.xyz/Sunrise</a> + EVM <a href="https://www.geckoterminal.com" target="_blank">GeckoTerminal</a>, 07-23 snapshot; xStocks EVM & Ondo all-chain ≈$0 verified) / counts <a href="https://api.backed.fi/api/v2/public/assets" target="_blank">api.backed.fi</a> · Ondo <a href="https://github.com/ondoprotocol/ondo-global-markets-token-list" target="_blank">token-list</a> / on-chain value <a href="https://app.rwa.xyz/stocks" target="_blank">RWA.xyz</a> 07-22 / live price <a href="https://defillama.com" target="_blank">DefiLlama</a><br>Informational only · not investment advice · on-chain data may be delayed/inaccurate · Backpack Securities unavailable in US/UK/UAE/JP/EU'},
 };
 const TR_ZH={
   share_btn:'🔗 分享',
@@ -633,8 +634,8 @@ const TR_ZH={
   sec7_h:'上市 · 监管 · 新进入者', sec7_d:'已核实事件时间线',
   share_by:'按发行方占比', dist:'分布',
   m_vol:'成交量', m_count:'代币数', m_mcap:'链上发行额',
-  note_vol:'24h DEX 兑换成交量（GeckoTerminal，含自营 AMM）· Ondo 在 DEX ≈0（以铸造/赎回为主），其 $12.93M 转账量另计',
-  note_count:'各发行方代币数量', note_mcap:'链上发行额 (RWA.xyz 06-25)',
+  note_vol:'24h DEX 兑换成交量（GeckoTerminal，含自营 AMM）· Ondo 在 DEX ≈0（以铸造/赎回为主）（以铸造/赎回为主）',
+  note_count:'各发行方代币数量', note_mcap:'链上发行额 (RWA.xyz 07-22)',
   l_vol:'成交量', l_count:'代币数', l_mcap:'链上发行额',
   chain_mcap_h:'各链链上发行额', chain_vol_h:'各链成交量占比', chain_vol_d:'Solana 约 95.6% 集中',
   c_ticker:'代码', c_issuer:'发行方', c_class:'类别',
@@ -645,7 +646,7 @@ const TR_ZH={
   legend_liq:'流动性(TVL) = DEX 池储备（可即时交易深度）',
   c_stock:'股票', c_tokens:'各发行方代币 · 价格', c_gap:'价差',
   f_all:'全部',
-  kpi_mcap:'板块链上发行总额', kpi_vol:'月成交量', kpi_top:'24h 最高成交代币', kpi_sol:'Solana 成交量占比',
+  kpi_mcap:'板块链上发行总额', kpi_vol:'月成交量', kpi_top:'24h 最高成交代币', kpi_sol:'Solana 成交量占比', kpi_holders:'持有人数(30d)',
   u_assets:' 个', u_most:'链上成交量大部分',
   cls_stock:'股票', cls_etf:'ETF',
   search_lbl:'搜索', no_res:'无结果',
@@ -677,7 +678,7 @@ const TR_ZH={
   cex_explain:'<b>以 Nasdaq 实时买卖盘价差为基准</b>，对比同一只股票在 Backpack 与 Binance 的价差差异。涵盖 Backpack 上架<b>全部 1,112 只证券</b>，每页 30 只，可对比的（Binance/Backpack 订单簿）优先靠前。⚠ Backpack Securities 为<b>单一报价(quote)制，无公开价差</b> → 仅 SPCX·MU（订单簿）有实测，其余显示"报价制"。美股盘前/盘后价差较宽。Nasdaq=基准，数值越小越好。',
   onchainval:'链上发行额', tokenmc:'代币市值',
   m_coverage:'显示 {n}/{total} 个追踪代币（按成交量靠前）',
-  foot:'数据 · <b>24h 成交量·流动性 = 全链链上 DEX</b>（Solana <a href="https://www.tokens.xyz" target="_blank">tokens.xyz/Sunrise</a> + EVM <a href="https://www.geckoterminal.com" target="_blank">GeckoTerminal</a>，06-26 快照；xStocks EVM 与 Ondo 全链 ≈$0 已核实）/ 数量 <a href="https://api.backed.fi/api/v2/public/assets" target="_blank">api.backed.fi</a> · Ondo <a href="https://github.com/ondoprotocol/ondo-global-markets-token-list" target="_blank">token-list</a> / 链上发行额 <a href="https://app.rwa.xyz/stocks" target="_blank">RWA.xyz</a> 06-25 / 实时价格 <a href="https://defillama.com" target="_blank">DefiLlama</a><br>仅供参考 · 非投资建议 · 链上数据可能延迟/不准确 · Backpack Securities 不向 美/英/UAE/日/欧盟 提供',
+  foot:'数据 · <b>24h 成交量·流动性 = 全链链上 DEX</b>（Solana <a href="https://www.tokens.xyz" target="_blank">tokens.xyz/Sunrise</a> + EVM <a href="https://www.geckoterminal.com" target="_blank">GeckoTerminal</a>，06-26 快照；xStocks EVM 与 Ondo 全链 ≈$0 已核实）/ 数量 <a href="https://api.backed.fi/api/v2/public/assets" target="_blank">api.backed.fi</a> · Ondo <a href="https://github.com/ondoprotocol/ondo-global-markets-token-list" target="_blank">token-list</a> / 链上发行额 <a href="https://app.rwa.xyz/stocks" target="_blank">RWA.xyz</a> 07-22 / 实时价格 <a href="https://defillama.com" target="_blank">DefiLlama</a><br>仅供参考 · 非投资建议 · 链上数据可能延迟/不准确 · Backpack Securities 不向 美/英/UAE/日/欧盟 提供',
 };
 Object.keys(TR_ZH).forEach(k=>{if(TR[k])TR[k].zh=TR_ZH[k];else TR[k]={zh:TR_ZH[k]};});
 const t=k=>(TR[k]&&(TR[k][lang]||TR[k].en))||k;
@@ -685,13 +686,13 @@ const t=k=>(TR[k]&&(TR[k][lang]||TR[k].en))||k;
 /* ===================== DATA ===================== */
 const ISSUERS={ xStocks:{color:'#2f6fed'}, Backpack:{color:'#e5383b'}, Ondo:{color:'#6366f1'} };
 const issuersList=Object.keys(ISSUERS);
-const ISSUER_AGG={  // 2026-06-26
-  Ondo:    {count:439, mcap:899.4e6, vol:0, xfer:12.93e6},  // DEX 스왑 ≈0 (검증) · 전송량(transfer) $12.93M는 별도 metric
-  xStocks: {count:166, mcap:507.7e6, vol:29e6},     // Solana DEX 스왑(tokens.xyz)
-  Backpack:{count:4,   mcap:17.6e6,  vol:112.1e6},  // SPCX·MU·SNDK·DRAM(신규) · Solana DEX 스왑(tokens.xyz)
+const ISSUER_AGG={  // as of 2026-07-23 · Ondo=공식 PR($1B+ TVL), xStocks 발행액=RWA 07-16, Backpack=CoinGecko 07-23 · vol은 라이브 재계산
+  Ondo:    {count:438, mcap:1.0e9,  vol:0},        // "Ondo Stocks"(구 Global Markets) · 업계 최초 $1B TVL · DEX 스왑 ≈0
+  xStocks: {count:628, mcap:507e6,  vol:29e6},     // backed.fi API 07-23 (628 assets)
+  Backpack:{count:8,   mcap:21.3e6, vol:112.1e6},  // SPCX·MU·SNDK·DRAM·SKHY·BOT·INTC·HOOD
 };
-const SECTOR={mcap:1.52e9, assets:2480, monthlyVol:8.02e9, mcap30d:-6.6, vol30d:127};
-const CHAIN_MCAP=[['Ethereum',614.3e6,'#627EEA'],['Solana',442.6e6,'#9945FF'],['BNB Chain',432.2e6,'#F0B90B'],['Other',31e6,'#9aa0ab']];
+const SECTOR={mcap:1.86e9, monthlyVol:9e9, mcap30d:15.1, volYoY:'170×', holders:671490, holders30d:75.7};  // RWA.xyz 07-22 · 월 전송량 $9B(2026-06, 전년비 170×, FXStreet)
+const CHAIN_MCAP=[['Ethereum',647e6,'#627EEA'],['BNB Chain',562e6,'#F0B90B'],['Solana',443e6,'#9945FF'],['Avalanche',140e6,'#E84142'],['Other',68e6,'#9aa0ab']];  // 비중 RWA 07-16 × 총액 $1.86B
 const CHAIN_VOL=[['Solana',95.6,'#9945FF'],['Gnosis',1.98,'#3E6957'],['Ethereum',1.8,'#627EEA'],['Other',0.62,'#F0B90B']];
 const A=(t,n,issuer,chain,ck,addr,price,vol,liq,mcap,spread,cls)=>({t,n,issuer,chain,ck,addr,price,vol,liq,mcap,spread,cls:cls||'stock'});
 const ASSETS=[
@@ -721,39 +722,37 @@ const ASSETS=[
 
 const ISSUER_INFO={
   xStocks:{color:'#2f5fc0',
-    count:{ko:'166 종목',en:'166 tokens'}, tag:{ko:'Backed Finance · "x" 접미사',en:'Backed Finance · "x" suffix'},
+    count:{ko:'628 종목',en:'628 assets'}, tag:{ko:'Backed Finance · "x" 접미사',en:'Backed Finance · "x" suffix'},
     por:{ko:'✓ Chainlink Proof-of-Reserve 활성',en:'✓ Chainlink Proof-of-Reserve active'},
     items:{ko:[['거래량','Solana DEX + CEX(Kraken/Bybit) — 종목 다수로 폭넓게 거래'],['구조','SPL Token-2022, 1:1 백킹, <b>현금가치 청구권</b>'],['체인','전 종목 Solana + ETH/BNB/Optimism 등'],['데이터','공개 API로 mint·메타데이터 투명']],
       en:[['Volume','Solana DEX + CEX (Kraken/Bybit) — broad across many tokens'],['Structure','SPL Token-2022, 1:1 backed, <b>cash-value claim</b>'],['Chains','All on Solana + ETH/BNB/Optimism…'],['Data','Public API exposes mints & metadata']]}},
   Backpack:{color:'#e5383b',
-    count:{ko:'4 종목',en:'4 tokens'}, tag:{ko:'Backpack Securities · Sunrise/Wormhole',en:'Backpack Securities · Sunrise/Wormhole'},
+    count:{ko:'8 종목',en:'8 tokens'}, tag:{ko:'Backpack Securities · Sunrise/Wormhole',en:'Backpack Securities · Sunrise/Wormhole'},
     por:{ko:'✓ 1:1 실주식 · UCC Art.8 보호',en:'✓ 1:1 real shares · UCC Art.8'},
-    items:{ko:[['종목','SPCX·MU·SNDK·<b>DRAM</b>(신규 ETF), <b>Solana만</b>'],['거래량','Solana DEX에서 활발 — SPCX·MU·SNDK (실시간 수치는 상단/표)'],['구조','<b>상환 가능 증권</b> — ACATS/DTCC로 실주식 이관'],['홀더','SPCX 1만+ (xStocks SPCXx의 ~2배)']],
-      en:[['Tokens','SPCX·MU·SNDK·<b>DRAM</b>(new ETF), <b>Solana only</b>'],['Volume','Active on Solana DEX — SPCX·MU·SNDK (live figures above)'],['Structure','<b>Redeemable security</b> — move shares via ACATS/DTCC'],['Holders','SPCX 10k+ (≈2× xStocks SPCXx)']]}},
+    items:{ko:[['종목','SPCX·MU·SNDK·DRAM·<b>SKHY</b>·BOT·INTC·HOOD — <b>Solana만</b>'],['거래량','Solana DEX 활발 (실시간 수치는 상단/표)'],['구조','<b>상환 가능 증권</b> — ACATS/DTCC로 실주식 이관'],['하이라이트','<b>SKHY: 한국 주식 최초 온체인</b> — 나스닥 IPO 당일(7/10)']],
+      en:[['Tokens','SPCX·MU·SNDK·DRAM·<b>SKHY</b>·BOT·INTC·HOOD — <b>Solana only</b>'],['Volume','Active on Solana DEX (live figures above)'],['Structure','<b>Redeemable security</b> — move shares via ACATS/DTCC'],['Highlight','<b>SKHY: first Korean stock on-chain</b> — Nasdaq IPO day (Jul 10)']]}},
   Ondo:{color:'#5a51b0',
-    count:{ko:'439 티커',en:'439 tickers'}, tag:{ko:'Ondo Global Markets · "on" 접미사',en:'Ondo Global Markets · "on" suffix'},
+    count:{ko:'438+ 종목',en:'438+ listings'}, tag:{ko:'Ondo Stocks(구 Global Markets) · "on" 접미사',en:'Ondo Stocks (fka Global Markets) · "on" suffix'},
     por:{ko:'✓ 브로커딜러(Alpaca) 1:1 커스터디',en:'✓ Broker-dealer (Alpaca) 1:1 custody'},
-    items:{ko:[['온체인 발행액','<b>발행액 1위</b> $899M (추적 3사 중 ~63%)'],['종목','ETH 439 + BNB 439 + Solana 200+'],['거래','<b>DEX 스왑 ≈$0</b> — 전송량 ~$13M/24h(mint/redeem·기관 이동)'],['상환','24×5 mint/redeem · 리테일은 파트너']],
-      en:[['On-chain Value','<b>#1 by value</b> $899M (~63% of 3 tracked)'],['Tokens','ETH 439 + BNB 439 + Solana 200+'],['Trading','<b>DEX swaps ≈$0</b> — ~$13M/24h transfers (mint/redeem & institutional)'],['Redemption','24×5 mint/redeem · retail via partners']]}},
+    items:{ko:[['온체인 발행액','<b>업계 최초 $1B+ TVL</b>(공식) · 추적 3사 중 ~65%'],['종목','438+ · ETH/BNB/Solana 멀티체인'],['거래','<b>DEX 스왑 ≈$0</b> — 누적 거래 $18B+ (mint/redeem·기관)'],['상환','24×5 mint/redeem · 리테일은 파트너']],
+      en:[['On-chain Value','<b>First to $1B+ TVL</b> (official) · ~65% of 3 tracked'],['Tokens','438+ across ETH/BNB/Solana'],['Trading','<b>DEX swaps ≈$0</b> — $18B+ cumulative (mint/redeem & institutional)'],['Redemption','24×5 mint/redeem · retail via partners']]}},
 };
-const LISTINGS={ko:[['SNDK','SanDisk','06-24','Backpack'],['MU','Micron','06-22','Backpack'],['+173','Ondo 대량 상장','06-17','Ondo'],['SPCX','SpaceX','06-12','Backpack']],
-  en:[['SNDK','SanDisk','06-24','Backpack'],['MU','Micron','06-22','Backpack'],['+173','Ondo bulk listing','06-17','Ondo'],['SPCX','SpaceX','06-12','Backpack']]};
+const LISTINGS={ko:[['SKHY','SK하이닉스 — 나스닥 IPO 당일 3사 동시 토큰화','07-10','Backpack'],['INTC','Intel','07월','Backpack'],['HOOD','Robinhood','07월','Backpack'],['BOT','RoboStrategy','07월','Backpack']],
+  en:[['SKHY','SK Hynix — tokenized on IPO day by all 3 issuers','07-10','Backpack'],['INTC','Intel','Jul','Backpack'],['HOOD','Robinhood','Jul','Backpack'],['BOT','RoboStrategy','Jul','Backpack']]};
 const NEWS={ko:[
-  {c:'launch',l:'LAUNCH',t:'Backpack, SanDisk(SNDK) 토큰화 — Solana 3번째 종목',m:'Cryptobriefing · 06-24'},
-  {c:'launch',l:'LAUNCH',t:'Backpack, Micron(MU) 온체인 — 실적발표 48시간 전',m:'The Defiant · 06-22'},
-  {c:'milestone',l:'RECORD',t:'솔라나 토큰주식 24h 거래량 $380M 돌파 — xStocks·Backpack 주도',m:'CryptoAdventure · 06-24'},
-  {c:'entrant',l:'ENTRANT',t:'Ondo, 173개 주식/ETF 추가 — 3개 체인 합 430+ 종목',m:'The Defiant · 06-17'},
-  {c:'milestone',l:'RECORD',t:'SPCX, 솔라나 단일 토큰 일일 거래 $108M — 역대 최고',m:'KuCoin · 06-15'},
-  {c:'launch',l:'LAUNCH',t:'Backpack, SpaceX(SPCX) 토큰화 — 나스닥 상장 당일',m:'Solana Compass · 06-12'},
-  {c:'reg',l:'REG',t:'Ondo–J.P.Morgan·Mastercard·Ripple 국경간 상환 파일럿',m:'05-06'}],
+  {c:'launch',l:'LAUNCH',t:'SK하이닉스(SKHY) 나스닥 IPO 당일 온체인 — Backpack·xStocks·Ondo 동시 발행',m:'Solana Compass · 07-10'},
+  {c:'milestone',l:'RECORD',t:'Ondo, 토큰화 주식 최초 $1B TVL — "Ondo Stocks"로 리브랜딩',m:'PR Newswire · 07-13'},
+  {c:'milestone',l:'RECORD',t:'토큰화 주식 월 전송량 $9B — 전년 대비 170배',m:'FXStreet · 07-22'},
+  {c:'milestone',l:'RECORD',t:'섹터 발행액 $1.86B(+15%/30d) · 홀더 67만 명(+76%)',m:'RWA.xyz · 07-22'},
+  {c:'launch',l:'LAUNCH',t:'Backpack, Intel·Robinhood·RoboStrategy 추가 — 온체인 8종목으로 확대',m:'07월'},
+  {c:'entrant',l:'ENTRANT',t:'xStocks(Kraken), 628개 자산으로 확장',m:'backed.fi · 07월'}],
   en:[
-  {c:'launch',l:'LAUNCH',t:'Backpack tokenizes SanDisk (SNDK) — 3rd Solana name',m:'Cryptobriefing · 06-24'},
-  {c:'launch',l:'LAUNCH',t:'Backpack brings Micron (MU) on-chain — 48h before earnings',m:'The Defiant · 06-22'},
-  {c:'milestone',l:'RECORD',t:'Solana tokenized-stock 24h volume tops $380M — xStocks & Backpack lead',m:'CryptoAdventure · 06-24'},
-  {c:'entrant',l:'ENTRANT',t:'Ondo adds 173 stocks/ETFs — 430+ across 3 chains',m:'The Defiant · 06-17'},
-  {c:'milestone',l:'RECORD',t:'SPCX hits $108M single-token daily volume on Solana — record',m:'KuCoin · 06-15'},
-  {c:'launch',l:'LAUNCH',t:'Backpack tokenizes SpaceX (SPCX) — day of Nasdaq listing',m:'Solana Compass · 06-12'},
-  {c:'reg',l:'REG',t:'Ondo–J.P.Morgan·Mastercard·Ripple cross-border redemption pilot',m:'05-06'}]};
+  {c:'launch',l:'LAUNCH',t:'SK Hynix (SKHY) on-chain on Nasdaq IPO day — issued by Backpack, xStocks & Ondo',m:'Solana Compass · 07-10'},
+  {c:'milestone',l:'RECORD',t:'Ondo first to $1B TVL in tokenized stocks — rebrands as "Ondo Stocks"',m:'PR Newswire · 07-13'},
+  {c:'milestone',l:'RECORD',t:'Tokenized-stock monthly transfer volume hits $9B — 170× YoY',m:'FXStreet · 07-22'},
+  {c:'milestone',l:'RECORD',t:'Sector value $1.86B (+15%/30d) · 671K holders (+76%)',m:'RWA.xyz · 07-22'},
+  {c:'launch',l:'LAUNCH',t:'Backpack adds Intel, Robinhood, RoboStrategy — 8 on-chain tokens',m:'Jul'},
+  {c:'entrant',l:'ENTRANT',t:'xStocks (Kraken) expands to 628 assets',m:'backed.fi · Jul'}]};
 
 /* ===================== HELPERS ===================== */
 let shareMetric='volume', issuerFilter='all', searchQ='', priceLive=false, tablePage=0, tableSort='vol', topPage=0, liveVolTs=0;
@@ -765,7 +764,7 @@ function logoT(a){const tk=a.t||''; if(a.issuer==='xStocks')return tk.replace(/x
 const logoImg=a=>`<img class="logo" loading="lazy" src="/api/logo?t=${encodeURIComponent(logoT(a))}" onerror="this.style.display='none'" alt="">`;
 function txtOn(hex){hex=(hex||'').replace('#','');if(hex.length<6)return '#fff';const r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16);return (0.299*r+0.587*g+0.114*b)>150?'#15170d':'#fff';}
 const ISSUER_DOM={Backpack:'backpack.exchange',xStocks:'backed.fi',Ondo:'ondo.finance',Dinari:'dinari.com'};
-const CHAIN_SLUG={Solana:'solana',Ethereum:'ethereum','BNB Chain':'binance',Gnosis:'gnosis',Arbitrum:'arbitrum',Base:'base'};
+const CHAIN_SLUG={Solana:'solana',Ethereum:'ethereum','BNB Chain':'binance',Gnosis:'gnosis',Arbitrum:'arbitrum',Base:'base',Avalanche:'avalanche'};
 const issuerLogo=i=>ISSUER_DOM[i]?`<img class="logo" src="/api/logo?d=${ISSUER_DOM[i]}" onerror="this.style.display='none'" alt="">`:'';
 const chainLogo=n=>CHAIN_SLUG[n]?`<img class="logo" src="/api/logo?c=${CHAIN_SLUG[n]}" onerror="this.style.display='none'" alt="">`:'';
 const fmtUSD=v=> v==null?'—': v>=1e9?'$'+(v/1e9).toFixed(2)+'B': v>=1e6?'$'+(v/1e6).toFixed(2)+'M':
@@ -802,9 +801,9 @@ function renderHero(){
     </div>
     <div class="hero-card">
       <div class="hero-eyebrow">${t('hero_pulse')}</div>
-      <div class="pulse-row" style="margin-top:8px"><span>${t('kpi_mcap')}</span><b>${fmtUSD(SECTOR.mcap)} <span class="down">▼${Math.abs(SECTOR.mcap30d)}%</span></b></div>
-      <div class="pulse-row"><span>${t('kpi_vol')}</span><b>${fmtUSD(SECTOR.monthlyVol)} <span class="up">▲${SECTOR.vol30d}%</span></b></div>
-      <div class="pulse-row" style="border:none"><span>${t('kpi_sol')}</span><b>95.6%</b></div>
+      <div class="pulse-row" style="margin-top:8px"><span>${t('kpi_mcap')}</span><b>${fmtUSD(SECTOR.mcap)} <span class="${SECTOR.mcap30d>=0?'up':'down'}">${SECTOR.mcap30d>=0?'▲':'▼'}${Math.abs(SECTOR.mcap30d)}%</span></b></div>
+      <div class="pulse-row"><span>${t('kpi_vol')}</span><b>${fmtUSD(SECTOR.monthlyVol)} <span class="up">▲${SECTOR.volYoY} YoY</span></b></div>
+      <div class="pulse-row" style="border:none"><span>${t('kpi_holders')}</span><b>${Math.round(SECTOR.holders/1000)}K <span class="up">▲${SECTOR.holders30d}%</span></b></div>
       <div class="pulse-live"><span class="dot"></span>${age?(t('vol_updated')+' '+age):'LIVE'}</div>
     </div>`;
 }
@@ -945,10 +944,10 @@ function renderIssuerCTA(){
 }
 const STRUCT_ORDER=['Backpack','xStocks','Ondo'];
 const STRUCT={
-  ko:[{iss:'Backpack',col:'--bp',badge:'최초',b:[['IBKR 파트너','증권사'],['온체인 토큰','SPCX·MU·SNDK'],['지갑 · DEX','즉시 입출금']],c:[['실주식 송금',true],['입·출금',true]],key:'상환 가능 증권 · 실주식 1:1 양방향 (업계 최초)'},
+  ko:[{iss:'Backpack',col:'--bp',badge:'최초',b:[['IBKR 파트너','증권사'],['온체인 토큰','SPCX·SKHY 등 8종'],['지갑 · DEX','즉시 입출금']],c:[['실주식 송금',true],['입·출금',true]],key:'상환 가능 증권 · 실주식 1:1 양방향 (업계 최초)'},
       {iss:'xStocks',col:'--xs',badge:'',b:[['Backed Finance','실주식 보관'],['토큰 AAPLx','현금가치 청구권'],['Solana DEX','2차 거래']],c:[['발행',false],['거래',false]],key:'실주식 인출 불가 · 현금으로만 상환'},
       {iss:'Ondo',col:'--ondo',badge:'',b:[['브로커딜러','Alpaca 커스터디'],['토큰 TSLAon','배당 포함'],['기관 보유','24×5']],c:[['mint/redeem',true],['보유',false]],key:'기관 중심 · 24×5 발행/상환 · 리테일 제한'}],
-  en:[{iss:'Backpack',col:'--bp',badge:'1ST',b:[['IBKR-partner','broker'],['On-chain token','SPCX·MU·SNDK'],['Wallet · DEX','instant in/out']],c:[['shares xfer',true],['deposit/out',true]],key:'Redeemable security · 1:1 real shares, bidirectional (first)'},
+  en:[{iss:'Backpack',col:'--bp',badge:'1ST',b:[['IBKR-partner','broker'],['On-chain token','SPCX·SKHY +6'],['Wallet · DEX','instant in/out']],c:[['shares xfer',true],['deposit/out',true]],key:'Redeemable security · 1:1 real shares, bidirectional (first)'},
       {iss:'xStocks',col:'--xs',badge:'',b:[['Backed Finance','holds shares'],['Token AAPLx','cash-value claim'],['Solana DEX','secondary']],c:[['issue',false],['trade',false]],key:'No share withdrawal · cash redemption only'},
       {iss:'Ondo',col:'--ondo',badge:'',b:[['Broker-dealer','Alpaca custody'],['Token TSLAon','total-return'],['Institutional','24×5']],c:[['mint/redeem',true],['hold',false]],key:'Institutional · 24×5 mint/redeem · retail-limited'}]
 };

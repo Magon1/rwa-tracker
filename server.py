@@ -204,7 +204,11 @@ def _get(url, timeout=30):
 BP_MINTS = {'SPCX': 'SPCXxcqXj6e5dJDVNovHN8744zkbhM2bYudU45BimGb',
             'MU': 'MUxEsUKSMACyw5fZf68wxf5FLnZVhtU9CwH8uNNGay1',
             'SNDK': 'SNDKbwMUQvZhnLnxLduradgLHG5KrPuKwpnrkkGRhfH',
-            'DRAM': 'DRAMjSWR7HRfJKjRkvQWYL2bcaejaVhuxEcjf4pAY4Cw'}  # Roundhill Memory ETF (new)
+            'DRAM': 'DRAMjSWR7HRfJKjRkvQWYL2bcaejaVhuxEcjf4pAY4Cw',   # Roundhill Memory ETF
+            'SKHY': 'SKHYhSjuRWHgikq8eRKbtBbpABgJSkd7ytQV14i9EQ3',   # SK Hynix — Nasdaq IPO 07-10, tokenized day one
+            'BOT':  'BoTx8y9ynfdxf5ZjWtCoBVkff52qKA82ysaLU8ZM6d8T',  # RoboStrategy
+            'INTC': 'iNTCy1qTsUEZQe3DSocLz1ZXXai34Gdw8THQh5rxFaF',   # Intel
+            'HOOD': 'HooDYv5RewLRiMLnEVq3VJqdqxhuE6c5eYvqejMC3e9A'}  # Robinhood
 _addr_map = None
 _bp_syms = set(BP_MINTS)
 _live = {'t': 0, 'data': {}}
@@ -287,7 +291,7 @@ def _dex_token(mint):
             m = p.get('marketCap') or p.get('fdv'); mc = float(m) if m else None
     return {'vol': vol, 'liq': liq, 'px': px, 'mc': mc}
 
-DEX_FALLBACK = ['SPCX', 'MU', 'SNDK', 'DRAM', 'SPYx', 'CRCLx', 'NVDAx', 'QQQx', 'SPCXx', 'TSLAx',
+DEX_FALLBACK = ['SPCX', 'MU', 'SNDK', 'DRAM', 'SKHY', 'BOT', 'INTC', 'HOOD', 'SPYx', 'CRCLx', 'NVDAx', 'QQQx', 'SPCXx', 'TSLAx',
                 'METAx', 'AAPLx', 'AMZNx', 'COINx', 'MSTRx', 'GOOGLx', 'HOODx', 'NFLXx', 'MSFTx']
 
 def _build_live():
@@ -338,7 +342,7 @@ def _live_loop():
 
 # ---- US equity earnings calendar (Nasdaq) — upcoming dates for tokenized-stock tickers ----
 _earn = {'t': 0, 'data': []}
-EARN_WATCH = {'NVDA','TSLA','AAPL','MSFT','META','AMZN','GOOGL','GOOG','MU','SNDK','COIN','MSTR',
+EARN_WATCH = {'NVDA','TSLA','AAPL','MSFT','META','AMZN','GOOGL','GOOG','MU','SNDK','COIN','MSTR','SKHY',
               'CRCL','INTC','AMD','HOOD','PLTR','AVGO','NFLX','SMCI','MSTR','QCOM','ORCL','CRM'}
 def build_earnings():
     import datetime as _dt
