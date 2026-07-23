@@ -266,9 +266,33 @@ def _gt_multi(addrs):
         time.sleep(4)
     return out
 
+# DexScreener single-token aggregate — FALLBACK ONLY (it omits private/prop AMMs like ZeroFi,
+# so it under-counts; but a slightly-low live number beats a frozen/empty page when GT is blocked).
+def _dex_token(mint):
+    try:
+        prs = json.loads(_get("https://api.dexscreener.com/latest/dex/tokens/" + mint, 12)).get('pairs') or []
+    except Exception:
+        return None
+    if not prs:
+        return None
+    vol = liq = 0.0; px = None; mc = None; topliq = -1.0
+    for p in prs:
+        if p.get('chainId') != 'solana' or (p.get('baseToken', {}) or {}).get('address') != mint:
+            continue
+        vol += (p.get('volume', {}) or {}).get('h24', 0) or 0
+        l = (p.get('liquidity', {}) or {}).get('usd', 0) or 0
+        liq += l
+        if l > topliq and p.get('priceUsd'):
+            topliq = l; px = float(p['priceUsd'])
+            m = p.get('marketCap') or p.get('fdv'); mc = float(m) if m else None
+    return {'vol': vol, 'liq': liq, 'px': px, 'mc': mc}
+
+DEX_FALLBACK = ['SPCX', 'MU', 'SNDK', 'DRAM', 'SPYx', 'CRCLx', 'NVDAx', 'QQQx', 'SPCXx', 'TSLAx',
+                'METAx', 'AAPLx', 'AMZNx', 'COINx', 'MSTRx', 'GOOGLx', 'HOODx', 'NFLXx', 'MSFTx']
+
 def _build_live():
     global _addr_map
-    if _addr_map is None:
+    if _addr_map is None or len(_addr_map) < 50:   # rebuild if the first build partially failed
         _addr_map = _build_addr_map()
     addrs = list(_addr_map.values())
     by_addr = _gt_multi(addrs)
@@ -276,24 +300,41 @@ def _build_live():
     for sym, addr in _addr_map.items():
         g = by_addr.get(addr.lower())
         if g: data[sym] = {**g, 'chain': 'Solana'}
-    # Volume source = GeckoTerminal token-level h24, which sums ALL pools including private/prop
-    # AMMs (ZeroFi, SolFi, HumidiFi…) that fill ~40-65% of Jupiter-routed Solana volume. DexScreener
-    # omits those private AMMs, so it UNDER-counts these tokens — we intentionally do not use it here.
+    # Primary volume source = GeckoTerminal token-level h24 (sums ALL pools incl. private/prop AMMs
+    # like ZeroFi/SolFi that fill ~40-65% of Jupiter-routed volume). If GT is rate-limiting our
+    # egress IP (shared on Render) the whole map comes back near-empty — fall back to DexScreener
+    # for the headline tokens so the site never shows a frozen snapshot as live.
+    if len(data) < 10:
+        sys.stderr.write(f"live: GT sparse ({len(data)}) -> DexScreener fallback\n")
+        for sym in DEX_FALLBACK:
+            mint = BP_MINTS.get(sym) or _addr_map.get(sym)
+            if not mint: continue
+            dx = _dex_token(mint)
+            if dx and (dx['vol'] or dx['liq']):
+                d = data.setdefault(sym, {})
+                d['vol'] = dx['vol']; d['liq'] = dx['liq']; d['chain'] = 'Solana'
+                if dx.get('px'): d['px'] = dx['px']
+                if dx.get('mc'): d['mc'] = dx['mc']
+            time.sleep(0.25)
     for sym in data:                    # tag issuer so the frontend can auto-add new tokens
         data[sym]['issuer'] = 'Backpack' if sym in _bp_syms else 'xStocks'
     return data
 
 def _live_loop():
     while True:
+        ok = False
         try:
             d = _build_live()
             if d:
                 with _lock:
                     _live['t'] = time.time(); _live['data'] = d
+                ok = True
                 sys.stderr.write(f"live: refreshed {len(d)} tokens\n")
+            else:
+                sys.stderr.write("live: empty result (all sources failed) — keeping previous cache\n")
         except Exception as e:
             sys.stderr.write(f"live loop: {e}\n")
-        time.sleep(60)   # refresh volumes/prices every 60s so the charts stay close to real-time
+        time.sleep(60 if ok else 150)   # 60s fresh cadence; back off when sources are failing
 
 # ---- US equity earnings calendar (Nasdaq) — upcoming dates for tokenized-stock tickers ----
 _earn = {'t': 0, 'data': []}
@@ -325,15 +366,19 @@ def build_earnings():
 
 def _earn_loop():
     while True:
+        got = False
         try:
             d = build_earnings()
             if d:
                 with _lock:
                     _earn['t'] = time.time(); _earn['data'] = d
+                got = True
                 sys.stderr.write(f"earnings: {len(d)} upcoming\n")
+            else:
+                sys.stderr.write("earnings: empty (calendar fetch failed?) — will retry in 15min\n")
         except Exception as e:
             sys.stderr.write(f"earnings loop: {e}\n")
-        time.sleep(6 * 3600)   # earnings dates change slowly — refresh every 6h
+        time.sleep(6 * 3600 if got else 900)   # 6h after success; retry every 15min while empty
 
 # ---- CEX securities spread: Backpack (.US order book) vs Binance (tokenized-stock pairs), both LIVE ----
 _cex = {'t': 0, 'data': {}}
