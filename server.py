@@ -164,16 +164,92 @@ def build_news():
         r['summary_zh'] = _translate(r.get('summary', ''), 'zh-CN')
     return top
 
+# ---- professional finance/crypto glossary ----
+# Free Google Translate literalizes jargon (vault→금고, mint→조폐국, rally→집회…).
+# Fix: protect glossary terms with placeholders (verified to survive translation: "XQV7XQ"),
+# then restore the proper domain term per language. Specific/longer patterns MUST come first.
+GLOSS = [
+    # phrase-level (most specific first)
+    (r'defi vaults?',              'DeFi 볼트',        'DeFi 金库'),
+    (r'yield farming',             '일드 파밍',         '收益耕作'),
+    (r'liquidity pools?',          '유동성 풀',         '流动性池'),
+    (r'tokenized stocks?|tokenized equit(?:y|ies)', '토큰화 주식', '代币化股票'),
+    (r'tokenized treasur(?:y|ies)','토큰화 국채',       '代币化国债'),
+    (r'security tokens?',          '증권형 토큰',       '证券型代币'),
+    (r'governance tokens?',        '거버넌스 토큰',     '治理代币'),
+    (r'smart contracts?',          '스마트 컨트랙트',   '智能合约'),
+    (r'order ?books?',             '오더북',            '订单簿'),
+    (r'market makers?',            '마켓메이커',        '做市商'),
+    (r'broker-?dealers?',          '브로커딜러',        '经纪交易商'),
+    (r'prediction markets?',       '예측 시장',         '预测市场'),
+    (r'proof[ -]of[ -]reserves?',  '준비금 증명',       '储备证明'),
+    (r'proof[ -]of[ -]stake',      '지분증명(PoS)',     '权益证明(PoS)'),
+    (r'proof[ -]of[ -]work',       '작업증명(PoW)',     '工作量证明(PoW)'),
+    (r'mint/redeem|mint-and-redeem','발행/상환',        '铸造/赎回'),
+    (r'bull markets?',             '강세장',            '牛市'),
+    (r'bear markets?',             '약세장',            '熊市'),
+    (r'gas fees?',                 '가스비',            'Gas费'),
+    (r'rug ?pulls?',               '러그풀',            'Rug Pull'),
+    (r'meme ?coins?',              '밈코인',            '迷因币'),
+    (r'fee switch',                '수수료 스위치',     '费用开关'),
+    (r'layer[ -]?2\b|l2\b',        '레이어2',           'Layer2'),
+    # single terms
+    (r'vaults?',                   '볼트',              '金库'),
+    (r'restaking',                 '리스테이킹',        '再质押'),
+    (r'staking',                   '스테이킹',          '质押'),
+    (r'airdrops?',                 '에어드랍',          '空投'),
+    (r'minting|mints?',            '민팅',              '铸造'),
+    (r'stablecoins?',              '스테이블코인',      '稳定币'),
+    (r'liquidity',                 '유동성',            '流动性'),
+    (r'perpetuals?|perps?',        '무기한 선물',       '永续合约'),
+    (r'slippage',                  '슬리피지',          '滑点'),
+    (r'on-?chain',                 '온체인',            '链上'),
+    (r'off-?chain',                '오프체인',          '链下'),
+    (r'tokenization',              '토큰화',            '代币化'),
+    (r'custodians?',               '수탁기관',          '托管机构'),
+    (r'custody',                   '커스터디',          '托管'),
+    (r'rall(?:y|ies)',             '랠리',              '上涨行情'),
+    (r'validators?',               '밸리데이터',        '验证者'),
+    (r'mainnet',                   '메인넷',            '主网'),
+    (r'testnet',                   '테스트넷',          '测试网'),
+    (r'halving',                   '반감기',            '减半'),
+    (r'redemptions?',              '상환',              '赎回'),
+    (r'delist(?:ing|ed|s)?',       '상장폐지',          '下架'),
+    (r'exploits?',                 '익스플로잇',        '漏洞攻击'),
+    (r'buybacks?',                 '바이백',            '回购'),
+    (r'rollups?',                  '롤업',              'Rollup'),
+    (r'wrapped',                   '랩드',              '封装'),
+    (r'bridges?',                  '브리지',            '跨链桥'),
+]
+_GLOSS_RE = [(re.compile(r'\b(?:' + p + r')\b', re.I), ko, zh) for p, ko, zh in GLOSS]
+_PH_RE = re.compile(r'XQV\s*(\d+)\s*XQ', re.I)
+
 def _translate(text, tl='ko'):
     text = (text or '').strip()
     if not text:
         return ''
+    # 1) protect glossary terms so the MT engine can't literalize them
+    lang_i = 0 if tl.startswith('ko') else 1
+    repl = []
+    def _sub(m, term):
+        repl.append(term)
+        return f'XQV{len(repl)-1}XQ'
+    prot = text
+    for rx, ko, zh in _GLOSS_RE:
+        term = (ko, zh)[lang_i]
+        if not term:
+            continue
+        prot = rx.sub(lambda m, t=term: _sub(m, t), prot)
     try:
         u = ("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl="
-             + tl + "&dt=t&q=" + urllib.parse.quote(text[:1800]))
+             + tl + "&dt=t&q=" + urllib.parse.quote(prot[:1800]))
         d = json.loads(_get(u, 10))
         out = ''.join(seg[0] for seg in d[0] if seg and seg[0])
-        return out or text
+        if not out:
+            return text
+        # 2) restore protected terms (tolerate spacing the MT may add inside the placeholder)
+        out = _PH_RE.sub(lambda m: repl[int(m.group(1))] if int(m.group(1)) < len(repl) else m.group(0), out)
+        return out
     except Exception:
         return text  # graceful fallback to English
 
