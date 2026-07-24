@@ -255,6 +255,13 @@
   .nf-dot{width:7px;height:7px;border-radius:50%;background:var(--down);flex:none}
   .nf-dot.off{background:var(--line2)}
   .nf-badge{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--down)}
+  .rwa-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+  @media(max-width:720px){.rwa-kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi-tile{background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:13px 15px}
+  .kt-l{font-family:var(--mono);font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px}
+  .kt-v{font-family:var(--serif);font-size:23px;font-weight:600;line-height:1}
+  .kt-s{font-family:var(--mono);font-size:11px;margin-top:6px}
+  .kt-s .d{color:var(--mut)}
   .rwa-seg{display:inline-flex;gap:4px;margin-bottom:16px;border:1px solid var(--line2);border-radius:6px;padding:3px;background:var(--card)}
   .rwa-seg button{font-family:var(--mono);font-size:11px;padding:5px 11px;border:none;background:none;color:var(--mut);border-radius:4px;cursor:pointer}
   .rwa-seg button.on{background:var(--ink);color:var(--paper)}
@@ -434,7 +441,22 @@
   <section id="s-rwa" data-tab="rwa">
     <div class="sec-head"><div><div class="sec-label">RWA Equities</div><h2 data-t="rwa_h"></h2></div>
       <div class="desc" data-t="rwa_d"></div></div>
-    <div id="rwaNote" class="mcov" style="margin:0 0 14px"></div>
+    <div id="rwaNote" class="mcov" style="margin:0 0 16px"></div>
+
+    <div class="sec-label" data-t="sect_h" style="margin-bottom:10px"></div>
+    <div class="rwa-kpis" id="rwaKpis"></div>
+    <div class="grid g2" style="margin:16px 0 30px">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_stable_h"></h3><span id="stableSub" class="pd" style="margin:0"></span></div>
+        <div style="position:relative;height:180px;margin-top:8px"><canvas id="stableChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_flow_h"></h3><span id="rwaFlowHead" class="pd" style="margin:0"></span></div>
+        <div style="position:relative;height:180px;margin-top:8px"><canvas id="rwaFlowChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="sec-label" data-t="rwa_list_h" style="margin-bottom:10px"></div>
     <div class="rwa-seg" id="rwaSort"></div>
     <div id="rwaGrid"></div>
   </section>
@@ -522,7 +544,7 @@ function syncChartTheme(){if(window.Chart){Chart.defaults.font.family=cv('--sans
 function applyTheme(name){
   document.body.className=name==='editorial'?'':'t-'+name;
   localStorage.setItem('theme',name);
-  [barChart,donut,chainMcapCh,chainVolCh].forEach(c=>{try{if(c)c.destroy();}catch(e){}});
+  [barChart,donut,chainMcapCh,chainVolCh,stableChart,rwaFlowChart].forEach(c=>{try{if(c)c.destroy();}catch(e){}});stableChart=rwaFlowChart=null;
   barChart=donut=chainMcapCh=chainVolCh=null;
   syncChartTheme();renderAll();
   const sel=document.getElementById('themeSel');if(sel)sel.value=name;
@@ -627,8 +649,15 @@ const TR={
   nav_issuers:{ko:'발행사 구조',en:'Issuers'}, nav_news:{ko:'뉴스',en:'News'},
   m_sort_vol:{ko:'볼륨순',en:'Volume'}, m_sort_tvl:{ko:'TVL순',en:'TVL'}, m_page:{ko:'페이지',en:'Page'},
   m_prev:{ko:'← 이전',en:'← Prev'}, m_next:{ko:'다음 →',en:'Next →'},
-  tab_main:{ko:'Main',en:'Main'}, tab_rwa:{ko:'RWA 주식',en:'RWA Stocks'}, tab_news:{ko:'RWA 뉴스 · 리서치',en:'RWA News · Research'}, tab_issuers:{ko:'발행사별 구조',en:'Issuers'}, tab_cex:{ko:'거래소 비교',en:'Exchanges'},
+  tab_main:{ko:'Main',en:'Main'}, tab_rwa:{ko:'RWA 관련 주식',en:'RWA Stocks'}, tab_news:{ko:'RWA 뉴스 · 리서치',en:'RWA News · Research'}, tab_issuers:{ko:'발행사별 구조',en:'Issuers'}, tab_cex:{ko:'거래소 비교',en:'Exchanges'},
   rwa_h:{ko:'RWA 관련 미국 주식',en:'RWA-Related US Equities'},
+  sect_h:{ko:'📈 RWA 섹터 확장 지표',en:'📈 RWA Sector Expansion'},
+  sect_stable_h:{ko:'스테이블코인 총 발행량 (90일)',en:'Stablecoin Supply (90d)'},
+  sect_flow_h:{ko:'RWA 관련 주식 자금 흐름',en:'RWA Stock Money Flow'},
+  rwa_list_h:{ko:'RWA 관련 주식 — 종목별',en:'RWA-Related Stocks — by ticker'},
+  sect_k_stable:{ko:'스테이블코인 발행량',en:'Stablecoin supply'}, sect_k_rwatvl:{ko:'RWA 프로토콜 TVL',en:'RWA protocol TVL'},
+  sect_k_idx:{ko:'RWA 주식 지수',en:'RWA stock index'}, sect_k_tokstk:{ko:'토큰화 주식 발행액',en:'Tokenized-stock value'},
+  sect_weighted:{ko:'시총가중',en:'mcap-wtd'}, flow_in:{ko:'유입',en:'inflow'}, flow_out:{ko:'유출',en:'outflow'},
   rwa_d:{ko:'토큰화·스테이블코인·라이센스 인프라 플레이 · 실시간 등락 · 클릭 시 상세',en:'Tokenization / stablecoin / licensed-infra plays · live moves · click for detail'},
   rwa_note:{ko:'⚠️ <b>정보 제공용 · 투자 자문 아님.</b> "RWA 테마 익스포저"가 있는 상장사를 큐레이션 — 가격·시총·등락은 Nasdaq 라이브(~10분 지연 가능). RWA 관련성은 각 사의 토큰화/스테이블코인/커스터디 사업 기준.',
     en:'⚠️ <b>Informational only · not investment advice.</b> Curated public companies with RWA-theme exposure — price/mcap/change live from Nasdaq (may lag ~10min). RWA relevance = each firm\'s tokenization/stablecoin/custody activity.'},
@@ -718,7 +747,10 @@ const TR_ZH={
   nav_active:'最活跃', nav_share:'市场份额', nav_chain:'按链', nav_tokens:'全部代币',
   nav_issuers:'发行方结构', nav_news:'新闻',
   m_sort_vol:'按成交量', m_sort_tvl:'按 TVL', m_page:'页', m_prev:'← 上一页', m_next:'下一页 →',
-  tab_main:'Main', tab_rwa:'RWA 股票', tab_news:'RWA 新闻 · 研究', tab_issuers:'发行方结构', tab_cex:'交易所对比',
+  tab_main:'Main', tab_rwa:'RWA 相关股票', tab_news:'RWA 新闻 · 研究', tab_issuers:'发行方结构', tab_cex:'交易所对比',
+  sect_h:'📈 RWA 板块扩张指标', sect_stable_h:'稳定币总发行量 (90天)', sect_flow_h:'RWA 相关股票资金流向', rwa_list_h:'RWA 相关股票 — 按标的',
+  sect_k_stable:'稳定币发行量', sect_k_rwatvl:'RWA 协议 TVL', sect_k_idx:'RWA 股票指数', sect_k_tokstk:'代币化股票发行额',
+  sect_weighted:'市值加权', flow_in:'流入', flow_out:'流出',
   rwa_h:'RWA 相关美股', rwa_d:'代币化/稳定币/牌照基础设施标的 · 实时涨跌 · 点击查看详情',
   rwa_note:'⚠️ <b>仅供参考 · 非投资建议。</b> 精选具有 RWA 主题敞口的上市公司 — 价格/市值/涨跌来自 Nasdaq 实时（可能延迟约10分钟）。',
   rwacat_onchain:'链上/代币化 纯标的', rwacat_asset:'资产管理（代币化基金）', rwacat_infra:'交易所与市场基础设施',
@@ -908,7 +940,7 @@ function renderTop(){
      <button class="btn" onclick="topMove(1)" ${dis(topPage>=pages-1)}>${t('m_next')}</button>`;
 }
 function topMove(d){topPage+=d;renderTop();}
-let barChart,donut,chainMcapCh,chainVolCh;
+let barChart,donut,chainMcapCh,chainVolCh,stableChart,rwaFlowChart;
 function renderShare(){
   const cur=aggIssuer(shareMetric),tot=Object.values(cur).reduce((a,b)=>a+b,0);
   const order=[...issuersList].sort((a,b)=>cur[b]-cur[a]);
@@ -1273,6 +1305,63 @@ function renderRWA(){
     html=`<div class="rwa-list">${sorted.map(card).join('')}</div>`;
   }
   el.innerHTML=html;
+  renderRwaFlow();
+}
+/* ---- RWA sector-expansion dashboard (KPI tiles + stablecoin trend) ---- */
+let sectorData=null;
+async function loadSector(){
+  try{const r=await fetch('/api/sector',{cache:'no-store'});const j=await r.json();if(j&&(j.stable||j.rwatvl))sectorData=j;}catch(e){}
+  renderSector();
+}
+const pctSpan=(v,d)=>v==null?'':`<span class="${v>=0?'up':'down'}">${v>=0?'▲':'▼'}${Math.abs(v).toFixed(d==null?1:d)}%</span>`;
+function rwaIndex(){  // mcap-weighted aggregate move of the RWA-stock basket + breadth
+  const items=(rwaData||[]).filter(r=>r.chg!=null);
+  if(!items.length)return null;
+  const tw=items.reduce((s,r)=>s+(r.mcap||0),0);
+  const w=tw?items.reduce((s,r)=>s+r.chg*(r.mcap||0),0)/tw:0;
+  const simple=items.reduce((s,r)=>s+r.chg,0)/items.length;
+  const up=items.filter(r=>r.chg>0).length, dn=items.filter(r=>r.chg<0).length;
+  return {w,simple,up,dn,n:items.length};
+}
+function renderSector(){
+  const kp=document.getElementById('rwaKpis');if(!kp)return;
+  const s=(sectorData&&sectorData.stable)||{}, rt=(sectorData&&sectorData.rwatvl)||{}, idx=rwaIndex();
+  const tile=(label,val,sub)=>`<div class="kpi-tile"><div class="kt-l">${label}</div><div class="kt-v">${val}</div><div class="kt-s">${sub||''}</div></div>`;
+  kp.innerHTML=
+    tile(t('sect_k_stable'), s.total!=null?'$'+s.total.toFixed(0)+'B':'—', s.chg30!=null?pctSpan(s.chg30)+' <span class="d">30d</span>':'')+
+    tile(t('sect_k_rwatvl'), rt.total!=null?'$'+rt.total.toFixed(1)+'B':'—', (rt.chg7!=null?pctSpan(rt.chg7)+' <span class="d">7d</span> · ':'')+`<span class="d">${rt.count||0} proto</span>`)+
+    tile(t('sect_k_idx'), idx?pctSpan(idx.w,2):'—', idx?`<span class="d">${t('sect_weighted')} · ${idx.up}▲ ${idx.dn}▼</span>`:'')+
+    tile(t('sect_k_tokstk'), '$1.86B', pctSpan(SECTOR.mcap30d)+' <span class="d">30d</span>');
+  // stablecoin trend line
+  const sub=document.getElementById('stableSub');
+  if(sub)sub.innerHTML=s.total!=null?('$'+s.total.toFixed(0)+'B '+pctSpan(s.chg30)):'';
+  const scv=document.getElementById('stableChart');
+  if(scv&&s.series&&s.series.length&&window.Chart){
+    const labels=s.series.map(p=>{const d=new Date(p[0]*1000);return (d.getMonth()+1)+'/'+d.getDate();});
+    const data=s.series.map(p=>p[1]);
+    const cfg={type:'line',data:{labels,datasets:[{data,borderColor:cv('--accent'),backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:.25,fill:false}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y+'B'}}},
+        scales:{x:{ticks:{maxTicksLimit:6,color:cv('--mut'),font:{size:9}},grid:{display:false}},
+                y:{ticks:{callback:v=>'$'+v+'B',color:cv('--mut'),font:{size:9},maxTicksLimit:5},grid:{color:cv('--line2')}}}}};
+    if(stableChart){stableChart.data=cfg.data;stableChart.options=cfg.options;stableChart.update();}else stableChart=new Chart(scv,cfg);
+  }
+}
+function renderRwaFlow(){
+  const cvs=document.getElementById('rwaFlowChart');if(!cvs||!window.Chart)return;
+  const idx=rwaIndex();
+  const head=document.getElementById('rwaFlowHead');
+  if(head)head.innerHTML=idx?`${pctSpan(idx.w,2)} <span class="d">${t('sect_weighted')}</span> · ${idx.up}▲/${idx.dn}▼ <b style="color:${idx.w>=0?'var(--up)':'var(--down)'}">${idx.w>=0?t('flow_in'):t('flow_out')}</b>`:'';
+  const items=(rwaData||[]).filter(r=>r.chg!=null).sort((a,b)=>b.chg-a.chg);
+  if(!items.length)return;
+  const up=cv('--up'),dn=cv('--down');
+  const cfg={type:'bar',data:{labels:items.map(r=>r.sym),datasets:[{data:items.map(r=>r.chg),
+      backgroundColor:items.map(r=>r.chg>=0?up:dn),borderRadius:2,barPercentage:.9,categoryPercentage:.85}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>c.label+': '+(c.parsed.y>=0?'+':'')+c.parsed.y.toFixed(2)+'%'}}},
+      onClick:(e,els)=>{if(els.length)openStock(items[els[0].index].sym);},
+      scales:{x:{ticks:{color:cv('--mut'),font:{size:8},maxRotation:90,minRotation:90},grid:{display:false}},
+              y:{ticks:{callback:v=>v+'%',color:cv('--mut'),font:{size:9}},grid:{color:cv('--line2')}}}}};
+  if(rwaFlowChart){rwaFlowChart.data=cfg.data;rwaFlowChart.options=cfg.options;rwaFlowChart.update();}else rwaFlowChart=new Chart(cvs,cfg);
 }
 const L18=r=>(lang==='en'?r.note_en:r.note_ko)||r.note_en;
 function openStock(sym){
@@ -1416,7 +1505,7 @@ function showTab(name){
   if(name==='main')renderTable();
   if(name==='news')loadNews();
   if(name==='cex'&&!spreadsData)loadSpreads(0);
-  if(name==='rwa'&&!rwaData)loadRWA();
+  if(name==='rwa'){if(!rwaData)loadRWA();if(!sectorData)loadSector();}
 }
 function applyStatic(){
   document.querySelectorAll('[data-t]').forEach(el=>el.innerHTML=t(el.dataset.t));
@@ -1465,7 +1554,7 @@ function renderAll(){
   recomputeAgg();
   const loc=lang==='ko'?'ko-KR':(lang==='zh'?'zh-CN':'en-US');
   document.getElementById('editionDate').textContent='LIVE · '+new Date().toLocaleString(loc,{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-  renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderCross();renderTable();renderCmp();renderNews();renderEarnings();renderNewsFeed();renderRevenue();if(rwaData)renderRWA();
+  renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderCross();renderTable();renderCmp();renderNews();renderEarnings();renderNewsFeed();renderRevenue();if(rwaData)renderRWA();if(sectorData)renderSector();
   chainMcapCh=chainDonut('chainMcap',CHAIN_MCAP,false,chainMcapCh);
   chainVolCh=chainDonut('chainVol',CHAIN_VOL,true,chainVolCh);
   renderChainLegend('chainMcapLeg',CHAIN_MCAP,false);renderChainLegend('chainVolLeg',CHAIN_VOL,true);
@@ -1503,7 +1592,7 @@ const savedTheme=localStorage.getItem('theme')||'editorial';
 document.body.className=savedTheme==='editorial'?'':'t-'+savedTheme;
 syncChartTheme();
 fetch('./assets.json',{cache:'no-store'}).then(r=>r.json()).then(j=>{FULL=j;renderTable();if(document.getElementById('modal').style.display==='flex')renderModal();}).catch(()=>{});
-renderAll();showTab('main');tick();setInterval(tick,30000);confirmGeoLang();loadNews();loadEarnings();loadRWA();
+renderAll();showTab('main');tick();setInterval(tick,30000);confirmGeoLang();loadNews();loadEarnings();loadRWA();loadSector();
 </script>
 </body>
 </html>

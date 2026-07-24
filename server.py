@@ -590,6 +590,50 @@ def _rwa_loop():
             sys.stderr.write(f"rwa loop: {e}\n")
         time.sleep(600 if got else 300)   # 10min when healthy; retry 5min while failing
 
+# ---- RWA sector-expansion metrics: stablecoin supply (proxy for on-chain capital) + RWA TVL ----
+_sector = {'t': 0, 'data': {}}
+def build_sector():
+    out = {}
+    try:  # total stablecoin supply + 90-day series (DefiLlama, free)
+        ch = json.loads(_get("https://stablecoins.llama.fi/stablecoincharts/all", 25))
+        pts = [[int(r['date']), round((r.get('totalCirculatingUSD', {}) or {}).get('peggedUSD', 0) / 1e9, 1)]
+               for r in ch if (r.get('totalCirculatingUSD') or {}).get('peggedUSD')]
+        series = pts[-90:]
+        total = series[-1][1] if series else None
+        d30 = series[-31][1] if len(series) >= 31 else (series[0][1] if series else None)
+        out['stable'] = {'total': total, 'series': series,
+                         'chg30': round((total - d30) / d30 * 100, 1) if (total and d30) else None}
+    except Exception as e:
+        sys.stderr.write(f"sector stable: {e}\n")
+    try:  # on-chain RWA protocol TVL (DefiLlama category=RWA) + tvl-weighted 7d change
+        prot = json.loads(_get("https://api.llama.fi/protocols", 30))
+        rwa = [p for p in prot if p.get('category') == 'RWA']
+        tot = sum(p.get('tvl', 0) or 0 for p in rwa)
+        w = sum((p.get('tvl', 0) or 0) for p in rwa if p.get('change_7d') is not None)
+        c7 = (sum((p.get('tvl', 0) or 0) * (p.get('change_7d') or 0) for p in rwa if p.get('change_7d') is not None) / w) if w else None
+        top = sorted(rwa, key=lambda x: -(x.get('tvl', 0) or 0))[:6]
+        out['rwatvl'] = {'total': round(tot / 1e9, 2), 'count': len(rwa),
+                         'chg7': round(c7, 1) if c7 is not None else None,
+                         'top': [{'name': p.get('name'), 'tvl': round((p.get('tvl', 0) or 0) / 1e9, 2)} for p in top]}
+    except Exception as e:
+        sys.stderr.write(f"sector rwatvl: {e}\n")
+    out['generated'] = int(time.time())
+    return out
+
+def _sector_loop():
+    while True:
+        got = False
+        try:
+            d = build_sector()
+            if d.get('stable') or d.get('rwatvl'):
+                with _lock:
+                    _sector['t'] = time.time(); _sector['data'] = d
+                got = True
+                sys.stderr.write("sector: refreshed\n")
+        except Exception as e:
+            sys.stderr.write(f"sector loop: {e}\n")
+        time.sleep(1800 if got else 600)   # 30min (slow-moving); 10min retry on failure
+
 # ---- CEX securities spread: Backpack (.US order book) vs Binance (tokenized-stock pairs), both LIVE ----
 _cex = {'t': 0, 'data': {}}
 _bn_stock_syms = None  # discovered once (ticker -> binance symbol)
@@ -857,6 +901,10 @@ class H(BaseHTTPRequestHandler):
             with _lock:
                 self._send(200, json.dumps({'generated': int(_rwa['t']), 'items': _rwa['data']}), 'application/json')
             return
+        if path == '/api/sector':
+            with _lock:
+                self._send(200, json.dumps(_sector['data'] or {}), 'application/json')
+            return
         if path == '/api/geo':
             # Country from the CDN edge (Cloudflare sets CF-IPCountry; others vary). Used only to
             # auto-pick UI language (KR->ko, CN->zh, else en). No IP stored.
@@ -903,4 +951,5 @@ if __name__ == '__main__':
     threading.Thread(target=_cex_loop, daemon=True).start()
     threading.Thread(target=_earn_loop, daemon=True).start()
     threading.Thread(target=_rwa_loop, daemon=True).start()
+    threading.Thread(target=_sector_loop, daemon=True).start()
     ThreadingHTTPServer(('0.0.0.0', PORT), H).serve_forever()
