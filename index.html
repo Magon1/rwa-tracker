@@ -255,6 +255,35 @@
   .nf-dot{width:7px;height:7px;border-radius:50%;background:var(--down);flex:none}
   .nf-dot.off{background:var(--line2)}
   .nf-badge{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--down)}
+  .rwa-seg{display:inline-flex;gap:4px;margin-bottom:16px;border:1px solid var(--line2);border-radius:6px;padding:3px;background:var(--card)}
+  .rwa-seg button{font-family:var(--mono);font-size:11px;padding:5px 11px;border:none;background:none;color:var(--mut);border-radius:4px;cursor:pointer}
+  .rwa-seg button.on{background:var(--ink);color:var(--paper)}
+  .rwa-cat{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin:22px 0 9px}
+  .rwa-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:9px}
+  .rwa-card{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line2);border-radius:8px;padding:11px 13px;cursor:pointer;transition:box-shadow .13s,transform .13s}
+  .rwa-card:hover{box-shadow:0 5px 18px rgba(28,27,23,.1);transform:translateY(-1px)}
+  .rwa-card .logo{width:26px;height:26px;flex:none;border-radius:5px}
+  .rwa-tk{font-weight:700;font-size:14px}
+  .rwa-nm{font-weight:400;font-size:11px;color:var(--mut)}
+  .rwa-note{font-size:10.5px;color:var(--ink2);line-height:1.4;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rwa-px{font-family:var(--mono);font-size:13px;font-weight:600}
+  .rwa-chg{font-family:var(--mono);font-size:11.5px;font-weight:700}
+  .rwa-mc{font-family:var(--mono);font-size:10px;color:var(--mut)}
+  .sm-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .sm-sym{font-size:22px;font-weight:800}.sm-name{font-size:12px;color:var(--mut)}
+  .sm-px{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+  .sm-price{font-family:var(--mono);font-size:26px;font-weight:700}.sm-chg{font-family:var(--mono);font-size:15px;font-weight:700}
+  .sm-stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line2);border:1px solid var(--line2);border-radius:8px;overflow:hidden;margin-bottom:14px}
+  .sm-stats>div{background:var(--card);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
+  .sm-stats span{color:var(--mut)}.sm-stats b{font-family:var(--mono)}
+  .sm-role{font-size:12.5px;color:var(--ink2);line-height:1.55;padding:11px 13px;background:color-mix(in srgb,var(--accent) 7%,transparent);border-radius:8px;margin-bottom:16px}
+  .sm-nh{font-weight:700;font-size:13px;margin-bottom:8px}
+  .sm-news{display:block;padding:8px 0;border-top:1px solid var(--line);text-decoration:none}
+  .sm-news:first-of-type{border-top:none}
+  .sm-nt{display:block;font-size:13px;color:var(--ink);line-height:1.4;margin-bottom:2px}
+  .sm-news .d{font-family:var(--mono);font-size:10px;color:var(--mut)}
+  .sm-news:hover .sm-nt{color:var(--accent)}
+  .sm-ext{font-family:var(--mono);font-size:11px;color:var(--accent)}
   .nf-row.reg .nf-title{color:var(--down);font-weight:600}
   .nf-reg{font-family:var(--mono);font-size:9px;font-weight:700;color:#fff;background:var(--down);border-radius:3px;padding:1px 4px;flex:none}
   .foot{margin-top:46px;border-top:2px solid var(--ink);padding-top:14px;font-family:var(--mono);font-size:11px;color:var(--mut);line-height:1.7}
@@ -321,6 +350,7 @@
 
   <nav class="nav" id="tabbar">
     <button class="tab on" data-tab="main" data-t="tab_main"></button>
+    <button class="tab" data-tab="rwa" data-t="tab_rwa"></button>
     <button class="tab" data-tab="news" data-t="tab_news"></button>
     <button class="tab" data-tab="issuers" data-t="tab_issuers"></button>
     <button class="tab" data-tab="cex" data-t="tab_cex"></button>
@@ -399,6 +429,14 @@
     <div id="cexNote" class="mcov" style="margin:0 0 10px"></div>
     <table id="cexTable"></table>
     <div id="cexPager" style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:14px"></div>
+  </section>
+
+  <section id="s-rwa" data-tab="rwa">
+    <div class="sec-head"><div><div class="sec-label">RWA Equities</div><h2 data-t="rwa_h"></h2></div>
+      <div class="desc" data-t="rwa_d"></div></div>
+    <div id="rwaNote" class="mcov" style="margin:0 0 14px"></div>
+    <div class="rwa-seg" id="rwaSort"></div>
+    <div id="rwaGrid"></div>
   </section>
 
   <section data-tab="main">
@@ -589,7 +627,20 @@ const TR={
   nav_issuers:{ko:'발행사 구조',en:'Issuers'}, nav_news:{ko:'뉴스',en:'News'},
   m_sort_vol:{ko:'볼륨순',en:'Volume'}, m_sort_tvl:{ko:'TVL순',en:'TVL'}, m_page:{ko:'페이지',en:'Page'},
   m_prev:{ko:'← 이전',en:'← Prev'}, m_next:{ko:'다음 →',en:'Next →'},
-  tab_main:{ko:'Main',en:'Main'}, tab_news:{ko:'RWA 뉴스 · 리서치',en:'RWA News · Research'}, tab_issuers:{ko:'발행사별 구조',en:'Issuers'}, tab_cex:{ko:'거래소 비교',en:'Exchanges'},
+  tab_main:{ko:'Main',en:'Main'}, tab_rwa:{ko:'RWA 주식',en:'RWA Stocks'}, tab_news:{ko:'RWA 뉴스 · 리서치',en:'RWA News · Research'}, tab_issuers:{ko:'발행사별 구조',en:'Issuers'}, tab_cex:{ko:'거래소 비교',en:'Exchanges'},
+  rwa_h:{ko:'RWA 관련 미국 주식',en:'RWA-Related US Equities'},
+  rwa_d:{ko:'토큰화·스테이블코인·라이센스 인프라 플레이 · 실시간 등락 · 클릭 시 상세',en:'Tokenization / stablecoin / licensed-infra plays · live moves · click for detail'},
+  rwa_note:{ko:'⚠️ <b>정보 제공용 · 투자 자문 아님.</b> "RWA 테마 익스포저"가 있는 상장사를 큐레이션 — 가격·시총·등락은 Nasdaq 라이브(~10분 지연 가능). RWA 관련성은 각 사의 토큰화/스테이블코인/커스터디 사업 기준.',
+    en:'⚠️ <b>Informational only · not investment advice.</b> Curated public companies with RWA-theme exposure — price/mcap/change live from Nasdaq (may lag ~10min). RWA relevance = each firm\'s tokenization/stablecoin/custody activity.'},
+  rwacat_onchain:{ko:'온체인·토큰화 직접 플레이어',en:'On-chain / tokenization pure-plays'},
+  rwacat_asset:{ko:'자산운용 (토큰화 펀드 발행)',en:'Asset managers (tokenized funds)'},
+  rwacat_infra:{ko:'거래소·시장 인프라',en:'Exchanges & market infra'},
+  rwacat_pay:{ko:'결제·스테이블코인 레일',en:'Payments & stablecoin rails'},
+  rwacat_bank:{ko:'은행·IB (기관 토큰화)',en:'Banks & IBs (institutional)'},
+  rwacat_treasury:{ko:'크립토 트레저리 (참고)',en:'Crypto treasury (reference)'},
+  rwa_sort_mcap:{ko:'분류별',en:'By category'}, rwa_sort_gain:{ko:'상승순',en:'Top gainers'}, rwa_sort_lose:{ko:'하락순',en:'Top losers'},
+  rwa_mcap:{ko:'시가총액',en:'Market cap'}, rwa_52w:{ko:'52주 범위',en:'52-wk range'}, rwa_sector:{ko:'섹터',en:'Sector'},
+  sm_news:{ko:'관련 최신 뉴스',en:'Related news'}, sm_nonews:{ko:'최근 관련 뉴스 없음',en:'No recent related news'},
   sec_tokmc_h:{ko:'발행사 토큰 시가총액',en:'Issuer Token Market Cap'},
   sec_tokmc_d:{ko:'토큰화 주식의 온체인 발행액과 별개 — 발행사 자체 토큰',en:"Distinct from tokenized-stock value — the issuers' own tokens"},
   sec_cex_h:{ko:'현물 주식 스프레드 — Nasdaq vs Backpack vs Binance',en:'Stock Spreads — Nasdaq vs Backpack vs Binance'},
@@ -667,7 +718,13 @@ const TR_ZH={
   nav_active:'最活跃', nav_share:'市场份额', nav_chain:'按链', nav_tokens:'全部代币',
   nav_issuers:'发行方结构', nav_news:'新闻',
   m_sort_vol:'按成交量', m_sort_tvl:'按 TVL', m_page:'页', m_prev:'← 上一页', m_next:'下一页 →',
-  tab_main:'Main', tab_news:'RWA 新闻 · 研究', tab_issuers:'发行方结构', tab_cex:'交易所对比',
+  tab_main:'Main', tab_rwa:'RWA 股票', tab_news:'RWA 新闻 · 研究', tab_issuers:'发行方结构', tab_cex:'交易所对比',
+  rwa_h:'RWA 相关美股', rwa_d:'代币化/稳定币/牌照基础设施标的 · 实时涨跌 · 点击查看详情',
+  rwa_note:'⚠️ <b>仅供参考 · 非投资建议。</b> 精选具有 RWA 主题敞口的上市公司 — 价格/市值/涨跌来自 Nasdaq 实时（可能延迟约10分钟）。',
+  rwacat_onchain:'链上/代币化 纯标的', rwacat_asset:'资产管理（代币化基金）', rwacat_infra:'交易所与市场基础设施',
+  rwacat_pay:'支付与稳定币', rwacat_bank:'银行与投行（机构）', rwacat_treasury:'加密金库（参考）',
+  rwa_sort_mcap:'按分类', rwa_sort_gain:'涨幅榜', rwa_sort_lose:'跌幅榜',
+  rwa_mcap:'市值', rwa_52w:'52周区间', rwa_sector:'板块', sm_news:'相关新闻', sm_nonews:'暂无相关新闻',
   sec_tokmc_h:'发行方代币市值', sec_tokmc_d:'与代币化股票发行额无关 — 发行方自身代币',
   sec_cex_h:'现货股票价差 — Nasdaq vs Backpack vs Binance',
   sec_cex_d:'以 Nasdaq 实时报价为基准对比各交易所价差 · 全部 1,112 只',
@@ -1180,6 +1237,69 @@ function renderRevenue(){
   el.innerHTML=head+'<tbody>'+body+'</tbody>';
   const rn=document.getElementById('revNote');if(rn)rn.innerHTML=t('rev_note');
 }
+/* ===================== RWA-related US equities ===================== */
+let rwaData=null, rwaSort='mcap';
+const RWA_CATS=['onchain','asset','infra','pay','bank','treasury'];
+async function loadRWA(){
+  try{const r=await fetch('/api/rwastocks',{cache:'no-store'});const j=await r.json();if(j&&j.items)rwaData=j.items;}catch(e){}
+  renderRWA();
+}
+const fmtMcap=m=>m==null?'—':m>=1e12?'$'+(m/1e12).toFixed(2)+'T':m>=1e9?'$'+(m/1e9).toFixed(1)+'B':'$'+(m/1e6).toFixed(0)+'M';
+function renderRWA(){
+  const el=document.getElementById('rwaGrid');if(!el)return;
+  document.getElementById('rwaNote').innerHTML=t('rwa_note');
+  const seg=document.getElementById('rwaSort');
+  if(seg)seg.innerHTML=['mcap','gain','lose'].map(s=>`<button class="${rwaSort===s?'on':''}" onclick="rwaSort='${s}';renderRWA()">${t('rwa_sort_'+s)}</button>`).join('');
+  const items=rwaData||[];
+  if(!items.length){el.innerHTML=`<div style="color:var(--mut);font-family:var(--mono);font-size:12px;padding:12px">${t('news_loading')}</div>`;return;}
+  const card=r=>{const up=r.chg==null?null:r.chg>=0;
+    const col=r.chg==null?'var(--mut)':up?'var(--up)':'var(--down)';
+    return `<div class="rwa-card" onclick="openStock('${r.sym}')">
+      <img class="logo" src="/api/logo?t=${r.sym}" onerror="this.style.display='none'" alt="">
+      <div style="flex:1;min-width:0">
+        <div class="rwa-tk">${r.sym} <span class="rwa-nm">${escHtml(r.name).replace(/,?\s*(Inc\.?|Corp\.?|Ltd|Common Stock|Class A.*|Holdings|Group|Incorporated).*$/i,'').slice(0,20)}</span></div>
+        <div class="rwa-note">${escHtml(L18(r))}</div></div>
+      <div style="text-align:right;flex:none">
+        <div class="rwa-px">$${(r.price||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+        <div class="rwa-chg" style="color:${col}">${r.chg==null?'—':(up?'▲':'▼')+Math.abs(r.chg).toFixed(2)+'%'}</div>
+        <div class="rwa-mc">${fmtMcap(r.mcap)}</div></div>
+    </div>`;};
+  let html='';
+  if(rwaSort==='mcap'){
+    RWA_CATS.forEach(cat=>{const g=items.filter(r=>r.cat===cat).sort((a,b)=>(b.mcap||0)-(a.mcap||0));
+      if(g.length)html+=`<div class="rwa-cat">${t('rwacat_'+cat)}</div><div class="rwa-list">${g.map(card).join('')}</div>`;});
+  }else{
+    const sorted=[...items].filter(r=>r.chg!=null).sort((a,b)=>rwaSort==='gain'?b.chg-a.chg:a.chg-b.chg);
+    html=`<div class="rwa-list">${sorted.map(card).join('')}</div>`;
+  }
+  el.innerHTML=html;
+}
+const L18=r=>(lang==='en'?r.note_en:r.note_ko)||r.note_en;
+function openStock(sym){
+  const r=(rwaData||[]).find(x=>x.sym===sym);if(!r)return;
+  const up=r.chg==null?null:r.chg>=0, col=r.chg==null?'var(--mut)':up?'var(--up)':'var(--down)';
+  // recent news mentioning this ticker or company
+  const key=r.name.split(/[ ,]/)[0].toLowerCase();
+  const rel=(newsData||[]).filter(n=>{const s=(n.title+' '+(n.summary||'')).toLowerCase();
+    return new RegExp('\\b'+sym.toLowerCase()+'\\b').test(s)||(key.length>3&&s.includes(key));}).slice(0,5);
+  const newsHtml=rel.length?rel.map(n=>`<a class="sm-news" href="${n.link}" target="_blank">
+      <span class="sm-nt">${escHtml(newsTitle(n))}</span><span class="d">${n.source} · ${relTime(n.age_h)}</span></a>`).join('')
+    :`<div style="color:var(--mut);font-size:12px;padding:6px 0">${t('sm_nonews')}</div>`;
+  document.getElementById('modalBody').innerHTML=`
+    <div class="sm-head"><img class="logo" style="width:34px;height:34px" src="/api/logo?t=${sym}" onerror="this.style.display='none'">
+      <div><div class="sm-sym">${sym}</div><div class="sm-name">${escHtml(r.name)}</div></div></div>
+    <div class="sm-px"><span class="sm-price">$${(r.price||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+      <span class="sm-chg" style="color:${col}">${r.chg==null?'—':(up?'▲':'▼')+Math.abs(r.chg).toFixed(2)+'%'}</span></div>
+    <div class="sm-stats">
+      <div><span>${t('rwa_mcap')}</span><b>${fmtMcap(r.mcap)}</b></div>
+      <div><span>${t('rwa_52w')}</span><b>${r.range52||'—'}</b></div>
+      <div><span>${t('rwa_sector')}</span><b>${escHtml(r.sector||'—')}</b></div>
+      <div><span>${t('rwacat_'+r.cat).replace(/·.*/,'')}</span><b style="color:var(--accent)">RWA</b></div></div>
+    <div class="sm-role">${escHtml(L18(r))}</div>
+    <div class="sm-nh">📰 ${t('sm_news')}</div>${newsHtml}
+    <div style="margin-top:12px"><a class="sm-ext" href="https://www.nasdaq.com/market-activity/stocks/${sym.toLowerCase()}" target="_blank">Nasdaq ↗</a></div>`;
+  document.getElementById('modal').style.display='flex';
+}
 function relTime(ageH){
   if(ageH==null)return '';
   if(ageH<1){const m=Math.max(1,Math.round(ageH*60));return lang==='ko'?m+'분 전':(lang==='zh'?m+'分钟前':m+'m ago');}
@@ -1296,6 +1416,7 @@ function showTab(name){
   if(name==='main')renderTable();
   if(name==='news')loadNews();
   if(name==='cex'&&!spreadsData)loadSpreads(0);
+  if(name==='rwa'&&!rwaData)loadRWA();
 }
 function applyStatic(){
   document.querySelectorAll('[data-t]').forEach(el=>el.innerHTML=t(el.dataset.t));
@@ -1344,7 +1465,7 @@ function renderAll(){
   recomputeAgg();
   const loc=lang==='ko'?'ko-KR':(lang==='zh'?'zh-CN':'en-US');
   document.getElementById('editionDate').textContent='LIVE · '+new Date().toLocaleString(loc,{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-  renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderCross();renderTable();renderCmp();renderNews();renderEarnings();renderNewsFeed();renderRevenue();
+  renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderCross();renderTable();renderCmp();renderNews();renderEarnings();renderNewsFeed();renderRevenue();if(rwaData)renderRWA();
   chainMcapCh=chainDonut('chainMcap',CHAIN_MCAP,false,chainMcapCh);
   chainVolCh=chainDonut('chainVol',CHAIN_VOL,true,chainVolCh);
   renderChainLegend('chainMcapLeg',CHAIN_MCAP,false);renderChainLegend('chainVolLeg',CHAIN_VOL,true);
@@ -1382,7 +1503,7 @@ const savedTheme=localStorage.getItem('theme')||'editorial';
 document.body.className=savedTheme==='editorial'?'':'t-'+savedTheme;
 syncChartTheme();
 fetch('./assets.json',{cache:'no-store'}).then(r=>r.json()).then(j=>{FULL=j;renderTable();if(document.getElementById('modal').style.display==='flex')renderModal();}).catch(()=>{});
-renderAll();showTab('main');tick();setInterval(tick,30000);confirmGeoLang();loadNews();loadEarnings();
+renderAll();showTab('main');tick();setInterval(tick,30000);confirmGeoLang();loadNews();loadEarnings();loadRWA();
 </script>
 </body>
 </html>

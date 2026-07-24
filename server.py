@@ -507,6 +507,89 @@ def _earn_loop():
             sys.stderr.write(f"earnings loop: {e}\n")
         time.sleep(6 * 3600 if got else 900)   # 6h after success; retry every 15min while empty
 
+# ---- RWA-related US equities: the "picks-and-shovels" plays (issuers, exchanges, licensed infra) ----
+# Curated + ticker-verified (Nasdaq quote). Live price/%chg/mcap from Nasdaq. Informational, not advice.
+_rwa = {'t': 0, 'data': []}
+RWA_STOCKS = [
+    # sym,   category,    Korean note,                                          English note
+    ('COIN', 'onchain', '최대 미국 거래소 · 토큰화·커스터디·USDC 지분',            'Largest US exchange · tokenization, custody, USDC stake'),
+    ('CRCL', 'onchain', 'USDC 발행 · 토큰화 국채 USYC($2B+)',                    'USDC issuer · tokenized T-bill USYC ($2B+)'),
+    ('HOOD', 'onchain', '토큰화 주식 발행 · 자체 온체인 레일(Arbitrum)',          'Issues tokenized stocks · own on-chain rails'),
+    ('SECZ', 'onchain', '토큰화 플랫폼 · NYSE Digital 백본 · $4B+ AUM (7/2 상장)', 'Tokenization platform · NYSE Digital backbone · $4B+ AUM (IPO Jul 2)'),
+    ('FIGR', 'onchain', 'HELOC 토큰 $20B — 단일 RWA 최대 자산',                  'HELOC token $20B — largest single RWA'),
+    ('GLXY', 'onchain', '크립토 금융 · 토큰화 인프라(Solana 대출)',              'Crypto finance · tokenization infra (Solana lending)'),
+    ('SOFI', 'onchain', '핀테크 · 토큰화·크립토 진출',                          'Fintech · tokenization/crypto push'),
+    ('BLK',  'asset',   'BUIDL $2.5B+ — 최대 토큰화 국채 펀드',                  'BUIDL $2.5B+ — largest tokenized treasury fund'),
+    ('BEN',  'asset',   'Franklin — BENJI 토큰화 MMF',                          'Franklin — BENJI tokenized money-market fund'),
+    ('APO',  'asset',   'Apollo — ACRED 토큰화 사모신용',                        'Apollo — ACRED tokenized private credit'),
+    ('HLNE', 'asset',   'Hamilton Lane — Securitize 통해 펀드 토큰화',            'Hamilton Lane — funds tokenized via Securitize'),
+    ('WT',   'asset',   'WisdomTree — 토큰화 펀드 라인(WisdomTree Prime)',        'WisdomTree — tokenized fund suite (Prime)'),
+    ('KKR',  'asset',   'KKR — 토큰화 사모펀드(Securitize)',                     'KKR — tokenized private fund (Securitize)'),
+    ('IVZ',  'asset',   'Invesco — 토큰화 MMF 신청',                            'Invesco — filed tokenized money-market fund'),
+    ('NDAQ', 'infra',   '나스닥 — 거래소·상장·시장 인프라',                       'Nasdaq — exchange, listing & market infra'),
+    ('ICE',  'infra',   'NYSE 모회사 · Securitize와 디지털 거래 MOU',             'NYSE parent · Securitize digital-trading MOU'),
+    ('CME',  'infra',   'CME — 파생 거래소',                                     'CME — derivatives exchange'),
+    ('CBOE', 'infra',   'Cboe — 거래소',                                         'Cboe — exchange'),
+    ('TW',   'infra',   'Tradeweb — 채권 전자거래 인프라',                        'Tradeweb — electronic fixed-income infra'),
+    ('V',    'pay',     'Visa — 스테이블코인 결제 파일럿',                        'Visa — stablecoin settlement pilots'),
+    ('MA',   'pay',     'Mastercard — 스테이블코인·토큰화',                       'Mastercard — stablecoin & tokenization'),
+    ('PYPL', 'pay',     'PayPal — PYUSD 스테이블코인',                           'PayPal — PYUSD stablecoin'),
+    ('JPM',  'bank',    'JPMorgan — Kinexys 토큰화 예금',                        'JPMorgan — Kinexys tokenized deposits'),
+    ('GS',   'bank',    'Goldman — 토큰화 플랫폼(GS DAP)',                       'Goldman — tokenization platform (GS DAP)'),
+    ('MS',   'bank',    'Morgan Stanley — 기관 디지털자산',                       'Morgan Stanley — institutional digital assets'),
+    ('STT',  'bank',    'State Street — 디지털 수탁',                            'State Street — digital custody'),
+    ('SCHW', 'bank',    'Schwab — 크립토·토큰화 진출',                           'Schwab — crypto/tokenization entry'),
+    ('IBKR', 'bank',    'Interactive Brokers — 토큰화 접근',                     'Interactive Brokers — tokenization access'),
+    ('MSTR', 'treasury','BTC 트레저리 원조 — "토큰보다 더 오른 주식" 사례',         'Original BTC treasury — the "stock beat the token" case'),
+]
+def _rwa_one(item):
+    sym, cat, ko, en = item
+    o = {'sym': sym, 'cat': cat, 'note_ko': ko, 'note_en': en}
+    prev = None
+    try:
+        d = json.loads(_get(f"https://api.nasdaq.com/api/quote/{sym}/info?assetclass=stocks", 8))
+        dd = d.get('data') or {}; pd = dd.get('primaryData') or {}
+        o['name'] = dd.get('companyName') or sym
+        o['price'] = _money(pd.get('lastSalePrice'))
+        pc = (pd.get('percentageChange') or '').replace('%', '').replace('+', '').replace(',', '').strip()
+        try: o['chg'] = float(pc)
+        except Exception: o['chg'] = None
+        o['range52'] = ((dd.get('keyStats') or {}).get('fiftyTwoWeekHighLow') or {}).get('value')
+        o['_net'] = _money((pd.get('netChange') or '').replace('+', ''))
+    except Exception:
+        pass
+    try:
+        s = json.loads(_get(f"https://api.nasdaq.com/api/quote/{sym}/summary?assetclass=stocks", 8))
+        sd = (s.get('data') or {}).get('summaryData') or {}
+        o['mcap'] = _money((sd.get('MarketCap') or {}).get('value'))
+        o['sector'] = (sd.get('Sector') or {}).get('value')
+        prev = _money((sd.get('PreviousClose') or {}).get('value'))
+    except Exception:
+        pass
+    if o.get('chg') is None and o.get('_net') is not None and prev:   # fallback %chg from net/prevClose
+        o['chg'] = round(o['_net'] / prev * 100, 2)
+    o.pop('_net', None)
+    return o
+
+def build_rwastocks():
+    with _cf.ThreadPoolExecutor(max_workers=8) as ex:
+        rows = list(ex.map(_rwa_one, RWA_STOCKS))
+    return [r for r in rows if r.get('price')]
+
+def _rwa_loop():
+    while True:
+        got = False
+        try:
+            d = build_rwastocks()
+            if d:
+                with _lock:
+                    _rwa['t'] = time.time(); _rwa['data'] = d
+                got = True
+                sys.stderr.write(f"rwastocks: {len(d)} priced\n")
+        except Exception as e:
+            sys.stderr.write(f"rwa loop: {e}\n")
+        time.sleep(600 if got else 300)   # 10min when healthy; retry 5min while failing
+
 # ---- CEX securities spread: Backpack (.US order book) vs Binance (tokenized-stock pairs), both LIVE ----
 _cex = {'t': 0, 'data': {}}
 _bn_stock_syms = None  # discovered once (ticker -> binance symbol)
@@ -770,6 +853,10 @@ class H(BaseHTTPRequestHandler):
             with _lock:
                 self._send(200, json.dumps({'generated': int(_earn['t']), 'items': _earn['data']}), 'application/json')
             return
+        if path == '/api/rwastocks':
+            with _lock:
+                self._send(200, json.dumps({'generated': int(_rwa['t']), 'items': _rwa['data']}), 'application/json')
+            return
         if path == '/api/geo':
             # Country from the CDN edge (Cloudflare sets CF-IPCountry; others vary). Used only to
             # auto-pick UI language (KR->ko, CN->zh, else en). No IP stored.
@@ -815,4 +902,5 @@ if __name__ == '__main__':
     threading.Thread(target=_live_loop, daemon=True).start()
     threading.Thread(target=_cex_loop, daemon=True).start()
     threading.Thread(target=_earn_loop, daemon=True).start()
+    threading.Thread(target=_rwa_loop, daemon=True).start()
     ThreadingHTTPServer(('0.0.0.0', PORT), H).serve_forever()
