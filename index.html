@@ -387,6 +387,22 @@
 
   <div class="issuer-cta" id="issuerCta" data-tab="issuers"></div>
 
+  <section id="s-sector" data-tab="main">
+    <div class="sec-head"><div><div class="sec-label">00 · Sector</div><h2 data-t="sect_h"></h2></div>
+      <span class="live-pill" id="livePill"><span class="live-dot"></span>LIVE<span id="liveCountdown"></span></span></div>
+    <div class="rwa-kpis" id="rwaKpis"></div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_idx_h"></h3><span id="idxSub" class="pd" style="margin:0"></span></div>
+        <div style="position:relative;height:190px;margin-top:8px"><canvas id="idxChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_stable_h"></h3><span id="stableSub" class="pd" style="margin:0"></span></div>
+        <div style="position:relative;height:190px;margin-top:8px"><canvas id="stableChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
   <section id="s-active" data-tab="main">
     <div class="sec-head"><div><div class="sec-label">01 · Most Active</div><h2 data-t="sec1_h"></h2></div>
       <div class="desc" data-t="sec1_d"></div></div>
@@ -450,27 +466,10 @@
     <div class="sec-head"><div><div class="sec-label">RWA Equities</div><h2 data-t="rwa_h"></h2></div>
       <div class="desc" data-t="rwa_d"></div></div>
     <div id="rwaNote" class="mcov" style="margin:0 0 16px"></div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div class="sec-label" data-t="sect_h" style="margin:0"></div>
-      <span class="live-pill" id="livePill"><span class="live-dot"></span>LIVE<span id="liveCountdown"></span></span>
-    </div>
-    <div class="rwa-kpis" id="rwaKpis"></div>
-    <div class="grid g2" style="margin:16px 0 16px">
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_idx_h"></h3><span id="idxSub" class="pd" style="margin:0"></span></div>
-        <div style="position:relative;height:190px;margin-top:8px"><canvas id="idxChart"></canvas></div>
-      </div>
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_stable_h"></h3><span id="stableSub" class="pd" style="margin:0"></span></div>
-        <div style="position:relative;height:190px;margin-top:8px"><canvas id="stableChart"></canvas></div>
-      </div>
-    </div>
-    <div class="panel" style="margin-bottom:30px">
+    <div class="panel" style="margin-bottom:26px">
       <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_flow_h"></h3><span id="rwaFlowHead" class="pd" style="margin:0"></span></div>
-      <div style="position:relative;height:170px;margin-top:8px"><canvas id="rwaFlowChart"></canvas></div>
+      <div style="position:relative;height:180px;margin-top:8px"><canvas id="rwaFlowChart"></canvas></div>
     </div>
-
     <div class="sec-label" data-t="rwa_list_h" style="margin-bottom:10px"></div>
     <div class="rwa-seg" id="rwaSort"></div>
     <div id="rwaGrid"></div>
@@ -1293,7 +1292,7 @@ let rwaData=null, rwaSort='mcap';
 const RWA_CATS=['onchain','asset','infra','pay','bank','treasury'];
 async function loadRWA(){
   try{const r=await fetch('/api/rwastocks',{cache:'no-store'});const j=await r.json();if(j&&j.items)rwaData=j.items;}catch(e){}
-  renderRWA();
+  renderRWA();renderSector();   // sector index tile + flow chart both depend on rwaData
 }
 const fmtMcap=m=>m==null?'—':m>=1e12?'$'+(m/1e12).toFixed(2)+'T':m>=1e9?'$'+(m/1e9).toFixed(1)+'B':'$'+(m/1e6).toFixed(0)+'M';
 function renderRWA(){
@@ -1539,10 +1538,10 @@ function showTab(name){
   document.querySelectorAll('[data-tab]').forEach(el=>{if(el.closest('#tabbar'))return;el.style.display=el.dataset.tab===name?'':'none';});
   document.querySelectorAll('#tabbar .tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
   window.scrollTo(0,0);
-  if(name==='main')renderTable();
+  if(name==='main'){renderTable();if(!sectorData)loadSector();requestAnimationFrame(()=>renderSector());}  // redraw sector charts now visible
   if(name==='news')loadNews();
   if(name==='cex'&&!spreadsData)loadSpreads(0);
-  if(name==='rwa'){if(!rwaData)loadRWA();if(!sectorData)loadSector();}
+  if(name==='rwa'){if(!rwaData)loadRWA();else requestAnimationFrame(()=>renderRWA());}  // redraw flow chart now visible
 }
 function applyStatic(){
   document.querySelectorAll('[data-t]').forEach(el=>el.innerHTML=t(el.dataset.t));
@@ -1598,7 +1597,7 @@ function renderAll(){
 }
 const TICK_MS=30000; let nextTickAt=Date.now()+TICK_MS;
 async function tick(){nextTickAt=Date.now()+TICK_MS;await refreshPrices();await refreshBirdeye();await refreshLive();await refreshTokenMcap();await refreshCEX();renderAll();loadNews();
-  const sec=document.getElementById('s-rwa');if(sec&&sec.style.display!=='none')loadRWA();}   // live-refresh RWA prices when its tab is open
+  loadRWA();}   // RWA prices are server-cached (2min) → cheap to pull each tick; keeps the main sector index + flash live
 function heartbeat(){const el=document.getElementById('liveCountdown');if(!el)return;
   const s=Math.max(0,Math.ceil((nextTickAt-Date.now())/1000));el.textContent=' · '+t('live_next')+' '+s+'s';}
 setInterval(heartbeat,1000);
