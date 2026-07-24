@@ -242,6 +242,10 @@
   .ec-row .tk{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ec-date{font-family:var(--mono);font-size:10px;color:var(--accent);min-width:30px;font-weight:700;flex:none}
   .ec-eps{font-family:var(--mono);font-size:10px;color:var(--mut);flex:none}
+  .ec-wk{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.3px;margin:12px 0 3px;padding-top:8px;border-top:1px solid var(--line2)}
+  .ec-wk:first-child{margin-top:2px;padding-top:0;border-top:none}
+  .ec-dow{color:var(--mut);font-weight:400;margin-left:3px}
+  .ec-hint{font-family:var(--mono);font-size:10.5px;color:var(--mut);margin:2px 0 4px}
   .ec-t{font-family:var(--mono);font-size:9px;color:var(--mut);text-transform:uppercase;border:1px solid var(--line2);border-radius:4px;padding:1px 3px;flex:none}
   .nf-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line2);cursor:pointer;font-size:13px}
   .nf-row:first-child{border-top:none}
@@ -600,6 +604,8 @@ const TR={
   earn_h:{ko:'미국 실적 발표 일정',en:'US Earnings Calendar'},
   earn_empty:{ko:'예정된 추적 종목 실적 없음',en:'No upcoming earnings for tracked tickers'},
   earn_pre:{ko:'장전',en:'pre'}, earn_after:{ko:'장후',en:'after'},
+  wk_this:{ko:'이번 주',en:'This week'}, wk_next:{ko:'다음 주',en:'Next week'}, wk_n:{ko:'{n}주 후',en:'In {n} wks'},
+  earn_none_wk:{ko:'이번 주 추적 종목 실적 없음',en:'No tracked earnings this week'},
   newsfeed_h:{ko:'최신 뉴스',en:'Latest News'}, news_new:{ko:'새 뉴스',en:'NEW'},
   news_reg:{ko:'규제',en:'REG'},
   news_src:{ko:'개 매체',en:' sources'}, news_src1:{ko:'단독',en:'NEWS'},
@@ -669,6 +675,7 @@ const TR_ZH={
   sec_rec_h:'推荐：可加入的发行方', sec_rec_d:'Base·BNB 等链上代币化股票发行方候选',
   no_token:'无发行方代币', news_loading:'加载新闻中…', news_refresh:'↻ 刷新',
   earn_h:'美股财报日历', earn_empty:'追踪标的暂无即将公布的财报', earn_pre:'盘前', earn_after:'盘后',
+  wk_this:'本周', wk_next:'下周', wk_n:'{n}周后', earn_none_wk:'本周无追踪标的财报',
   newsfeed_h:'最新新闻', news_new:'新',
   news_reg:'监管', news_src:'家报道', news_src1:'单独',
   news_src_tip:'报道该新闻的媒体数（越多越重要）',
@@ -1251,21 +1258,35 @@ async function loadEarnings(){
   try{const r=await fetch('/api/earnings',{cache:'no-store'});const j=await r.json();if(j&&j.items)earnData=j.items;}catch(e){}
   renderEarnings();
 }
+function mondayOf(d){const x=new Date(d);const dow=(x.getDay()+6)%7;x.setDate(x.getDate()-dow);x.setHours(0,0,0,0);return x;}
 function renderEarnings(){
   const el=document.getElementById('earningsCard');if(!el)return;
-  const loc=lang==='ko'?'ko-KR':lang==='zh'?'zh-CN':'en-US';
-  const items=earnData||[];
-  const fmtD=ds=>{try{return new Date(ds+'T00:00:00').toLocaleDateString(loc,{month:'short',day:'numeric'});}catch(e){return ds;}};
   const tl=tm=>tm&&tm.includes('pre')?t('earn_pre'):tm&&tm.includes('after')?t('earn_after'):'';
   const fmtMD=ds=>{try{return new Date(ds+'T00:00:00').toLocaleDateString('en-US',{month:'numeric',day:'numeric'});}catch(e){return ds;}};
-  const rows=items.slice(0,12).map(e=>`<div class="ec-row" title="${escHtml(e.name)}">
-      <span class="ec-date">${fmtMD(e.date)}</span>
+  const dow=ds=>{try{return new Date(ds+'T00:00:00').toLocaleDateString(lang==='ko'?'ko-KR':lang==='zh'?'zh-CN':'en-US',{weekday:'short'});}catch(e){return '';}};
+  const items=earnData||[];
+  if(!items.length){el.innerHTML=`<h3>📅 ${t('earn_h')}</h3><div style="color:var(--mut);font-family:var(--mono);font-size:12px;padding:8px 0">${t('earn_empty')}</div>`;return;}
+  // group into weekly buckets (Mon-start); label each as This/Next/N weeks
+  const thisMon=mondayOf(new Date()).getTime();
+  const buckets={};
+  items.forEach(e=>{const wk=mondayOf(new Date(e.date+'T00:00:00')).getTime();(buckets[wk]=buckets[wk]||[]).push(e);});
+  const weeks=Object.keys(buckets).map(Number).sort((a,b)=>a-b);
+  const weekLabel=wk=>{const n=Math.round((wk-thisMon)/(7*864e5));
+    const base=n<=0?t('wk_this'):n===1?t('wk_next'):t('wk_n').replace('{n}',n);
+    const mon=new Date(wk),fri=new Date(wk+4*864e5);
+    return `${base} · ${fmtMD(mon.toISOString().slice(0,10))}~${fmtMD(fri.toISOString().slice(0,10))}`;};
+  const html=weeks.map(wk=>{
+    const rows=buckets[wk].map(e=>`<div class="ec-row" title="${escHtml(e.name)}">
+      <span class="ec-date">${fmtMD(e.date)}<span class="ec-dow">${dow(e.date)}</span></span>
       <img class="logo" src="/api/logo?t=${encodeURIComponent(e.symbol)}" onerror="this.style.display='none'" alt="">
       <span class="tk" style="flex:1">${escHtml(e.symbol)}</span>
       ${e.eps?`<span class="ec-eps">$${escHtml(String(e.eps))}</span>`:''}
-      ${tl(e.time)?`<span class="ec-t">${tl(e.time)}</span>`:''}</div>`).join('')
-    ||`<div style="color:var(--mut);font-family:var(--mono);font-size:12px;padding:8px 0">${t('earn_empty')}</div>`;
-  el.innerHTML=`<h3>📅 ${t('earn_h')}</h3><div class="ec-list">${rows}</div>`;
+      ${tl(e.time)?`<span class="ec-t">${tl(e.time)}</span>`:''}</div>`).join('');
+    return `<div class="ec-wk">${weekLabel(wk)}</div>${rows}`;
+  }).join('');
+  const noneThis=!weeks.some(wk=>Math.round((wk-thisMon)/(7*864e5))<=0);
+  const hint=noneThis?`<div class="ec-hint">${t('earn_none_wk')}</div>`:'';
+  el.innerHTML=`<h3>📅 ${t('earn_h')}</h3>${hint}<div class="ec-list">${html}</div>`;
 }
 function showTab(name){
   const ly=document.getElementById('layout');if(ly)ly.classList.toggle('solo',name!=='main');

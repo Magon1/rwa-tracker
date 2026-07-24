@@ -465,7 +465,9 @@ def build_earnings():
     import datetime as _dt
     out = {}
     base = _dt.datetime.utcnow().date()
-    for off in range(0, 45):                       # scan ~6 weeks of weekdays
+    empty_streak = 0
+    # scan the full next ~4 weeks of weekdays so the client can group by week (this/next/…).
+    for off in range(0, 32):
         day = base + _dt.timedelta(days=off)
         if day.weekday() >= 5:                      # skip weekends
             continue
@@ -475,12 +477,16 @@ def build_earnings():
             rows = (d.get('data') or {}).get('rows') or []
         except Exception:
             rows = []
+        hit = False
         for r in rows:
             sym = (r.get('symbol') or '').upper()
-            if sym in EARN_WATCH and sym not in out:   # keep the soonest date per ticker
+            if sym in EARN_WATCH and sym not in out:   # each ticker reports once → keep soonest date
                 out[sym] = {'symbol': sym, 'name': r.get('name', sym), 'date': ds,
                             'time': r.get('time', ''), 'eps': r.get('epsForecast', '')}
-        if len(out) >= 14:                          # enough upcoming names
+                hit = True
+        # once we've collected a healthy set, stop after a quiet stretch (covers ~3 weeks of names)
+        empty_streak = 0 if hit else empty_streak + 1
+        if len(out) >= 18 and empty_streak >= 4:
             break
         time.sleep(0.2)
     return sorted(out.values(), key=lambda x: x['date'])
