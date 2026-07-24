@@ -78,6 +78,52 @@ REGFLAG_RE = re.compile(
 def news_flag(title, summary):
     return 'reg' if REGFLAG_RE.search((title + ' ' + summary).lower()) else ''
 
+# Interpretation framework (not fabricated facts): classify a story, then state what it MEANS
+# and how the RWA market should read it. First matching rule wins. Attached to important items.
+INSIGHT_RULES = [
+    (r'\bsec\b.*(approv|clear|green ?light|no[- ]action|allow|permit)|approv.*\bsec\b|cleared to (offer|trade)|registration|transfer agent',
+     '규제 당국이 토큰화 상품에 청신호(승인/등록)',
+     '규제 명확화는 기관 자금 유입의 최대 전제조건 — RWA 시장 확장에 강한 순풍. 승인받은 발행처는 선점 효과.',
+     'A regulator cleared/registered a tokenized product',
+     'Regulatory clarity is the #1 unlock for institutional capital — a strong RWA tailwind; the approved issuer gets first-mover advantage.'),
+    (r'lawsuit|\bsue[sd]?\b|charges|enforce|fraud|complaint|crackdown|\bban\b|banned|penalt|investigat|hacked?|drained|exploit|delist',
+     '규제·법적 리스크 또는 보안 사고',
+     '단기 불확실성 요인 — 다만 규제 정비 과정의 일부. 사고가 특정 프로토콜에 국한되면 오히려 견고한 플레이어로 자금 이동.',
+     'A legal/regulatory risk or a security incident',
+     'Near-term uncertainty — but part of the rule-setting cycle. If contained, capital tends to rotate toward the more robust players.'),
+    (r'blackrock|jpmorgan|jp morgan|goldman|morgan stanley|nasdaq|\bdtcc\b|franklin|apollo|state street|\bciti\b|mastercard|\bvisa\b|\bbank\b|invesco|kkr|wisdomtree',
+     '대형 전통금융(TradFi) 기관의 온체인 행보',
+     '기관 검증 = RWA의 신뢰·규모 확대 신호. 발행액·TVL 성장의 직접 촉매이자, RWA 관련 주식(발행·인프라)에 수혜 가능성.',
+     'A major TradFi institution moving on-chain',
+     'Institutional validation → credibility & scale for RWA; a direct catalyst for issued value/TVL, and potentially a tailwind for RWA-related equities.'),
+    (r'partner|integrat|adds? support|\bdeal\b|collaborat|rail',
+     '전통금융–온체인 연결(레일/파트너십) 강화',
+     '유통 채널·결제 레일 확장 = RWA 접근성↑, 채택 속도 가속. 네트워크 효과로 승자 굳히기.',
+     'A TradFi↔on-chain rail/partnership',
+     'Wider distribution & payment rails → easier access, faster adoption; network effects entrench leaders.'),
+    (r'record|all[- ]time|\bath\b|largest|\btops?\b|hits? \$|surge|overtak|reaches',
+     'RWA 거래량·규모 신기록/모멘텀',
+     '수요 확인 신호 — 단, 지속성(신규 자본 유입 vs 기존 자본 회전)을 구분해서 봐야 함. 발행액이 함께 늘면 진짜 확장.',
+     'A new RWA volume/size record or momentum',
+     'A demand signal — but check durability (new inflows vs. churn). Real expansion is when issued value grows alongside volume.'),
+    (r'stablecoin|\busdc\b|\busdt\b|rlusd|pyusd|usyc|tokenized (?:deposit|cash|treasur|bank)',
+     '스테이블코인·토큰화 현금/국채 확장',
+     '온체인 정산 통화 확대 = RWA 거래의 기반 인프라 성장. 섹터 확장의 선행지표(대시보드 스테이블코인 지표와 연동).',
+     'Stablecoin / tokenized-cash / treasury expansion',
+     'More on-chain settlement money = base infra for RWA trading — a leading indicator of expansion (tracks the dashboard stablecoin metric).'),
+    (r'tokeniz|\blists?\b|goes live|debut|on[- ]?chain|equit|securit',
+     '새 토큰화 상품/종목 출시·확대',
+     '발행처·종목 경쟁 심화 → 유동성·선택지 확대. 다만 거래는 소수 인기 종목에 집중되는 경향(꼬리 종목 유동성 주의).',
+     'A new tokenized product/listing expands',
+     'More issuers/tokens → deeper liquidity & choice, but trading concentrates in a few names (watch thin long-tail liquidity).'),
+]
+def news_insight(title, summary):
+    text = (title + ' ' + (summary or '')).lower()
+    for rx, km, ki, em, ei in INSIGHT_RULES:
+        if re.search(rx, text):
+            return {'ko': km, 'ko2': ki, 'en': em, 'en2': ei}
+    return None
+
 _cache = {"t": 0, "data": []}
 _lock = threading.Lock()
 
@@ -125,19 +171,25 @@ def build_news():
         t = threading.Thread(target=fetch_feed, args=(name, url, items)); t.start(); threads.append(t)
     for t in threads: t.join(timeout=10)
     now = time.time()
-    # recency decay + corroboration clustering by shared significant words
+    # corroboration clustering: merge the SAME story arriving from different feeds/titles.
     def keywords(title):
         return set(w for w in re.findall(r'[a-z]{4,}', title.lower()) if w not in
-                   {'with','that','this','from','have','will','what','when','your','about','crypto'})
+                   {'with','that','this','from','have','will','what','when','your','about','crypto',
+                    'says','into','over','after','than','plans','launch','launches','crypto’s'})
+    def norm_title(t):
+        return re.sub(r'\s+', ' ', re.sub(r'[^a-z0-9 ]', '', (t or '').lower())).strip()
     clusters = []
     for it in items:
-        kw = keywords(it['title'])
+        kw = keywords(it['title']); nt = norm_title(it['title'])
+        link = (it.get('link') or '').split('?')[0].rstrip('/')
         placed = False
         for c in clusters:
-            if len(kw & c['kw']) >= 3:
+            jac = (len(kw & c['fkw']) / len(kw | c['fkw'])) if (kw or c['fkw']) else 0
+            # merge if: identical title / same URL / strong keyword overlap / high title similarity
+            if nt == c['nt'] or (link and link == c['link']) or len(kw & c['kw']) >= 3 or jac >= 0.5:
                 c['items'].append(it); c['kw'] |= kw; placed = True; break
         if not placed:
-            clusters.append({'kw': kw, 'items': [it]})
+            clusters.append({'kw': set(kw), 'fkw': kw, 'nt': nt, 'link': link, 'items': [it]})
     ranked = []
     for c in clusters:
         best = max(c['items'], key=lambda x: x['raw_score'])
@@ -149,6 +201,12 @@ def build_news():
         best['cluster'] = len(c['items'])
         best['score'] = round(final, 1)
         best['flag'] = news_flag(best['title'], best.get('summary', ''))
+        # important items get an interpretation (meaning + RWA implication): reg-flagged,
+        # corroborated by 2+ sources, or high-scoring
+        if best['flag'] == 'reg' or best['cluster'] >= 2 or best['score'] >= 15:
+            ins = news_insight(best['title'], best.get('summary', ''))
+            if ins:
+                best['insight'] = ins
         # keep only items that pass BOTH the score AND the topical gate (drops off-topic leaks)
         if best['raw_score'] >= 6 and is_relevant(best['title'], best.get('summary', '')):
             ranked.append(best)

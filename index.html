@@ -232,6 +232,10 @@
   .ni-summary{padding:0 4px 14px 102px}
   .ni-summary p{margin:0 0 8px;font-size:12.5px;color:var(--ink2);line-height:1.55}
   .ni-summary a{font-family:var(--mono);font-size:11px;color:var(--accent)}
+  .ni-insight{margin:2px 0 12px;padding:11px 13px;background:color-mix(in srgb,var(--accent) 6%,transparent);border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+  .nii-r{font-size:12.5px;line-height:1.55;color:var(--ink)}.nii-r+.nii-r{margin-top:5px}
+  .nii-l{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--accent);margin-right:5px}
+  .ni-ins-tag{font-size:12px}
   .ni-flash{animation:niflash 1.6s ease}
   @keyframes niflash{0%,100%{background:transparent}25%{background:color-mix(in srgb,var(--accent) 14%,transparent)}}
   .sidecols{align-items:start}
@@ -707,8 +711,10 @@ const TR={
   news_reg:{ko:'규제',en:'REG'},
   news_src:{ko:'개 매체',en:' sources'}, news_src1:{ko:'단독',en:'NEWS'},
   news_src_tip:{ko:'같은 뉴스를 보도한 매체 수 (많을수록 중요)',en:'Outlets reporting this story (more = bigger)'},
-  news_legend:{ko:'🔴 빨강 = 정부 규제·라이선스 관련 중요 뉴스 · "N개 매체" = 같은 뉴스를 N곳이 보도(교차검증 = 중요도)',
-    en:'🔴 red = government regulation / license alerts · "N sources" = N outlets reported it (corroboration = importance)'},
+  news_legend:{ko:'🔴 빨강 = 정부 규제·라이선스 관련 중요 뉴스 · "N개 매체" = 같은 뉴스를 N곳이 보도(교차검증 = 중요도) · 💡 = 클릭 시 RWA 인사이트',
+    en:'🔴 red = regulation/license alerts · "N sources" = N outlets reported it (corroboration=importance) · 💡 = click for RWA insight'},
+  ins_mean:{ko:'의미',en:'Meaning'}, ins_impl:{ko:'RWA 시장 함의',en:'RWA takeaway'},
+  ins_tip:{ko:'클릭하면 RWA 시장 관점 인사이트',en:'Click for RWA-market insight'},
   cex_total:{ko:'평균 / 합계',en:'Avg / Total'}, cex_venue:{ko:'거래 장소',en:'Venue'},
   cex_spread:{ko:'스프레드',en:'Spread'}, cex_vol:{ko:'24h 거래량',en:'24h Vol'},
   cex_closed:{ko:'장 마감',en:'mkt closed'}, cex_unlisted:{ko:'미상장',en:'not listed'},
@@ -786,7 +792,8 @@ const TR_ZH={
   newsfeed_h:'最新新闻', news_new:'新',
   news_reg:'监管', news_src:'家报道', news_src1:'单独',
   news_src_tip:'报道该新闻的媒体数（越多越重要）',
-  news_legend:'🔴 红色 = 政府监管/牌照相关重要新闻 · "N家报道" = N家媒体报道（交叉验证 = 重要度）',
+  news_legend:'🔴 红色 = 政府监管/牌照相关重要新闻 · "N家报道" = N家媒体报道（交叉验证 = 重要度）· 💡 = 点击查看 RWA 洞察',
+  ins_mean:'含义', ins_impl:'RWA 市场影响', ins_tip:'点击查看 RWA 市场洞察',
   cex_total:'平均 / 合计', cex_venue:'交易场所', cex_spread:'价差', cex_vol:'24h 成交量',
   cex_closed:'休市', cex_unlisted:'未上架', cex_quote:'报价制(App)', cex_closest:'最接近 Nasdaq',
   cex_explain:'<b>以 Nasdaq 实时买卖盘价差为基准</b>，对比同一只股票在 Backpack 与 Binance 的价差差异。涵盖 Backpack 上架<b>全部 1,112 只证券</b>，每页 30 只，可对比的（Binance/Backpack 订单簿）优先靠前。⚠ Backpack Securities 为<b>单一报价(quote)制，无公开价差</b> → 仅 SPCX·MU（订单簿）有实测，其余显示"报价制"。美股盘前/盘后价差较宽。Nasdaq=基准，数值越小越好。',
@@ -1446,14 +1453,18 @@ function renderNewsList(){
     const badge=reg?t('news_reg'):(n.cluster>1?(n.cluster+t('news_src')):t('news_src1'));
     const title=newsTitle(n), open=expandedNews.has(n.link);
     const sum=((lang==='ko'&&n.summary_ko)?n.summary_ko:((lang==='zh'&&n.summary_zh)?n.summary_zh:(n.summary||''))).trim().replace(/"/g,'&quot;');
+    const ins=n.insight?`<div class="ni-insight">
+        <div class="nii-r"><span class="nii-l">💡 ${t('ins_mean')}</span> ${escHtml(lang==='en'?n.insight.en:n.insight.ko)}</div>
+        <div class="nii-r"><span class="nii-l">📊 ${t('ins_impl')}</span> ${escHtml(lang==='en'?n.insight.en2:n.insight.ko2)}</div></div>`:'';
+    const badge2=n.insight?`<span class="ni-ins-tag" title="${t('ins_tip')}">💡</span>`:'';
     return `<div class="ni-item${reg?' reg':''}" data-link="${escHtml(n.link)}">
       <div class="ni${open?' open':''}" onclick="toggleNews(this)">
         <span class="cat ${cat}" ${n.cluster>1&&!reg?`title="${t('news_src_tip')}"`:''}>${badge}</span>
-        <h4 style="flex:1">${title}</h4>
+        <h4 style="flex:1">${title} ${badge2}</h4>
         <span class="meta">${n.source} · ${relTime(n.age_h)}</span>
         <span class="ni-caret">▾</span></div>
       <div class="ni-summary" style="display:${open?'block':'none'}">
-        <p>${sum||(lang==='ko'?'요약 없음 — 원문에서 확인':'No summary — see source')}</p>
+        <p>${sum||(lang==='ko'?'요약 없음 — 원문에서 확인':'No summary — see source')}</p>${ins}
         <a href="${n.link}" target="_blank">${lang==='ko'?'원문 기사 →':'Read source →'}</a></div>
     </div>`;}).join('');
 }
