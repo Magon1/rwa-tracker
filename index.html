@@ -255,8 +255,16 @@
   .nf-dot{width:7px;height:7px;border-radius:50%;background:var(--down);flex:none}
   .nf-dot.off{background:var(--line2)}
   .nf-badge{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--down)}
-  .rwa-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+  .rwa-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px}
   @media(max-width:720px){.rwa-kpis{grid-template-columns:repeat(2,1fr)}}
+  .live-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.5px;color:var(--up);border:1px solid color-mix(in srgb,var(--up) 35%,transparent);border-radius:20px;padding:3px 10px}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--up);animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 color-mix(in srgb,var(--up) 55%,transparent)}50%{opacity:.55;box-shadow:0 0 0 5px transparent}}
+  .live-pill #liveCountdown{color:var(--mut);font-weight:400}
+  @keyframes flashUp{0%{background:color-mix(in srgb,var(--up) 32%,transparent)}100%{background:transparent}}
+  @keyframes flashDn{0%{background:color-mix(in srgb,var(--down) 32%,transparent)}100%{background:transparent}}
+  .px-up{animation:flashUp 1.1s ease-out;border-radius:4px}
+  .px-dn{animation:flashDn 1.1s ease-out;border-radius:4px}
   .kpi-tile{background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:13px 15px}
   .kt-l{font-family:var(--mono);font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px}
   .kt-v{font-family:var(--serif);font-size:23px;font-weight:600;line-height:1}
@@ -443,17 +451,24 @@
       <div class="desc" data-t="rwa_d"></div></div>
     <div id="rwaNote" class="mcov" style="margin:0 0 16px"></div>
 
-    <div class="sec-label" data-t="sect_h" style="margin-bottom:10px"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="sec-label" data-t="sect_h" style="margin:0"></div>
+      <span class="live-pill" id="livePill"><span class="live-dot"></span>LIVE<span id="liveCountdown"></span></span>
+    </div>
     <div class="rwa-kpis" id="rwaKpis"></div>
-    <div class="grid g2" style="margin:16px 0 30px">
+    <div class="grid g2" style="margin:16px 0 16px">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_idx_h"></h3><span id="idxSub" class="pd" style="margin:0"></span></div>
+        <div style="position:relative;height:190px;margin-top:8px"><canvas id="idxChart"></canvas></div>
+      </div>
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_stable_h"></h3><span id="stableSub" class="pd" style="margin:0"></span></div>
-        <div style="position:relative;height:180px;margin-top:8px"><canvas id="stableChart"></canvas></div>
+        <div style="position:relative;height:190px;margin-top:8px"><canvas id="stableChart"></canvas></div>
       </div>
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_flow_h"></h3><span id="rwaFlowHead" class="pd" style="margin:0"></span></div>
-        <div style="position:relative;height:180px;margin-top:8px"><canvas id="rwaFlowChart"></canvas></div>
-      </div>
+    </div>
+    <div class="panel" style="margin-bottom:30px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_flow_h"></h3><span id="rwaFlowHead" class="pd" style="margin:0"></span></div>
+      <div style="position:relative;height:170px;margin-top:8px"><canvas id="rwaFlowChart"></canvas></div>
     </div>
 
     <div class="sec-label" data-t="rwa_list_h" style="margin-bottom:10px"></div>
@@ -544,7 +559,7 @@ function syncChartTheme(){if(window.Chart){Chart.defaults.font.family=cv('--sans
 function applyTheme(name){
   document.body.className=name==='editorial'?'':'t-'+name;
   localStorage.setItem('theme',name);
-  [barChart,donut,chainMcapCh,chainVolCh,stableChart,rwaFlowChart].forEach(c=>{try{if(c)c.destroy();}catch(e){}});stableChart=rwaFlowChart=null;
+  [barChart,donut,chainMcapCh,chainVolCh,stableChart,rwaFlowChart,idxChart].forEach(c=>{try{if(c)c.destroy();}catch(e){}});stableChart=rwaFlowChart=idxChart=null;
   barChart=donut=chainMcapCh=chainVolCh=null;
   syncChartTheme();renderAll();
   const sel=document.getElementById('themeSel');if(sel)sel.value=name;
@@ -652,6 +667,9 @@ const TR={
   tab_main:{ko:'Main',en:'Main'}, tab_rwa:{ko:'RWA 관련 주식',en:'RWA Stocks'}, tab_news:{ko:'RWA 뉴스 · 리서치',en:'RWA News · Research'}, tab_issuers:{ko:'발행사별 구조',en:'Issuers'}, tab_cex:{ko:'거래소 비교',en:'Exchanges'},
   rwa_h:{ko:'RWA 관련 미국 주식',en:'RWA-Related US Equities'},
   sect_h:{ko:'📈 RWA 섹터 확장 지표',en:'📈 RWA Sector Expansion'},
+  sect_idx_h:{ko:'RWA 주식 지수 추이 (vs BTC · 90일)',en:'RWA Stock Index (vs BTC · 90d)'},
+  sect_k_treasury:{ko:'토큰화 국채',en:'Tokenized treasuries'}, sect_treasury_sub:{ko:'BUIDL·USYC 등 주요',en:'BUIDL·USYC etc.'},
+  live_next:{ko:'갱신',en:'next'},
   sect_stable_h:{ko:'스테이블코인 총 발행량 (90일)',en:'Stablecoin Supply (90d)'},
   sect_flow_h:{ko:'RWA 관련 주식 자금 흐름',en:'RWA Stock Money Flow'},
   rwa_list_h:{ko:'RWA 관련 주식 — 종목별',en:'RWA-Related Stocks — by ticker'},
@@ -749,6 +767,7 @@ const TR_ZH={
   m_sort_vol:'按成交量', m_sort_tvl:'按 TVL', m_page:'页', m_prev:'← 上一页', m_next:'下一页 →',
   tab_main:'Main', tab_rwa:'RWA 相关股票', tab_news:'RWA 新闻 · 研究', tab_issuers:'发行方结构', tab_cex:'交易所对比',
   sect_h:'📈 RWA 板块扩张指标', sect_stable_h:'稳定币总发行量 (90天)', sect_flow_h:'RWA 相关股票资金流向', rwa_list_h:'RWA 相关股票 — 按标的',
+  sect_idx_h:'RWA 股票指数走势 (vs BTC · 90天)', sect_k_treasury:'代币化国债', sect_treasury_sub:'BUIDL·USYC 等主要', live_next:'更新',
   sect_k_stable:'稳定币发行量', sect_k_rwatvl:'RWA 协议 TVL', sect_k_idx:'RWA 股票指数', sect_k_tokstk:'代币化股票发行额',
   sect_weighted:'市值加权', flow_in:'流入', flow_out:'流出',
   rwa_h:'RWA 相关美股', rwa_d:'代币化/稳定币/牌照基础设施标的 · 实时涨跌 · 点击查看详情',
@@ -940,7 +959,7 @@ function renderTop(){
      <button class="btn" onclick="topMove(1)" ${dis(topPage>=pages-1)}>${t('m_next')}</button>`;
 }
 function topMove(d){topPage+=d;renderTop();}
-let barChart,donut,chainMcapCh,chainVolCh,stableChart,rwaFlowChart;
+let barChart,donut,chainMcapCh,chainVolCh,stableChart,rwaFlowChart,idxChart;
 function renderShare(){
   const cur=aggIssuer(shareMetric),tot=Object.values(cur).reduce((a,b)=>a+b,0);
   const order=[...issuersList].sort((a,b)=>cur[b]-cur[a]);
@@ -1286,13 +1305,14 @@ function renderRWA(){
   if(!items.length){el.innerHTML=`<div style="color:var(--mut);font-family:var(--mono);font-size:12px;padding:12px">${t('news_loading')}</div>`;return;}
   const card=r=>{const up=r.chg==null?null:r.chg>=0;
     const col=r.chg==null?'var(--mut)':up?'var(--up)':'var(--down)';
+    const fl=(prevPx[r.sym]!=null&&r.price!=null&&r.price!==prevPx[r.sym])?(r.price>prevPx[r.sym]?' px-up':' px-dn'):'';
     return `<div class="rwa-card" onclick="openStock('${r.sym}')">
       <img class="logo" src="/api/logo?t=${r.sym}" onerror="this.style.display='none'" alt="">
       <div style="flex:1;min-width:0">
         <div class="rwa-tk">${r.sym} <span class="rwa-nm">${escHtml(r.name).replace(/,?\s*(Inc\.?|Corp\.?|Ltd|Common Stock|Class A.*|Holdings|Group|Incorporated).*$/i,'').slice(0,20)}</span></div>
         <div class="rwa-note">${escHtml(L18(r))}</div></div>
       <div style="text-align:right;flex:none">
-        <div class="rwa-px">$${(r.price||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+        <div class="rwa-px${fl}">$${(r.price||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
         <div class="rwa-chg" style="color:${col}">${r.chg==null?'—':(up?'▲':'▼')+Math.abs(r.chg).toFixed(2)+'%'}</div>
         <div class="rwa-mc">${fmtMcap(r.mcap)}</div></div>
     </div>`;};
@@ -1305,8 +1325,10 @@ function renderRWA(){
     html=`<div class="rwa-list">${sorted.map(card).join('')}</div>`;
   }
   el.innerHTML=html;
+  items.forEach(r=>{if(r.price!=null)prevPx[r.sym]=r.price;});   // remember for next flash-diff
   renderRwaFlow();
 }
+let prevPx={};
 /* ---- RWA sector-expansion dashboard (KPI tiles + stablecoin trend) ---- */
 let sectorData=null;
 async function loadSector(){
@@ -1328,10 +1350,25 @@ function renderSector(){
   const s=(sectorData&&sectorData.stable)||{}, rt=(sectorData&&sectorData.rwatvl)||{}, idx=rwaIndex();
   const tile=(label,val,sub)=>`<div class="kpi-tile"><div class="kt-l">${label}</div><div class="kt-v">${val}</div><div class="kt-s">${sub||''}</div></div>`;
   kp.innerHTML=
-    tile(t('sect_k_stable'), s.total!=null?'$'+s.total.toFixed(0)+'B':'—', s.chg30!=null?pctSpan(s.chg30)+' <span class="d">30d</span>':'')+
+    tile(t('sect_k_stable'), s.total!=null?'$'+s.total.toFixed(0)+'B':'—', (s.chg30!=null?pctSpan(s.chg30)+' <span class="d">30d</span>':'')+(s.net7!=null?` · <span class="${s.net7>=0?'up':'down'}">${s.net7>=0?'+':''}$${s.net7.toFixed(0)}B</span> <span class="d">7d net</span>`:''))+
     tile(t('sect_k_rwatvl'), rt.total!=null?'$'+rt.total.toFixed(1)+'B':'—', (rt.chg7!=null?pctSpan(rt.chg7)+' <span class="d">7d</span> · ':'')+`<span class="d">${rt.count||0} proto</span>`)+
-    tile(t('sect_k_idx'), idx?pctSpan(idx.w,2):'—', idx?`<span class="d">${t('sect_weighted')} · ${idx.up}▲ ${idx.dn}▼</span>`:'')+
-    tile(t('sect_k_tokstk'), '$1.86B', pctSpan(SECTOR.mcap30d)+' <span class="d">30d</span>');
+    tile(t('sect_k_treasury'), rt.treasury!=null?'$'+rt.treasury.toFixed(1)+'B':'—', `<span class="d">${t('sect_treasury_sub')}</span>`)+
+    tile(t('sect_k_tokstk'), '$1.86B', pctSpan(SECTOR.mcap30d)+' <span class="d">30d · RWA.xyz</span>')+
+    tile(t('sect_k_idx'), idx?pctSpan(idx.w,2):'—', idx?`<span class="d">${t('sect_weighted')} · ${idx.up}▲ ${idx.dn}▼</span>`:'');
+  // RWA-equity index vs BTC (rebased 100)
+  const ix=sectorData&&sectorData.idxseries;
+  const isub=document.getElementById('idxSub');
+  if(isub)isub.innerHTML=ix&&ix.index&&ix.index.length?`<span class="up" style="color:var(--bp)">RWA ${ix.index[ix.index.length-1]}</span> · <span style="color:var(--gold)">BTC ${ix.btc[ix.btc.length-1]||'—'}</span> <span class="d">(90d, =100)</span>`:'';
+  const icv=document.getElementById('idxChart');
+  if(icv&&ix&&ix.dates&&ix.dates.length&&window.Chart){
+    const cfg={type:'line',data:{labels:ix.dates,datasets:[
+        {label:'RWA 주식',data:ix.index,borderColor:cv('--bp'),backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:.2},
+        {label:'BTC',data:ix.btc,borderColor:cv('--gold'),backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:.2}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10},color:cv('--ink2')}},tooltip:{callbacks:{label:c=>c.dataset.label+' '+c.parsed.y}}},
+        scales:{x:{ticks:{maxTicksLimit:6,color:cv('--mut'),font:{size:9}},grid:{display:false}},
+                y:{ticks:{color:cv('--mut'),font:{size:9},maxTicksLimit:5},grid:{color:cv('--line2')}}}}};
+    if(idxChart){idxChart.data=cfg.data;idxChart.options=cfg.options;idxChart.update();}else idxChart=new Chart(icv,cfg);
+  }
   // stablecoin trend line
   const sub=document.getElementById('stableSub');
   if(sub)sub.innerHTML=s.total!=null?('$'+s.total.toFixed(0)+'B '+pctSpan(s.chg30)):'';
@@ -1559,7 +1596,12 @@ function renderAll(){
   chainVolCh=chainDonut('chainVol',CHAIN_VOL,true,chainVolCh);
   renderChainLegend('chainMcapLeg',CHAIN_MCAP,false);renderChainLegend('chainVolLeg',CHAIN_VOL,true);
 }
-async function tick(){await refreshPrices();await refreshBirdeye();await refreshLive();await refreshTokenMcap();await refreshCEX();renderAll();loadNews();}
+const TICK_MS=30000; let nextTickAt=Date.now()+TICK_MS;
+async function tick(){nextTickAt=Date.now()+TICK_MS;await refreshPrices();await refreshBirdeye();await refreshLive();await refreshTokenMcap();await refreshCEX();renderAll();loadNews();
+  const sec=document.getElementById('s-rwa');if(sec&&sec.style.display!=='none')loadRWA();}   // live-refresh RWA prices when its tab is open
+function heartbeat(){const el=document.getElementById('liveCountdown');if(!el)return;
+  const s=Math.max(0,Math.ceil((nextTickAt-Date.now())/1000));el.textContent=' · '+t('live_next')+' '+s+'s';}
+setInterval(heartbeat,1000);
 
 /* ===================== EVENTS ===================== */
 document.getElementById('langSeg').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;

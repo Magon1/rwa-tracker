@@ -588,10 +588,52 @@ def _rwa_loop():
                 sys.stderr.write(f"rwastocks: {len(d)} priced\n")
         except Exception as e:
             sys.stderr.write(f"rwa loop: {e}\n")
-        time.sleep(600 if got else 300)   # 10min when healthy; retry 5min while failing
+        time.sleep(120 if got else 180)   # 2min when healthy (feels near-live); 3min retry on failure
 
 # ---- RWA sector-expansion metrics: stablecoin supply (proxy for on-chain capital) + RWA TVL ----
 _sector = {'t': 0, 'data': {}}
+def _yahoo_hist(sym, rng='6mo'):
+    try:
+        d = json.loads(_get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range={rng}&interval=1d", 10))
+        r = d['chart']['result'][0]
+        ts = r['timestamp']; cl = r['indicators']['quote'][0]['close']
+        return {time.strftime('%m/%d', time.gmtime(int(t))): c for t, c in zip(ts, cl) if c is not None}
+    except Exception:
+        return {}
+
+def build_rwa_series():
+    # Reconstruct a mcap-weighted RWA-equity index from real price history (no fragile storage;
+    # survives restarts, backfilled). Rebased to 100 at window start. BTC-USD as comparison.
+    with _lock:
+        weights = {r['sym']: (r.get('mcap') or 0) for r in _rwa['data']}
+    syms = list(weights) or [x[0] for x in RWA_STOCKS]
+    hist = {}
+    with _cf.ThreadPoolExecutor(max_workers=8) as ex:
+        for sym, h in zip(syms, ex.map(_yahoo_hist, syms)):
+            if len(h) >= 20:
+                hist[sym] = h
+    if not hist:
+        return None
+    btcd = _yahoo_hist('BTC-USD')
+    dates = sorted({d for h in hist.values() for d in h},
+                   key=lambda s: (int(s[:2]), int(s[3:])))[-90:]
+    base = {}
+    for sym, h in hist.items():
+        for dt in dates:
+            if dt in h:
+                base[sym] = h[dt]; break
+    idx = []
+    for dt in dates:
+        num = wsum = 0.0
+        for sym, h in hist.items():
+            if dt in h and base.get(sym):
+                w = weights.get(sym, 0) or 1
+                num += w * (h[dt] / base[sym]); wsum += w
+        idx.append(round(num / wsum * 100, 2) if wsum else None)
+    bbase = next((btcd[dt] for dt in dates if dt in btcd), None)
+    btc = [round(btcd[dt] / bbase * 100, 2) if (dt in btcd and bbase) else None for dt in dates]
+    return {'dates': dates, 'index': idx, 'btc': btc, 'members': len(hist)}
+
 def build_sector():
     out = {}
     try:  # total stablecoin supply + 90-day series (DefiLlama, free)
@@ -601,22 +643,33 @@ def build_sector():
         series = pts[-90:]
         total = series[-1][1] if series else None
         d30 = series[-31][1] if len(series) >= 31 else (series[0][1] if series else None)
+        d7 = series[-8][1] if len(series) >= 8 else None
         out['stable'] = {'total': total, 'series': series,
-                         'chg30': round((total - d30) / d30 * 100, 1) if (total and d30) else None}
+                         'chg30': round((total - d30) / d30 * 100, 1) if (total and d30) else None,
+                         'net7': round(total - d7, 1) if (total and d7) else None}   # weekly net mint/burn ($B)
     except Exception as e:
         sys.stderr.write(f"sector stable: {e}\n")
-    try:  # on-chain RWA protocol TVL (DefiLlama category=RWA) + tvl-weighted 7d change
+    try:  # on-chain RWA protocol TVL (DefiLlama category=RWA) + tvl-weighted 7d change + treasury subset
         prot = json.loads(_get("https://api.llama.fi/protocols", 30))
         rwa = [p for p in prot if p.get('category') == 'RWA']
         tot = sum(p.get('tvl', 0) or 0 for p in rwa)
         w = sum((p.get('tvl', 0) or 0) for p in rwa if p.get('change_7d') is not None)
         c7 = (sum((p.get('tvl', 0) or 0) * (p.get('change_7d') or 0) for p in rwa if p.get('change_7d') is not None) / w) if w else None
         top = sorted(rwa, key=lambda x: -(x.get('tvl', 0) or 0))[:6]
+        TRE = ('treasur', 'buidl', 'usyc', 'ousg', 'benji', 'ustb', 'tbill', 'money market', 'fobxx')
+        tre = sum((p.get('tvl', 0) or 0) for p in rwa if any(k in (p.get('name', '') or '').lower() for k in TRE))
         out['rwatvl'] = {'total': round(tot / 1e9, 2), 'count': len(rwa),
                          'chg7': round(c7, 1) if c7 is not None else None,
+                         'treasury': round(tre / 1e9, 2),
                          'top': [{'name': p.get('name'), 'tvl': round((p.get('tvl', 0) or 0) / 1e9, 2)} for p in top]}
     except Exception as e:
         sys.stderr.write(f"sector rwatvl: {e}\n")
+    try:  # mcap-weighted RWA-equity index time-series (Yahoo backfill) + BTC comparison
+        ser = build_rwa_series()
+        if ser:
+            out['idxseries'] = ser
+    except Exception as e:
+        sys.stderr.write(f"sector series: {e}\n")
     out['generated'] = int(time.time())
     return out
 
@@ -845,12 +898,26 @@ def _fetch_url(url):
     except Exception:
         pass
     return None, None
+# ticker -> official domain, for a high-quality Clearbit logo fallback on newer/obscure names
+LOGO_DOMAIN = {
+    'SECZ': 'securitize.io', 'FIGR': 'figure.com', 'GLXY': 'galaxy.com', 'HLNE': 'hamiltonlane.com',
+    'WT': 'wisdomtree.com', 'TW': 'tradeweb.com', 'CBOE': 'cboe.com', 'IBKR': 'interactivebrokers.com',
+    'APO': 'apollo.com', 'IVZ': 'invesco.com', 'BEN': 'franklintempleton.com', 'STT': 'statestreet.com',
+    'KKR': 'kkr.com', 'NDAQ': 'nasdaq.com', 'ICE': 'ice.com', 'SOFI': 'sofi.com', 'GLXY ': 'galaxy.com',
+    'CRCL': 'circle.com', 'COIN': 'coinbase.com', 'HOOD': 'robinhood.com', 'MSTR': 'strategy.com',
+    'SCHW': 'schwab.com', 'PYPL': 'paypal.com', 'CME': 'cmegroup.com',
+}
 def _logo_urls(typ, val):
     if typ == 't':
         v = val.upper()
-        return [f"https://financialmodelingprep.com/image-stock/{v}.png",
-                f"https://assets.parqet.com/logos/symbol/{v}?format=png",
-                f"https://xstocks-metadata.backed.fi/logos/tokens/{v}x.png"]
+        urls = [f"https://financialmodelingprep.com/image-stock/{v}.png",
+                f"https://assets.parqet.com/logos/symbol/{v}?format=png"]
+        dom = LOGO_DOMAIN.get(v)
+        if dom:                                    # try the company's real logo before the xStocks guess
+            urls.append(f"https://logo.clearbit.com/{dom}")
+            urls.append(f"https://www.google.com/s2/favicons?domain={dom}&sz=128")
+        urls.append(f"https://xstocks-metadata.backed.fi/logos/tokens/{v}x.png")
+        return urls
     if typ == 'd':
         return [f"https://www.google.com/s2/favicons?domain={val.lower()}&sz=128"]
     if typ == 'c':
