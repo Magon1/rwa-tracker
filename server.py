@@ -14,7 +14,13 @@ PORT = int(os.environ.get('PORT') or (sys.argv[1] if len(sys.argv) > 1 else 8765
 
 # ---- RWA news feeds (verified working RSS/Atom) ----
 FEEDS = [
-    # (name, url, lang)
+    # (name, url, lang[, cat])
+    # Global tier-1 ORIGINAL-source wires (they originate stories; Korean outlets re-report them —
+    # so these should win as the canonical version of any story they share). General-finance feeds:
+    # the crypto/RWA relevance gate keeps only their on-topic original reporting.
+    ("Bloomberg",     "https://feeds.bloomberg.com/markets/news.rss", "en"),
+    ("Bloomberg",     "https://feeds.bloomberg.com/technology/news.rss", "en"),
+    ("CNBC",          "https://www.cnbc.com/id/10000664/device/rss/rss.html", "en"),
     ("CoinDesk",      "https://www.coindesk.com/arc/outboundfeeds/rss/", "en"),
     ("Cointelegraph", "https://cointelegraph.com/rss", "en"),
     ("Cointelegraph RWA", "https://cointelegraph.com/rss/tag/rwa", "en"),
@@ -94,6 +100,16 @@ KO_NOISE_RE = re.compile(
     r'아침코인|주간\s?알트|주간알트|차트\s?분석|마켓\s?워치|특징주|채굴|주간\s?동향|주간알트|'
     r'주요\s?(경제|일정)[^\]]*|오늘의[^\]]*|이번\s?주[^\]]*일정|급등락|주간\s?코인|데일리|주간\s?전망|'
     r'주간\s?리포트|코인\s?시세|가격\s?동향|주간\s?정리|한주\s?동안|시황)', re.I)
+# Korea-domestic signals: Korean firms, regulators, market/geography terms. Used to keep Korean
+# outlets focused on KOREAN news — their re-reports of GLOBAL stories (no Korea angle) are dropped
+# so the global tier-1 ORIGINAL carries the story instead (Korean outlets re-report; originals originate).
+KO_DOMESTIC_RE = re.compile('|'.join([
+    '삼성', '카카오', '토스', '우리은행', '우리카드', '우리금융', '신한', '하나은행', '하나금융', '국민은행',
+    '기업은행', '농협', '미래에셋', '한국투자', '네이버', '엔에이치엔', 'nhn', '코인원', '빗썸', '업비트',
+    '두나무', '고팍스', '코빗', '위믹스', '위메이드', '카이아', '클레이', '넷마블', '컴투스', '다날', '쿠팡',
+    '엘지', 'lg전자', 'lg씨엔에스', 'lg cns', 'sk텔레콤', 'sk하이닉스', '케이티', '한화', '롯데', '카카오뱅크',
+    '금융위', '금감원', '한국은행', '예금보험', '자본시장법', '특금법', '원화', '국내', '한국', '코스피',
+    '코스닥', '기재부', '과기부', '전북은행', '카카오페이', '토스뱅크', '케이뱅크', '한국거래소', '예탁결제원']), re.I)
 
 def score(title, summary, lang='en'):
     text = (title + ' ' + summary).lower()
@@ -188,8 +204,19 @@ ARCHIVE_MAX = 260          # ~5 pages of 50 + headroom
 ARCHIVE_DAYS = 14          # keep two weeks so users can page back through time
 # outlet tiers for the Top-5 "impact" proxy (we have no real view counts; corroboration + tier + recency)
 SRC_TIER = {'CoinDesk': 2.0, 'Cointelegraph': 1.5, 'The Block': 2.0, 'Decrypt': 1.5,
-            'Bloomberg': 2.5, 'Reuters': 2.5, 'The Defiant': 1.5, 'Blockworks': 1.5,
+            'Bloomberg': 2.5, 'CNBC': 2.0, 'Reuters': 2.5, 'The Defiant': 1.5, 'Blockworks': 1.5,
             'SEC': 2.5, 'Investinglive': 1.2, 'Bankless': 1.2, '블록미디어': 1.2, '디지털에셋': 1.2}
+# canonical-source preference for clustering: when the same story appears from several outlets,
+# show the most ORIGINAL/tier-1 one as the headline (Korean outlets re-report globals → rank lower;
+# their Korea-origin stories are single-source, so this never suppresses them).
+SRC_RANK = {'SEC': 6, 'Bloomberg': 6, 'Reuters': 6,
+            'CoinDesk': 5, 'The Block': 5, 'CNBC': 5, 'WSJ': 5,
+            'Cointelegraph': 4, 'Cointelegraph RWA': 4, 'Cointelegraph Tokenization': 4,
+            'Decrypt': 4, 'Blockworks': 4, 'The Defiant': 4,
+            'Bankless': 3, 'CryptoBriefing': 3, 'Tokeny': 3, 'Dune': 3, 'Investinglive': 3,
+            '디지털에셋': 2, '블록미디어': 2, '토큰포스트': 2}
+def _rank(x):
+    return SRC_RANK.get(x.get('source', ''), 3)
 
 def _key(x):
     return (x.get('link') or '').strip() or ('t:' + (x.get('title') or ''))
@@ -362,18 +389,26 @@ def build_news():
             clusters.append({'kw': set(kw), 'fkw': kw, 'nt': nt, 'link': link, 'items': [it]})
     ranked = []
     for c in clusters:
-        best = max(c['items'], key=lambda x: x['raw_score'])
+        # canonical article = highest-rank ORIGINAL source (tie-break by score), so a global tier-1
+        # original represents the story rather than a Korean re-report that clustered with it.
+        best = max(c['items'], key=lambda x: (_rank(x), x['raw_score']))
+        top_raw = max(x['raw_score'] for x in c['items'])   # score the story on its best evidence
         age_h = (now - best['ts']) / 3600 if best['ts'] else 72
         decay = math.exp(-age_h / 24) if best['ts'] else 0.2
-        final = (best['raw_score'] + 2 * (len(c['items']) - 1)) * decay
+        final = (top_raw + 2 * (len(c['items']) - 1)) * decay
         best = dict(best)
         best['age_h'] = round(age_h, 1)
         best['cluster'] = len(c['items'])
         best['score'] = round(final, 1)
         lg = best.get('lang', 'en')
         cat = best.get('cat', 'crypto')
-        if lg == 'ko' and KO_NOISE_RE.search(best['title']):   # skip daily-recap / price-snapshot columns
-            continue
+        if lg == 'ko':
+            if KO_NOISE_RE.search(best['title']):   # skip daily-recap / price-snapshot columns
+                continue
+            # Korean outlet is the canonical source here → no global original clustered with it.
+            # Keep it only if it's a KOREAN story; drop global re-reports (global tier-1 feeds carry those).
+            if not KO_DOMESTIC_RE.search(best['title'] + ' ' + best.get('summary', '')):
+                continue
         best['flag'] = news_flag(best['title'], best.get('summary', ''), lg)
         # important items get an interpretation (meaning + RWA implication): reg-flagged,
         # corroborated by 2+ sources, or high-scoring
