@@ -28,11 +28,24 @@ FEEDS = [
     ("Tokeny",        "https://www.tokeny.com/feed/", "en"),
     ("Dune",          "https://dune.com/blog/feed", "en"),
     ("SEC",           "https://www.sec.gov/news/pressreleases.rss", "en"),   # official US regulator
-    # Korean digital-asset media — Korean企업 blockchain/tokenization coverage
+    # Korean digital-asset media — Korean企業 blockchain/tokenization coverage
     ("디지털에셋",     "https://www.digitalasset.works/rss/allArticle.xml", "ko"),
     ("블록미디어",     "https://www.blockmedia.co.kr/feed", "ko"),
     ("토큰포스트",     "https://www.tokenpost.kr/rss", "ko"),
+    # Real-time breaking macro/market desk (terminal-sourced headlines). This is the honest,
+    # reliable substitute for First Squawk / Walter Bloomberg: those are X accounts whose only
+    # free bridge (Twitter's public syndication timeline) has been frozen since Oct-2024, and
+    # nitter is dead. Investinglive/ForexLive carries the same class of fast market-moving
+    # headlines via proper RSS. 'macro' items use the macro relevance gate, not the crypto gate.
+    ("Investinglive", "https://www.forexlive.com/feed/news", "en", "macro"),
 ]
+# macro/big-news relevance gate — only high-impact market-moving headlines pass (not currency ticks)
+MACRO_RE = re.compile(
+    r'\bfed\b|fomc|federal reserve|rate (?:cut|hike|decision)|interest rate|\bcpi\b|inflation|'
+    r'\bpce\b|treasur|\byield|\bsec\b|regulat|tariff|sanction|\bwar\b|ceasefire|central bank|'
+    r'\bpboc\b|\becb\b|\bboj\b|\bboe\b|recession|\bgdp\b|jobs report|nonfarm|payroll|debt ceiling|'
+    r'default|downgrade|stimulus|\bstocks?\b|equit|nasdaq|s&p|dow jones|crude|\boil\b|\bgold\b|'
+    r'bitcoin|crypto|stablecoin|tokeniz', re.I)
 
 # ---- importance scoring ----
 HIGH = {  # core RWA tokenized-equity entities
@@ -168,10 +181,99 @@ def news_insight(title, summary):
             return {'ko': km, 'ko2': ki, 'en': em, 'en2': ei}
     return None
 
-_cache = {"t": 0, "data": []}
+_cache = {"t": 0, "data": [], "archive": {}, "top5": []}
 _lock = threading.Lock()
+_NEWS_STORE = os.path.join(BASE, 'news_store.json')
+ARCHIVE_MAX = 260          # ~5 pages of 50 + headroom
+ARCHIVE_DAYS = 14          # keep two weeks so users can page back through time
+# outlet tiers for the Top-5 "impact" proxy (we have no real view counts; corroboration + tier + recency)
+SRC_TIER = {'CoinDesk': 2.0, 'Cointelegraph': 1.5, 'The Block': 2.0, 'Decrypt': 1.5,
+            'Bloomberg': 2.5, 'Reuters': 2.5, 'The Defiant': 1.5, 'Blockworks': 1.5,
+            'SEC': 2.5, 'Investinglive': 1.2, 'Bankless': 1.2, '블록미디어': 1.2, '디지털에셋': 1.2}
 
-def fetch_feed(name, url, out, lang='en'):
+def _key(x):
+    return (x.get('link') or '').strip() or ('t:' + (x.get('title') or ''))
+
+def compute_top5(items):
+    """Today's most impactful global stories. Honest proxy for '조회수·반응·파급력':
+    multi-outlet corroboration (how many desks picked it up) + outlet tier + recency + score."""
+    now = time.time()
+    def impact(x):
+        age_h = (now - (x.get('ts') or now)) / 3600
+        rec = math.exp(-age_h / 30.0)                      # ~1.25-day half-life
+        corr = max((x.get('cluster', 1) - 1), 0)           # picked up by N extra outlets
+        sc = min((x.get('raw_score') or x.get('score') or 0), 30) / 30.0
+        flag = 1.0 if x.get('flag') == 'reg' else 0.0
+        tier = SRC_TIER.get(x.get('source', ''), 0.6)
+        return (corr * 3.5 + sc * 4.0 + flag * 2.0 + tier) * (0.35 + 0.65 * rec)
+    # favor globally-relevant stories (drop pure single-currency FX ticks that slipped through)
+    cand = [x for x in items if (x.get('ts') or 0) > now - 3 * 86400]
+    ranked = sorted(cand, key=impact, reverse=True)
+    def kw(x):   # distinguishing words for near-duplicate detection across outlets
+        stop = {'the', 'and', 'for', 'with', 'plans', 'says', 'over', 'into', 'from', 'that'}
+        return set(w for w in re.findall(r'[a-z]{4,}|[가-힣]{2,}', (x.get('title') or '').lower())
+                   if w not in stop)
+    out, seen, seen_kw = [], set(), []
+    for x in ranked:
+        k = _key(x)
+        if k in seen:
+            continue
+        kws = kw(x)
+        # skip a story already represented by a higher-ranked near-duplicate (same event, other outlet)
+        if any(len(kws & prev) >= 3 for prev in seen_kw):
+            continue
+        seen.add(k)
+        seen_kw.append(kws)
+        out.append({'title': x.get('title', ''), 'title_ko': x.get('title_ko', ''),
+                    'title_zh': x.get('title_zh', ''), 'link': x.get('link', ''),
+                    'source': x.get('source', ''), 'flag': x.get('flag', ''),
+                    'cat': x.get('cat', 'crypto'), 'impact': round(impact(x), 1)})
+        if len(out) >= 5:
+            break
+    return out
+
+def _load_store():
+    try:
+        with open(_NEWS_STORE, encoding='utf-8') as f:
+            items = json.load(f)
+        arc = {_key(x): x for x in items}
+        items = sorted(arc.values(), key=lambda x: -(x.get('ts') or 0))
+        with _lock:
+            _cache['archive'] = arc
+            _cache['data'] = items
+            _cache['top5'] = compute_top5(items)
+            _cache['t'] = time.time()
+        sys.stderr.write(f"news: loaded {len(items)} archived items from disk\n")
+    except Exception:
+        pass
+
+def _merge_archive(fresh):
+    """Merge a fresh build into the rolling archive so stories persist after they leave the RSS
+    window (lets the UI page 1..N back through time). Prune by count + age."""
+    now = time.time()
+    with _lock:
+        arc = _cache.get('archive') or {}
+        for it in fresh:
+            k = _key(it)
+            if k in arc:
+                arc[k].update(it)            # refresh score/cluster/translations, keep first-seen
+            else:
+                arc[k] = it
+        cutoff = now - ARCHIVE_DAYS * 86400
+        items = [x for x in arc.values() if (x.get('ts') or now) >= cutoff]
+        items.sort(key=lambda x: -(x.get('ts') or 0))
+        items = items[:ARCHIVE_MAX]
+        _cache['archive'] = {_key(x): x for x in items}
+        _cache['data'] = items
+        _cache['top5'] = compute_top5(items)
+        _cache['t'] = now
+    try:
+        with open(_NEWS_STORE, 'w', encoding='utf-8') as f:
+            json.dump(items, f, ensure_ascii=False)
+    except Exception as e:
+        sys.stderr.write(f"news store save: {e}\n")
+
+def fetch_feed(name, url, out, lang='en', cat='crypto'):
     try:
         req = urllib.request.Request(url, headers={
             'User-Agent': 'Mozilla/5.0 (compatible; OnchainEquities/1.0)',
@@ -204,15 +306,17 @@ def fetch_feed(name, url, out, lang='en'):
             except Exception:
                 ts = 0
             out.append({'title': title, 'link': link, 'source': name, 'summary': summary,
-                        'ts': ts, 'lang': lang, 'raw_score': score(title, summary, lang)})
+                        'ts': ts, 'lang': lang, 'cat': cat, 'raw_score': score(title, summary, lang)})
     except Exception as e:
         sys.stderr.write(f"feed err {name}: {e}\n")
 
 def build_news():
     items = []
     threads = []
-    for name, url, lang in FEEDS:
-        t = threading.Thread(target=fetch_feed, args=(name, url, items, lang)); t.start(); threads.append(t)
+    for feed in FEEDS:
+        name, url, lang = feed[0], feed[1], feed[2]
+        cat = feed[3] if len(feed) > 3 else 'crypto'
+        t = threading.Thread(target=fetch_feed, args=(name, url, items, lang, cat)); t.start(); threads.append(t)
     for t in threads: t.join(timeout=10)
     now = time.time()
     # corroboration clustering: merge the SAME story arriving from different feeds/titles.
@@ -254,6 +358,7 @@ def build_news():
         best['cluster'] = len(c['items'])
         best['score'] = round(final, 1)
         lg = best.get('lang', 'en')
+        cat = best.get('cat', 'crypto')
         if lg == 'ko' and KO_NOISE_RE.search(best['title']):   # skip daily-recap / price-snapshot columns
             continue
         best['flag'] = news_flag(best['title'], best.get('summary', ''), lg)
@@ -263,21 +368,25 @@ def build_news():
             ins = news_insight(best['title'], best.get('summary', ''))
             if ins:
                 best['insight'] = ins
-        # keep only items that pass BOTH the score AND the topical gate (drops off-topic leaks)
-        if best['raw_score'] >= 6 and is_relevant(best['title'], best.get('summary', ''), lg):
+        if cat == 'macro':
+            # breaking macro/big-news lane: use the macro gate (crypto keywords not required)
+            if MACRO_RE.search((best['title'] + ' ' + best.get('summary', '')).lower()):
+                ranked.append(best)
+        # crypto lane: keep only items that pass BOTH the score AND the topical gate
+        elif best['raw_score'] >= 6 and is_relevant(best['title'], best.get('summary', ''), lg):
             ranked.append(best)
     # show newest first (common sense for a news feed); relevance filter + dedup already applied above
     ranked.sort(key=lambda x: -(x.get('ts') or 0))
-    # soft-cap Korean items so fresh Korea-desk feeds don't crowd out global RWA / US-regulation /
-    # overseas-exchange news; keep the newest KO up to the cap, all non-KO, then re-sort newest-first.
-    KO_CAP = 16
+    # soft-cap each lane so no single desk crowds out the others: Korean, breaking-macro, and
+    # global crypto/RWA. Keep the newest of each up to its cap, then re-sort newest-first.
+    KO_CAP, MACRO_CAP = 16, 8
     ko = [r for r in ranked if r.get('lang') == 'ko'][:KO_CAP]
-    non = [r for r in ranked if r.get('lang') != 'ko']
-    top = ko + non
+    macro = [r for r in ranked if r.get('lang') != 'ko' and r.get('cat') == 'macro'][:MACRO_CAP]
+    other = [r for r in ranked if r.get('lang') != 'ko' and r.get('cat') != 'macro']
+    top = ko + macro + other
     top.sort(key=lambda x: -(x.get('ts') or 0))
-    top = top[:45]
-    for r in top:
-        r.pop('ts', None); r.pop('raw_score', None)
+    top = top[:50]
+    # keep ts + raw_score: the archive orders/pages by ts and ranks Top-5 impact by raw_score
     for r in top:                       # localize into all 3 languages, respecting the source language
         if r.get('lang') == 'ko':       # Korean source: keep original as KO, translate out to EN/ZH
             r['title_ko'] = r['title']; r['summary_ko'] = r.get('summary', '')
@@ -429,21 +538,38 @@ def _translate(text, tl='ko', sl='en'):
 def _translate_ko(text):
     return _translate(text, 'ko')
 
-def get_news():
+def get_news(page=1, size=50, q=''):
+    """Return a paged (and optionally searched) slice of the rolling archive + Top-5 + meta."""
     with _lock:
-        return _cache['data']
+        data = list(_cache['data'])
+        top5 = list(_cache['top5'])
+    q = (q or '').strip().lower()
+    if q:
+        def hit(x):
+            hay = ' '.join(str(x.get(k, '')) for k in
+                           ('title', 'title_ko', 'title_zh', 'summary', 'summary_ko', 'summary_zh', 'source'))
+            return q in hay.lower()
+        data = [x for x in data if hit(x)]
+    total = len(data)
+    size = max(1, min(size, 50))
+    pages = max(1, (total + size - 1) // size)
+    page = max(1, min(page, pages))
+    start = (page - 1) * size
+    return {'generated': int(_cache['t']), 'total': total, 'page': page, 'pages': pages,
+            'size': size, 'query': q, 'top5': top5, 'items': data[start:start + size]}
 
 def _news_loop():
     while True:
         try:
-            data = build_news()
-            if data:
+            fresh = build_news()
+            if fresh:
+                _merge_archive(fresh)
                 with _lock:
-                    _cache['t'] = time.time(); _cache['data'] = data
-                sys.stderr.write(f"news: refreshed {len(data)} items (translated)\n")
+                    n = len(_cache['data'])
+                sys.stderr.write(f"news: +{len(fresh)} fresh, archive now {n} items (translated)\n")
         except Exception as e:
             sys.stderr.write(f"news loop: {e}\n")
-        time.sleep(300)
+        time.sleep(240)
 
 # ---- live volume/liquidity refresher (GeckoTerminal Solana + tokens.xyz) ----
 def _get(url, timeout=30):
@@ -1072,7 +1198,11 @@ class H(BaseHTTPRequestHandler):
         path = self.path.split('?')[0]
         if path == '/api/news':
             try:
-                self._send(200, json.dumps({'generated': int(time.time()), 'items': get_news()}), 'application/json')
+                q = urllib.parse.parse_qs(self.path.split('?', 1)[1]) if '?' in self.path else {}
+                page = int((q.get('page', ['1']))[0] or 1)
+                size = int((q.get('size', ['50']))[0] or 50)
+                query = (q.get('q', ['']))[0]
+                self._send(200, json.dumps(get_news(page, size, query)), 'application/json')
             except Exception as e:
                 self._send(500, json.dumps({'error': str(e)}), 'application/json')
             return
@@ -1145,6 +1275,7 @@ class H(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     print(f"OnchainEquities backend on http://localhost:{PORT}  (/api/news + /api/live)")
+    _load_store()   # restore the rolling news archive so history survives restarts within a run
     threading.Thread(target=_news_loop, daemon=True).start()
     threading.Thread(target=_live_loop, daemon=True).start()
     threading.Thread(target=_cex_loop, daemon=True).start()

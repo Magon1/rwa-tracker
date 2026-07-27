@@ -238,6 +238,51 @@
   .ni-ins-tag{font-size:12px}
   .ni-flash{animation:niflash 1.6s ease}
   @keyframes niflash{0%,100%{background:transparent}25%{background:color-mix(in srgb,var(--accent) 14%,transparent)}}
+  /* breaking-macro lane */
+  .cat.macro{color:var(--gold);background:color-mix(in srgb,var(--gold) 18%,transparent);font-weight:700}
+  .ni-item.macro{border-left:3px solid var(--gold);padding-left:9px}
+  /* news search */
+  .news-search{display:flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:6px;
+    background:var(--card);padding:8px 12px;margin:0 0 14px;max-width:520px}
+  .news-search .ns-ic{font-size:13px;color:var(--mut);flex:none}
+  .news-search input{flex:1;border:none;background:none;outline:none;color:var(--ink);font-size:13.5px;font-family:inherit}
+  .news-search input::placeholder{color:var(--mut)}
+  .ns-clear{font-family:var(--mono);font-size:10.5px;color:var(--mut);background:var(--card2);
+    border:1px solid var(--line2);border-radius:4px;padding:3px 8px;cursor:pointer;flex:none}
+  .ns-clear:hover{color:var(--ink)}
+  .news-empty{font-family:var(--mono);font-size:12.5px;color:var(--mut);padding:24px 4px;text-align:center}
+  /* pagination */
+  .news-pager{display:flex;align-items:center;justify-content:center;gap:6px;margin:20px 0 6px;flex-wrap:wrap}
+  .np-nums{display:flex;gap:4px}
+  .np-num,.np-arrow{font-family:var(--mono);font-size:12px;color:var(--mut);background:var(--card);
+    border:1px solid var(--line2);border-radius:5px;padding:6px 11px;cursor:pointer;min-width:34px}
+  .np-num:hover,.np-arrow:hover:not([disabled]){color:var(--ink);border-color:var(--accent)}
+  .np-num.on{color:#fff;background:var(--accent);border-color:var(--accent);font-weight:700}
+  .np-arrow[disabled]{opacity:.4;cursor:default}
+  /* Top-5 box (news tab) */
+  .t5-box{border:1px solid var(--line2);border-radius:10px;background:var(--card);padding:14px 16px;margin:0 0 18px}
+  .t5-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .t5-h{font-size:14px;font-weight:700;color:var(--ink)}
+  .t5-sub{font-family:var(--mono);font-size:10.5px;color:var(--mut)}
+  .t5-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid var(--line);cursor:pointer}
+  .t5-row:hover .t5-title{color:var(--accent)}
+  .t5-rank{font-family:var(--mono);font-size:13px;font-weight:800;color:var(--accent);min-width:16px;text-align:center;flex:none}
+  .t5-title{flex:1;font-size:13.5px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+  .t5-src{font-family:var(--mono);font-size:10px;color:var(--mut);white-space:nowrap;flex:none}
+  .t5-tag{font-family:var(--mono);font-size:9px;font-weight:700;color:#fff;border-radius:3px;padding:1px 5px;flex:none}
+  .t5-tag.reg{background:var(--down)} .t5-tag.macro{background:var(--gold)}
+  /* Top-5 CTA card (main right rail) */
+  .cta-top5{border:1px solid color-mix(in srgb,var(--accent) 32%,var(--line2));
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 10%,transparent)}
+  .t5c-head h3{margin:0 0 2px;font-size:15px}
+  .t5c-sub{font-family:var(--mono);font-size:10px;color:var(--mut);margin-bottom:8px}
+  .t5c-row{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-top:1px solid var(--line2);cursor:pointer}
+  .t5c-row:first-child{border-top:none}
+  .t5c-row:hover .t5c-title{color:var(--accent)}
+  .t5c-rank{font-family:var(--mono);font-size:12px;font-weight:800;color:#fff;background:var(--accent);
+    border-radius:5px;width:19px;height:19px;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+  .t5c-rank.r1{background:var(--gold)} .t5c-rank.r2{background:var(--accent)} .t5c-rank.r3{background:var(--accent)}
+  .t5c-title{flex:1;font-size:12.8px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
   .sidecols{align-items:start}
   #earningsCard h3,#newsfeedCard h3{margin:0 0 10px;font-size:15px}
   .ec-row{display:flex;align-items:center;gap:7px;padding:6.5px 0;border-top:1px solid var(--line2);font-size:12.5px}
@@ -530,11 +575,18 @@
   <section id="s-news" data-tab="news">
     <div class="sec-head"><div><div class="sec-label">LIVE · Newsflow</div><h2 data-t="sec_news_h"></h2></div>
       <div class="desc" data-t="sec_news_d"></div></div>
+    <div id="newsTop5"></div>
+    <div class="news-search">
+      <span class="ns-ic">🔍</span>
+      <input id="newsSearch" type="search" autocomplete="off" data-tp="news_search">
+      <button class="ns-clear" id="newsClear" data-t="news_clear" style="display:none"></button>
+    </div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
       <div class="listings" id="listings" style="margin:0"></div>
       <button class="btn" id="newsRefresh" data-t="news_refresh"></button>
     </div>
     <div class="news" id="newsLive"></div>
+    <div class="news-pager" id="newsPager"></div>
   </section>
 
   <section id="s-rec" data-tab="news">
@@ -544,7 +596,7 @@
   </section>
 
   </div><!-- /center -->
-  <aside class="rail rail-r" data-tab="main"><div class="panel" id="newsfeedCard"></div></aside>
+  <aside class="rail rail-r" data-tab="main"><div class="panel cta-top5" id="top5Card"></div><div class="panel" id="newsfeedCard"></div></aside>
   </div><!-- /layout -->
 
   <div class="foot" id="foot"></div>
@@ -715,6 +767,16 @@ const TR={
     en:'🔴 red = regulation/license alerts · "N sources" = N outlets reported it (corroboration=importance) · 💡 = click for RWA insight'},
   ins_mean:{ko:'의미',en:'Meaning'}, ins_impl:{ko:'RWA 시장 함의',en:'RWA takeaway'},
   ins_tip:{ko:'클릭하면 RWA 시장 관점 인사이트',en:'Click for RWA-market insight'},
+  news_search:{ko:'뉴스 검색 — 제목·내용',en:'Search news — title/content'},
+  news_clear:{ko:'지우기',en:'Clear'},
+  news_noresult:{ko:'‘{q}’ 검색 결과가 없습니다',en:'No results for “{q}”'},
+  news_prev:{ko:'← 이전',en:'← Prev'}, news_next:{ko:'다음 →',en:'Next →'},
+  news_page:{ko:'{p} / {n}',en:'{p} / {n}'},
+  news_macro:{ko:'속보',en:'BREAKING'},
+  news_macro_tip:{ko:'실시간 매크로·빅뉴스 데스크(터미널 헤드라인)',en:'Real-time macro/big-news desk (terminal headlines)'},
+  top5_h:{ko:'오늘의 주목 뉴스 TOP 5',en:"Today's Top 5"},
+  top5_sub:{ko:'글로벌 파급력·교차보도 순',en:'Ranked by global impact & corroboration'},
+  top5_all:{ko:'전체 뉴스 보기 →',en:'See all news →'},
   cex_total:{ko:'평균 / 합계',en:'Avg / Total'}, cex_venue:{ko:'거래 장소',en:'Venue'},
   cex_spread:{ko:'스프레드',en:'Spread'}, cex_vol:{ko:'24h 거래량',en:'24h Vol'},
   cex_closed:{ko:'장 마감',en:'mkt closed'}, cex_unlisted:{ko:'미상장',en:'not listed'},
@@ -794,6 +856,11 @@ const TR_ZH={
   news_src_tip:'报道该新闻的媒体数（越多越重要）',
   news_legend:'🔴 红色 = 政府监管/牌照相关重要新闻 · "N家报道" = N家媒体报道（交叉验证 = 重要度）· 💡 = 点击查看 RWA 洞察',
   ins_mean:'含义', ins_impl:'RWA 市场影响', ins_tip:'点击查看 RWA 市场洞察',
+  news_search:'搜索新闻 — 标题/内容', news_clear:'清除',
+  news_noresult:'没有找到“{q}”的结果',
+  news_prev:'← 上一页', news_next:'下一页 →', news_page:'{p} / {n}',
+  news_macro:'快讯', news_macro_tip:'实时宏观/大新闻台（终端头条）',
+  top5_h:'今日焦点新闻 TOP 5', top5_sub:'按全球影响力与交叉报道排序', top5_all:'查看全部新闻 →',
   cex_total:'平均 / 合计', cex_venue:'交易场所', cex_spread:'价差', cex_vol:'24h 成交量',
   cex_closed:'休市', cex_unlisted:'未上架', cex_quote:'报价制(App)', cex_closest:'最接近 Nasdaq',
   cex_explain:'<b>以 Nasdaq 实时买卖盘价差为基准</b>，对比同一只股票在 Backpack 与 Binance 的价差差异。涵盖 Backpack 上架<b>全部 1,112 只证券</b>，每页 30 只，可对比的（Binance/Backpack 订单簿）优先靠前。⚠ Backpack Securities 为<b>单一报价(quote)制，无公开价差</b> → 仅 SPCX·MU（订单簿）有实测，其余显示"报价制"。美股盘前/盘后价差较宽。Nasdaq=基准，数值越小越好。',
@@ -1152,7 +1219,7 @@ function closeModal(){document.getElementById('modal').style.display='none';}
 function renderNews(){
   document.getElementById('listings').innerHTML=LISTINGS[lang].map(l=>`<span class="lst"><b>${l[0]}</b> ${l[1]} <span class="d">· ${l[2]} · ${l[3]}</span></span>`).join('');
   renderTokenMcap();renderCEX();renderRecommended();
-  if(typeof newsData!=='undefined'&&newsData.length)renderNewsList();
+  if(typeof newsData!=='undefined'){renderNewsList();renderPager();renderTop5();renderTop5Card();}
 }
 const ISSUER_TOKENS=[
   {tk:'$ONDO',sub:'Ondo Finance',cgid:'ondo-finance',chain:'Ethereum',color:'#5a51b0',mc:1.483e9,chg:null},
@@ -1443,23 +1510,28 @@ function toggleNews(el){const item=el.closest('.ni-item');const link=item&&item.
   const s=el.nextElementSibling;const open=s.style.display==='block';
   s.style.display=open?'none':'block';el.classList.toggle('open',!open);
   if(link){open?expandedNews.delete(link):expandedNews.add(link);}}
-let newsData=[];
+let newsData=[], newsTop5=[], newsPage=1, newsPages=1, newsQuery='', newsSearchTimer=null;
+const NEWS_SIZE=18;
 const newsTitle=n=>(lang==='ko'&&n.title_ko)?n.title_ko:((lang==='zh'&&n.title_zh)?n.title_zh:n.title);
 function renderNewsList(){
-  const box=document.getElementById('newsLive');if(!newsData.length)return;
+  const box=document.getElementById('newsLive');if(!box)return;
+  if(!newsData.length){
+    box.innerHTML=newsQuery?`<div class="news-empty">${t('news_noresult').replace('{q}',escHtml(newsQuery))}</div>`:'';
+    return;
+  }
   box.innerHTML=`<div class="ni-legend">${t('news_legend')}</div>`+newsData.map(n=>{
-    const reg=n.flag==='reg';
-    const cat=reg?'reg':(n.score>=15?'milestone':n.score>=10?'launch':'entrant');
-    const badge=reg?t('news_reg'):(n.cluster>1?(n.cluster+t('news_src')):t('news_src1'));
+    const reg=n.flag==='reg', macro=n.cat==='macro';
+    const cat=reg?'reg':(macro?'macro':(n.score>=15?'milestone':n.score>=10?'launch':'entrant'));
+    const badge=reg?t('news_reg'):(macro?t('news_macro'):(n.cluster>1?(n.cluster+t('news_src')):t('news_src1')));
     const title=newsTitle(n), open=expandedNews.has(n.link);
     const sum=((lang==='ko'&&n.summary_ko)?n.summary_ko:((lang==='zh'&&n.summary_zh)?n.summary_zh:(n.summary||''))).trim().replace(/"/g,'&quot;');
     const ins=n.insight?`<div class="ni-insight">
         <div class="nii-r"><span class="nii-l">💡 ${t('ins_mean')}</span> ${escHtml(lang==='en'?n.insight.en:n.insight.ko)}</div>
         <div class="nii-r"><span class="nii-l">📊 ${t('ins_impl')}</span> ${escHtml(lang==='en'?n.insight.en2:n.insight.ko2)}</div></div>`:'';
     const badge2=n.insight?`<span class="ni-ins-tag" title="${t('ins_tip')}">💡</span>`:'';
-    return `<div class="ni-item${reg?' reg':''}" data-link="${escHtml(n.link)}">
+    return `<div class="ni-item${reg?' reg':''}${macro?' macro':''}" data-link="${escHtml(n.link)}">
       <div class="ni${open?' open':''}" onclick="toggleNews(this)">
-        <span class="cat ${cat}" ${n.cluster>1&&!reg?`title="${t('news_src_tip')}"`:''}>${badge}</span>
+        <span class="cat ${cat}" ${macro?`title="${t('news_macro_tip')}"`:(n.cluster>1&&!reg?`title="${t('news_src_tip')}"`:'')}>${badge}</span>
         <h4 style="flex:1">${title} ${badge2}</h4>
         <span class="meta">${n.source} · ${relTime(n.age_h)}</span>
         <span class="ni-caret">▾</span></div>
@@ -1468,12 +1540,56 @@ function renderNewsList(){
         <a href="${n.link}" target="_blank">${lang==='ko'?'원문 기사 →':'Read source →'}</a></div>
     </div>`;}).join('');
 }
-async function loadNews(){
+async function loadNews(page=newsPage,q=newsQuery){
   const box=document.getElementById('newsLive');
-  if(box&&!newsData.length)box.innerHTML=`<div style="padding:18px;color:var(--mut);font-family:var(--mono);font-size:12px">${t('news_loading')}</div>`;
-  try{const r=await fetch('/api/news',{cache:'no-store'});const j=await r.json();
-    if(j&&j.items&&j.items.length){newsData=j.items;renderNewsList();renderNewsFeed();}
+  if(box&&!newsData.length&&!q)box.innerHTML=`<div style="padding:18px;color:var(--mut);font-family:var(--mono);font-size:12px">${t('news_loading')}</div>`;
+  try{const u=`/api/news?page=${page}&size=${NEWS_SIZE}`+(q?`&q=${encodeURIComponent(q)}`:'');
+    const r=await fetch(u,{cache:'no-store'});const j=await r.json();
+    if(j&&j.items){
+      newsData=j.items; newsPage=j.page||1; newsPages=j.pages||1; newsQuery=j.query||q||'';
+      if(j.top5&&j.top5.length)newsTop5=j.top5;
+      renderNewsList();renderPager();renderTop5();renderTop5Card();renderNewsFeed();
+    }
   }catch(e){if(box&&!newsData.length)box.innerHTML=NEWS[lang].map(n=>`<div class="ni"><span class="cat ${n.c}">${n.l}</span><h4>${n.t}</h4><span class="meta" style="margin-left:auto">${n.m}</span></div>`).join('');}
+}
+function newsGoto(p){if(p<1||p>newsPages||p===newsPage)return;newsPage=p;loadNews(p,newsQuery);
+  const s=document.getElementById('s-news');if(s)s.scrollIntoView({behavior:'smooth',block:'start'});}
+function newsSearch(q){newsQuery=q;newsPage=1;loadNews(1,q);
+  const c=document.getElementById('newsClear');if(c)c.style.display=q?'':'none';}
+function renderPager(){
+  const el=document.getElementById('newsPager');if(!el)return;
+  if(newsPages<=1){el.innerHTML='';return;}
+  let btns='';
+  for(let p=1;p<=newsPages;p++){btns+=`<button class="np-num${p===newsPage?' on':''}" onclick="newsGoto(${p})">${p}</button>`;}
+  el.innerHTML=`<button class="np-arrow" ${newsPage<=1?'disabled':''} onclick="newsGoto(${newsPage-1})">${t('news_prev')}</button>`+
+    `<div class="np-nums">${btns}</div>`+
+    `<button class="np-arrow" ${newsPage>=newsPages?'disabled':''} onclick="newsGoto(${newsPage+1})">${t('news_next')}</button>`;
+}
+/* ---- Top 5 notable news: box above the news list + CTA card on the main right rail ---- */
+function top5Title(x){return (lang==='ko'&&x.title_ko)?x.title_ko:((lang==='zh'&&x.title_zh)?x.title_zh:x.title);}
+function renderTop5(){
+  const el=document.getElementById('newsTop5');if(!el)return;
+  if(!newsTop5.length){el.innerHTML='';return;}
+  const rows=newsTop5.map((x,i)=>{const reg=x.flag==='reg',macro=x.cat==='macro';
+    return `<div class="t5-row" onclick="openNews('${encodeURIComponent(x.link||'')}')">
+      <span class="t5-rank">${i+1}</span>
+      ${reg?`<span class="t5-tag reg">${t('news_reg')}</span>`:(macro?`<span class="t5-tag macro">${t('news_macro')}</span>`:'')}
+      <span class="t5-title">${escHtml(top5Title(x))}</span>
+      <span class="t5-src">${escHtml(x.source||'')}</span></div>`;}).join('');
+  el.innerHTML=`<div class="t5-box"><div class="t5-head"><span class="t5-h">🔥 ${t('top5_h')}</span>
+      <span class="t5-sub">${t('top5_sub')}</span></div>${rows}</div>`;
+}
+function renderTop5Card(){
+  const el=document.getElementById('top5Card');if(!el)return;
+  if(!newsTop5.length){el.innerHTML='';el.style.display='none';return;}
+  el.style.display='';
+  const rows=newsTop5.map((x,i)=>{const reg=x.flag==='reg',macro=x.cat==='macro';
+    return `<div class="t5c-row" onclick="openNews('${encodeURIComponent(x.link||'')}')">
+      <span class="t5c-rank r${i+1}">${i+1}</span>
+      <span class="t5c-title">${reg?`<span class="t5-tag reg">${t('news_reg')}</span> `:(macro?`<span class="t5-tag macro">${t('news_macro')}</span> `:'')}${escHtml(top5Title(x))}</span></div>`;}).join('');
+  el.innerHTML=`<div class="t5c-head"><h3>🔥 ${t('top5_h')}</h3><div class="t5c-sub">${t('top5_sub')}</div></div>
+    <div class="t5c-list">${rows}</div>
+    <button class="mv-link" style="margin-top:10px" onclick="openNews('')">${t('top5_all')}</button>`;
 }
 /* ---- main-page "Latest News" feed + NEW notification (click → news tab, auto-expand) ---- */
 function seenLinks(){try{return new Set(JSON.parse(localStorage.getItem('seenNews')||'[]'));}catch(e){return new Set();}}
@@ -1556,6 +1672,7 @@ function showTab(name){
 }
 function applyStatic(){
   document.querySelectorAll('[data-t]').forEach(el=>el.innerHTML=t(el.dataset.t));
+  document.querySelectorAll('[data-tp]').forEach(el=>el.placeholder=t(el.dataset.tp));
   document.getElementById('search').placeholder=t('search_ph');
   document.getElementById('foot').innerHTML=t('foot');
   document.documentElement.lang=lang;
@@ -1637,7 +1754,12 @@ document.getElementById('modalX').addEventListener('click',closeModal);
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 document.getElementById('tabbar').addEventListener('click',e=>{if(e.target.dataset.tab)showTab(e.target.dataset.tab);});
-document.getElementById('newsRefresh').addEventListener('click',()=>{document.getElementById('newsLive').dataset.loaded='';loadNews();});
+document.getElementById('newsRefresh').addEventListener('click',()=>{document.getElementById('newsLive').dataset.loaded='';newsPage=1;loadNews(1,newsQuery);});
+(function(){const inp=document.getElementById('newsSearch'),clr=document.getElementById('newsClear');
+  if(inp)inp.addEventListener('input',e=>{clearTimeout(newsSearchTimer);const q=e.target.value.trim();
+    newsSearchTimer=setTimeout(()=>newsSearch(q),300);});
+  if(clr)clr.addEventListener('click',()=>{if(inp)inp.value='';newsSearch('');});
+})();
 
 /* ===================== INIT ===================== */
 const savedTheme=localStorage.getItem('theme')||'editorial';
