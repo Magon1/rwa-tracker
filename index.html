@@ -515,8 +515,14 @@
     <div class="sec-head"><div><div class="sec-label">RWA Equities</div><h2 data-t="rwa_h"></h2></div>
       <div class="desc" data-t="rwa_d"></div></div>
     <div id="rwaNote" class="mcov" style="margin:0 0 16px"></div>
+    <div class="panel" style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_money_h"></h3><span id="rwaMoneyHead" class="pd" style="margin:0"></span></div>
+      <div class="mcov" data-t="sect_money_sub" style="margin:2px 0 0"></div>
+      <div style="position:relative;height:190px;margin-top:10px"><canvas id="rwaMoneyChart"></canvas></div>
+    </div>
     <div class="panel" style="margin-bottom:26px">
       <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="sect_flow_h"></h3><span id="rwaFlowHead" class="pd" style="margin:0"></span></div>
+      <div class="mcov" data-t="sect_flow_sub" style="margin:2px 0 0"></div>
       <div style="position:relative;height:180px;margin-top:8px"><canvas id="rwaFlowChart"></canvas></div>
     </div>
     <div class="sec-label" data-t="rwa_list_h" style="margin-bottom:10px"></div>
@@ -614,7 +620,7 @@ function syncChartTheme(){if(window.Chart){Chart.defaults.font.family=cv('--sans
 function applyTheme(name){
   document.body.className=name==='editorial'?'':'t-'+name;
   localStorage.setItem('theme',name);
-  [barChart,donut,chainMcapCh,chainVolCh,stableChart,rwaFlowChart,idxChart].forEach(c=>{try{if(c)c.destroy();}catch(e){}});stableChart=rwaFlowChart=idxChart=null;
+  [barChart,donut,chainMcapCh,chainVolCh,stableChart,rwaFlowChart,rwaMoneyChart,idxChart].forEach(c=>{try{if(c)c.destroy();}catch(e){}});stableChart=rwaFlowChart=rwaMoneyChart=idxChart=null;
   barChart=donut=chainMcapCh=chainVolCh=null;
   syncChartTheme();renderAll();
   const sel=document.getElementById('themeSel');if(sel)sel.value=name;
@@ -726,7 +732,13 @@ const TR={
   sect_k_treasury:{ko:'토큰화 국채',en:'Tokenized treasuries'}, sect_treasury_sub:{ko:'BUIDL·USYC 등 주요',en:'BUIDL·USYC etc.'},
   live_next:{ko:'갱신',en:'next'},
   sect_stable_h:{ko:'스테이블코인 총 발행량 (90일)',en:'Stablecoin Supply (90d)'},
-  sect_flow_h:{ko:'RWA 관련 주식 자금 흐름',en:'RWA Stock Money Flow'},
+  sect_flow_h:{ko:'RWA 관련 주식 등락폭 (종목별)',en:'RWA Stock Price Change (by ticker)'},
+  sect_flow_sub:{ko:'각 종목의 당일 등락률 — 클릭 시 상세',en:"Each ticker's daily % change — click for detail"},
+  sect_money_h:{ko:'RWA 관련 주식 자금 흐름 — 순유입·유출 (일별)',en:'RWA Stock Money Flow — Net In/Out (daily)'},
+  sect_money_sub:{ko:'일별 총 매수금액 vs 매도금액 추정 → 순유입(초록)·순유출(빨강). 종가의 장중 위치×거래대금(차이킨 자금흐름) 기반 추정치 — 실제 체결 매수/매도 데이터는 비공개.',
+    en:'Daily estimated buy$ vs sell$ → net inflow (green)/outflow (red). Estimated via close-in-range × dollar volume (Chaikin Money Flow); true order-level buy/sell data is not public.'},
+  money_net:{ko:'순유입/유출',en:'Net flow'}, money_buy:{ko:'매수',en:'Buy'}, money_sell:{ko:'매도',en:'Sell'},
+  money_cum:{ko:'14일 누적',en:'14d cumulative'},
   rwa_list_h:{ko:'RWA 관련 주식 — 종목별',en:'RWA-Related Stocks — by ticker'},
   sect_k_stable:{ko:'스테이블코인 발행량',en:'Stablecoin supply'}, sect_k_rwatvl:{ko:'RWA 프로토콜 TVL',en:'RWA protocol TVL'},
   sect_k_idx:{ko:'RWA 주식 지수',en:'RWA stock index'}, sect_k_tokstk:{ko:'토큰화 주식 발행액',en:'Tokenized-stock value'},
@@ -833,7 +845,12 @@ const TR_ZH={
   nav_issuers:'发行方结构', nav_news:'新闻',
   m_sort_vol:'按成交量', m_sort_tvl:'按 TVL', m_page:'页', m_prev:'← 上一页', m_next:'下一页 →',
   tab_main:'Main', tab_rwa:'RWA 相关股票', tab_news:'RWA 新闻 · 研究', tab_issuers:'发行方结构', tab_cex:'交易所对比',
-  sect_h:'📈 RWA 板块扩张指标', sect_stable_h:'稳定币总发行量 (90天)', sect_flow_h:'RWA 相关股票资金流向', rwa_list_h:'RWA 相关股票 — 按标的',
+  sect_h:'📈 RWA 板块扩张指标', sect_stable_h:'稳定币总发行量 (90天)',
+  sect_flow_h:'RWA 相关股票涨跌幅 (按标的)', sect_flow_sub:'各标的当日涨跌幅 — 点击查看详情',
+  sect_money_h:'RWA 相关股票资金流向 — 净流入/流出 (每日)',
+  sect_money_sub:'每日估算买入额 vs 卖出额 → 净流入(绿)/净流出(红)。基于收盘价在当日区间位置×成交额(蔡金资金流)估算 — 真实逐笔买卖数据未公开。',
+  money_net:'净流入/流出', money_buy:'买入', money_sell:'卖出', money_cum:'14日累计',
+  rwa_list_h:'RWA 相关股票 — 按标的',
   sect_idx_h:'RWA 股票指数走势 (vs BTC · 90天)', sect_k_treasury:'代币化国债', sect_treasury_sub:'BUIDL·USYC 等主要', live_next:'更新',
   sect_k_stable:'稳定币发行量', sect_k_rwatvl:'RWA 协议 TVL', sect_k_idx:'RWA 股票指数', sect_k_tokstk:'代币化股票发行额',
   sect_weighted:'市值加权', flow_in:'流入', flow_out:'流出',
@@ -1032,7 +1049,7 @@ function renderTop(){
      <button class="btn" onclick="topMove(1)" ${dis(topPage>=pages-1)}>${t('m_next')}</button>`;
 }
 function topMove(d){topPage+=d;renderTop();}
-let barChart,donut,chainMcapCh,chainVolCh,stableChart,rwaFlowChart,idxChart;
+let barChart,donut,chainMcapCh,chainVolCh,stableChart,rwaFlowChart,rwaMoneyChart,idxChart;
 function renderShare(){
   const cur=aggIssuer(shareMetric),tot=Object.values(cur).reduce((a,b)=>a+b,0);
   const order=[...issuersList].sort((a,b)=>cur[b]-cur[a]);
@@ -1400,13 +1417,14 @@ function renderRWA(){
   el.innerHTML=html;
   items.forEach(r=>{if(r.price!=null)prevPx[r.sym]=r.price;});   // remember for next flash-diff
   renderRwaFlow();
+  if(!sectorData)loadSector(); else renderRwaMoney();   // daily money-flow chart needs /api/sector
 }
 let prevPx={};
 /* ---- RWA sector-expansion dashboard (KPI tiles + stablecoin trend) ---- */
 let sectorData=null;
 async function loadSector(){
   try{const r=await fetch('/api/sector',{cache:'no-store'});const j=await r.json();if(j&&(j.stable||j.rwatvl))sectorData=j;}catch(e){}
-  renderSector();
+  renderSector();renderRwaMoney();
 }
 const pctSpan=(v,d)=>v==null?'':`<span class="${v>=0?'up':'down'}">${v>=0?'▲':'▼'}${Math.abs(v).toFixed(d==null?1:d)}%</span>`;
 function rwaIndex(){  // mcap-weighted aggregate move of the RWA-stock basket + breadth
@@ -1460,7 +1478,7 @@ function renderRwaFlow(){
   const cvs=document.getElementById('rwaFlowChart');if(!cvs||!window.Chart)return;
   const idx=rwaIndex();
   const head=document.getElementById('rwaFlowHead');
-  if(head)head.innerHTML=idx?`${pctSpan(idx.w,2)} <span class="d">${t('sect_weighted')}</span> · ${idx.up}▲/${idx.dn}▼ <b style="color:${idx.w>=0?'var(--up)':'var(--down)'}">${idx.w>=0?t('flow_in'):t('flow_out')}</b>`:'';
+  if(head)head.innerHTML=idx?`${pctSpan(idx.w,2)} <span class="d">${t('sect_weighted')}</span> · ${idx.up}▲ / ${idx.dn}▼`:'';
   const items=(rwaData||[]).filter(r=>r.chg!=null).sort((a,b)=>b.chg-a.chg);
   if(!items.length)return;
   const up=cv('--up'),dn=cv('--down');
@@ -1472,6 +1490,25 @@ function renderRwaFlow(){
       scales:{x:{ticks:{color:cv('--mut'),font:{size:8},maxRotation:90,minRotation:90},grid:{display:false}},
               y:{ticks:{callback:v=>v+'%',color:cv('--mut'),font:{size:9}},grid:{color:cv('--line2')}}}}};
   if(rwaFlowChart){rwaFlowChart.data=cfg.data;rwaFlowChart.options=cfg.options;rwaFlowChart.update();}else rwaFlowChart=new Chart(cvs,cfg);
+}
+function renderRwaMoney(){
+  const cvs=document.getElementById('rwaMoneyChart');if(!cvs||!window.Chart)return;
+  const fl=(sectorData&&sectorData.flow)||[];
+  const head=document.getElementById('rwaMoneyHead');
+  if(!fl.length){if(head)head.innerHTML='';return;}
+  const fmtM=v=>{const a=Math.abs(v);return (v<0?'-':'+')+'$'+(a>=1000?(a/1000).toFixed(2)+'B':a.toFixed(0)+'M');};
+  const last=fl[fl.length-1], cum=fl.reduce((s,r)=>s+r.net,0);
+  if(head)head.innerHTML=`<b style="color:${last.net>=0?'var(--up)':'var(--down)'}">${fmtM(last.net)}</b> <span class="d">${last.date}</span> · <span class="d">${t('money_cum')}</span> <b style="color:${cum>=0?'var(--up)':'var(--down)'}">${fmtM(cum)}</b>`;
+  const up=cv('--up'),dn=cv('--down');
+  const cfg={type:'bar',data:{labels:fl.map(r=>r.date),datasets:[{data:fl.map(r=>r.net),
+      backgroundColor:fl.map(r=>r.net>=0?up:dn),borderRadius:2,barPercentage:.72,categoryPercentage:.82}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{title:c=>c[0].label,label:c=>{const r=fl[c.dataIndex];
+        return [t('money_buy')+': $'+r.buy.toFixed(0)+'M', t('money_sell')+': $'+r.sell.toFixed(0)+'M',
+                t('money_net')+': '+fmtM(r.net)];}}}},
+      scales:{x:{ticks:{color:cv('--mut'),font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{display:false}},
+              y:{ticks:{callback:v=>fmtM(v),color:cv('--mut'),font:{size:9},maxTicksLimit:6},grid:{color:cv('--line2')}}}}};
+  if(rwaMoneyChart){rwaMoneyChart.data=cfg.data;rwaMoneyChart.options=cfg.options;rwaMoneyChart.update();}else rwaMoneyChart=new Chart(cvs,cfg);
 }
 const L18=r=>(lang==='en'?r.note_en:r.note_ko)||r.note_en;
 function openStock(sym){
@@ -1668,7 +1705,8 @@ function showTab(name){
   if(name==='main'){renderTable();if(!sectorData)loadSector();requestAnimationFrame(()=>renderSector());}  // redraw sector charts now visible
   if(name==='news')loadNews();
   if(name==='cex'&&!spreadsData)loadSpreads(0);
-  if(name==='rwa'){if(!rwaData)loadRWA();else requestAnimationFrame(()=>renderRWA());}  // redraw flow chart now visible
+  if(name==='rwa'){if(!rwaData)loadRWA();else requestAnimationFrame(()=>renderRWA());
+    if(!sectorData)loadSector();else requestAnimationFrame(()=>renderRwaMoney());}  // money-flow chart now visible
 }
 function applyStatic(){
   document.querySelectorAll('[data-t]').forEach(el=>el.innerHTML=t(el.dataset.t));

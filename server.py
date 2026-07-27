@@ -883,12 +883,62 @@ def _rwa_one(item):
     if o.get('chg') is None and o.get('_net') is not None and prev:   # fallback %chg from net/prevClose
         o['chg'] = round(o['_net'] / prev * 100, 2)
     o.pop('_net', None)
+    if not o.get('price'):
+        # Nasdaq API can't serve NYSE-listed names (e.g. SECZ / Securitize) → Yahoo fallback.
+        try:
+            c = json.loads(_get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=7d", 8))
+            r = (c.get('chart', {}).get('result') or [{}])[0]
+            m = r.get('meta', {})
+            px = m.get('regularMarketPrice')
+            closes = [x for x in ((r.get('indicators', {}).get('quote') or [{}])[0].get('close') or []) if x is not None]
+            if px:
+                o['price'] = round(px, 2)
+                o['name'] = m.get('longName') or m.get('shortName') or o.get('name') or sym
+                if len(closes) >= 2 and closes[-2]:
+                    o['chg'] = round((closes[-1] - closes[-2]) / closes[-2] * 100, 2)
+        except Exception:
+            pass
     return o
 
 def build_rwastocks():
     with _cf.ThreadPoolExecutor(max_workers=8) as ex:
         rows = list(ex.map(_rwa_one, RWA_STOCKS))
     return [r for r in rows if r.get('price')]
+
+def _flow_one(sym):
+    """Per-day money flow for one stock via the Chaikin Money-Flow method: split each day's dollar
+    volume into buy vs sell by where the close sits in the day's range. Real order-level buy/sell
+    data isn't public for equities, so this is the industry-standard estimate."""
+    try:
+        c = json.loads(_get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=20d", 10))
+        r = c['chart']['result'][0]
+        ts = r['timestamp']; q = r['indicators']['quote'][0]
+        H, L, C, V = q['high'], q['low'], q['close'], q['volume']
+        out = []
+        for i, tv in enumerate(ts):
+            h, l, cl, v = H[i], L[i], C[i], V[i]
+            if None in (h, l, cl, v) or h == l or not v:
+                continue
+            mult = ((cl - l) - (h - cl)) / (h - l)      # -1 (sold into low) .. +1 (bought to high)
+            dollar = v * cl
+            buy = (mult + 1) / 2 * dollar               # dollar volume attributed to buying
+            sell = (1 - mult) / 2 * dollar              # ... and to selling
+            out.append((time.strftime('%m/%d', time.gmtime(int(tv))), buy, sell))
+        return out
+    except Exception:
+        return []
+
+def build_rwa_flow(days=14):
+    """Aggregate daily net money flow (buy$ vs sell$ → net inflow/outflow) across the RWA basket."""
+    syms = [x[0] for x in RWA_STOCKS]
+    agg = {}
+    with _cf.ThreadPoolExecutor(max_workers=8) as ex:
+        for res in ex.map(_flow_one, syms):
+            for d, buy, sell in res:
+                a = agg.setdefault(d, [0.0, 0.0]); a[0] += buy; a[1] += sell
+    dates = sorted(agg, key=lambda s: (int(s[:2]), int(s[3:])))[-days:]
+    return [{'date': d, 'buy': round(agg[d][0] / 1e6, 1), 'sell': round(agg[d][1] / 1e6, 1),
+             'net': round((agg[d][0] - agg[d][1]) / 1e6, 1)} for d in dates]   # $ millions
 
 def _rwa_loop():
     while True:
@@ -984,6 +1034,12 @@ def build_sector():
             out['idxseries'] = ser
     except Exception as e:
         sys.stderr.write(f"sector series: {e}\n")
+    try:  # daily net money flow (buy$ vs sell$) across the RWA-stock basket
+        fl = build_rwa_flow()
+        if fl:
+            out['flow'] = fl
+    except Exception as e:
+        sys.stderr.write(f"sector flow: {e}\n")
     out['generated'] = int(time.time())
     return out
 
