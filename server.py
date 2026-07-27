@@ -14,18 +14,24 @@ PORT = int(os.environ.get('PORT') or (sys.argv[1] if len(sys.argv) > 1 else 8765
 
 # ---- RWA news feeds (verified working RSS/Atom) ----
 FEEDS = [
-    ("CoinDesk",      "https://www.coindesk.com/arc/outboundfeeds/rss/"),
-    ("Cointelegraph", "https://cointelegraph.com/rss"),
-    ("Cointelegraph RWA", "https://cointelegraph.com/rss/tag/rwa"),
-    ("Cointelegraph Tokenization", "https://cointelegraph.com/rss/tag/tokenization"),
-    ("The Defiant",   "https://thedefiant.io/api/feed"),
-    ("The Block",     "https://www.theblock.co/rss.xml"),
-    ("Blockworks",    "https://blockworks.com/feed"),
-    ("Decrypt",       "https://decrypt.co/feed"),
-    ("CryptoBriefing","https://cryptobriefing.com/feed/"),
-    ("Bankless",      "https://www.bankless.com/rss/feed"),
-    ("Tokeny",        "https://www.tokeny.com/feed/"),
-    ("Dune",          "https://dune.com/blog/feed"),
+    # (name, url, lang)
+    ("CoinDesk",      "https://www.coindesk.com/arc/outboundfeeds/rss/", "en"),
+    ("Cointelegraph", "https://cointelegraph.com/rss", "en"),
+    ("Cointelegraph RWA", "https://cointelegraph.com/rss/tag/rwa", "en"),
+    ("Cointelegraph Tokenization", "https://cointelegraph.com/rss/tag/tokenization", "en"),
+    ("The Defiant",   "https://thedefiant.io/api/feed", "en"),
+    ("The Block",     "https://www.theblock.co/rss.xml", "en"),
+    ("Blockworks",    "https://blockworks.com/feed", "en"),
+    ("Decrypt",       "https://decrypt.co/feed", "en"),
+    ("CryptoBriefing","https://cryptobriefing.com/feed/", "en"),
+    ("Bankless",      "https://www.bankless.com/rss/feed", "en"),
+    ("Tokeny",        "https://www.tokeny.com/feed/", "en"),
+    ("Dune",          "https://dune.com/blog/feed", "en"),
+    ("SEC",           "https://www.sec.gov/news/pressreleases.rss", "en"),   # official US regulator
+    # Korean digital-asset media — Korean企업 blockchain/tokenization coverage
+    ("디지털에셋",     "https://www.digitalasset.works/rss/allArticle.xml", "ko"),
+    ("블록미디어",     "https://www.blockmedia.co.kr/feed", "ko"),
+    ("토큰포스트",     "https://www.tokenpost.kr/rss", "ko"),
 ]
 
 # ---- importance scoring ----
@@ -47,9 +53,45 @@ MULT = [('billion',1.5),('mainnet',1.3),('launch',1.3),('goes live',1.3),('go li
         ('partnership',1.15),('integration',1.12),('hack',1.4),('exploit',1.4),
         ('lawsuit',1.3),('sec charges',1.4),('halt',1.3)]
 
-def score(title, summary):
+# ---- Korean-language scoring (applied only to ko-tagged feeds; safe within Hangul text) ----
+KO_HIGH = {  # core RWA/tokenization + Korean firms active in blockchain/digital assets
+    '토큰증권': 10, '증권형 토큰': 10, '증권토큰': 9, '토큰화': 9, '실물자산': 8, '스테이블코인': 7,
+    '디지털자산': 7, '가상자산': 6, '블록체인': 6, '온체인': 6, '스테이킹': 4, '수탁': 5, '커스터디': 5,
+    '삼성': 6, '우리은행': 5, '우리카드': 5, '우리금융': 5, '신한': 5, '국민은행': 5, '하나은행': 5,
+    '하나금융': 5, '카카오': 6, '토스': 6, '네이버': 6, '미래에셋': 6, '엔에이치엔': 5, 'nhn': 5,
+    '엘지': 4, 'sk텔레콤': 5, '케이티': 4, '한화': 5, '비트코인': 3, '이더리움': 3, '리플': 4, '테더': 4,
+}
+KO_REG = {  # regulatory / policy
+    '금융위': 7, '금융위원회': 7, '금감원': 6, '규제': 5, '인가': 5, '라이선스': 5, '가이드라인': 5,
+    '증권신고서': 5, '제재': 6, '소송': 5, '승인': 4, '특금법': 6, '자본시장법': 6, '허가': 4, '입법': 5,
+}
+KO_MULT = [('출시', 1.25), ('발행', 1.2), ('상장', 1.25), ('세계 최초', 1.4), ('국내 최초', 1.35),
+           ('파트너', 1.15), ('협력', 1.12), ('진출', 1.2), ('해킹', 1.4), ('중단', 1.2)]
+KO_CORE_RE = re.compile('|'.join([  # topical gate for Korean items
+    '토큰', '블록체인', '가상자산', '디지털자산', '스테이블코인', '증권형', '실물자산', 'rwa', 'sto',
+    '온체인', '수탁', '커스터디', '스테이킹', '비트코인', '이더리움', '리플', '금융위', '규제', '상장',
+    '거래소', '메인넷', '지갑', '결제', '증권사', '디파이', '웹3', 'web3']))
+KO_REGFLAG_RE = re.compile('|'.join([
+    '규제', '금융위', '금감원', '제재', '소송', '인가', '라이선스', '가이드라인', '승인', '특금법',
+    '자본시장법', '허가', '입법', '과징금', '수사', '기소', '위법', '불법']))
+# daily-recap / price-snapshot / market-column noise — low-signal, drop from the feed.
+# (targets recurring column tags; leaves valuable brackets like [단독]/[영상]/[네이버·두나무 M&A] intact)
+KO_NOISE_RE = re.compile(
+    r'\[\s*(개장시황|마감시황|장중시황|코인\s?시황|코인\s?top|국내증시|해외증시|선물[^\]]*|kol[^\]]*|'
+    r'아침코인|주간\s?알트|주간알트|차트\s?분석|마켓\s?워치|특징주|채굴|주간\s?동향|주간알트|'
+    r'주요\s?(경제|일정)[^\]]*|오늘의[^\]]*|이번\s?주[^\]]*일정|급등락|주간\s?코인|데일리|주간\s?전망|'
+    r'주간\s?리포트|코인\s?시세|가격\s?동향|주간\s?정리|한주\s?동안|시황)', re.I)
+
+def score(title, summary, lang='en'):
     text = (title + ' ' + summary).lower()
     s = 0.0
+    if lang == 'ko':
+        for d in (KO_HIGH, KO_REG):
+            for k, w in d.items():
+                if k in text: s += w
+        for term, m in KO_MULT:
+            if term in text: s *= m
+        return s
     for d in (HIGH, MID, VENUE, REG):
         for k, w in d.items():
             if k in text: s += w
@@ -67,16 +109,18 @@ CORE_RE = re.compile(
     r'\bequit(?:y|ies)\b|\bsecuriti(?:es|zation)\b|brokerage|\bcusip\b|prime broker|'
     r'\bmica\b|money market fund|\bmmf\b|asset manager|institutional')
 
-def is_relevant(title, summary):
-    return bool(CORE_RE.search((title + ' ' + summary).lower()))
+def is_relevant(title, summary, lang='en'):
+    text = (title + ' ' + summary).lower()
+    return bool((KO_CORE_RE if lang == 'ko' else CORE_RE).search(text))
 
 # regulation / license / legal-action news → flagged red on the frontend (highest reader priority)
 REGFLAG_RE = re.compile(
     r'regulat|licen[sc]|\bsec\b|\bcftc\b|\bdoj\b|\bfca\b|\besma\b|\bmica\b|lawsuit|\bsue[sd]?\b|'
     r'\bcourt\b|\bban\b|banned|sanction|enforce|crackdown|complian|\bfine[sd]?\b|penalt|settlement|'
     r'\bfraud|investigat|subpoena|approv|crimina|illegal|probe|charges|halt(?:ed|s)?\b|delist')
-def news_flag(title, summary):
-    return 'reg' if REGFLAG_RE.search((title + ' ' + summary).lower()) else ''
+def news_flag(title, summary, lang='en'):
+    text = (title + ' ' + summary).lower()
+    return 'reg' if (KO_REGFLAG_RE if lang == 'ko' else REGFLAG_RE).search(text) else ''
 
 # Interpretation framework (not fabricated facts): classify a story, then state what it MEANS
 # and how the RWA market should read it. First matching rule wins. Attached to important items.
@@ -127,7 +171,7 @@ def news_insight(title, summary):
 _cache = {"t": 0, "data": []}
 _lock = threading.Lock()
 
-def fetch_feed(name, url, out):
+def fetch_feed(name, url, out, lang='en'):
     try:
         req = urllib.request.Request(url, headers={
             'User-Agent': 'Mozilla/5.0 (compatible; OnchainEquities/1.0)',
@@ -160,33 +204,42 @@ def fetch_feed(name, url, out):
             except Exception:
                 ts = 0
             out.append({'title': title, 'link': link, 'source': name, 'summary': summary,
-                        'ts': ts, 'raw_score': score(title, summary)})
+                        'ts': ts, 'lang': lang, 'raw_score': score(title, summary, lang)})
     except Exception as e:
         sys.stderr.write(f"feed err {name}: {e}\n")
 
 def build_news():
     items = []
     threads = []
-    for name, url in FEEDS:
-        t = threading.Thread(target=fetch_feed, args=(name, url, items)); t.start(); threads.append(t)
+    for name, url, lang in FEEDS:
+        t = threading.Thread(target=fetch_feed, args=(name, url, items, lang)); t.start(); threads.append(t)
     for t in threads: t.join(timeout=10)
     now = time.time()
     # corroboration clustering: merge the SAME story arriving from different feeds/titles.
     def keywords(title):
-        return set(w for w in re.findall(r'[a-z]{4,}', title.lower()) if w not in
+        return set(w for w in re.findall(r'[가-힣]{2,}|[a-z]{4,}', title.lower()) if w not in
                    {'with','that','this','from','have','will','what','when','your','about','crypto',
-                    'says','into','over','after','than','plans','launch','launches','crypto’s'})
-    def norm_title(t):
-        return re.sub(r'\s+', ' ', re.sub(r'[^a-z0-9 ]', '', (t or '').lower())).strip()
+                    'says','into','over','after','than','plans','launch','launches','crypto’s',
+                    # Korean generic domain words — non-distinguishing, must not drive clustering
+                    '스테이블코인','스테이블','토큰','토큰화','블록체인','비트코인','이더리움','가상자산',
+                    '디지털','디지털자산','자산','코인','발행','시장','규제','금융','투자','서비스','출시',
+                    '도입','진출','관련','온체인','거래소','거래','결제','증권','기술','사업','계획','추진',
+                    '지원','강화','확대','협력','참여','추진','도전','전망','예정','공개','한다','했다'})
+    def norm_title(t):   # keep Hangul too, else every Korean title collapses to '' and cross-merges
+        return re.sub(r'\s+', ' ', re.sub(r'[^a-z0-9가-힣 ]', '', (t or '').lower())).strip()
     clusters = []
     for it in items:
         kw = keywords(it['title']); nt = norm_title(it['title'])
-        link = (it.get('link') or '').split('?')[0].rstrip('/')
+        # keep the query string — many CMSs (e.g. digitalasset.works ?idxno=) put the article id there;
+        # only drop tracking params, else every article collapses onto one base URL.
+        link = (it.get('link') or '').strip()
+        link = re.sub(r'([?&])(utm_[^=&]*|ref|fbclid|gclid|igshid)=[^&]*', r'\1', link)
+        link = re.sub(r'[?&]+$', '', link).rstrip('/')
         placed = False
         for c in clusters:
             jac = (len(kw & c['fkw']) / len(kw | c['fkw'])) if (kw or c['fkw']) else 0
             # merge if: identical title / same URL / strong keyword overlap / high title similarity
-            if nt == c['nt'] or (link and link == c['link']) or len(kw & c['kw']) >= 3 or jac >= 0.5:
+            if (nt and nt == c['nt']) or (link and link == c['link']) or len(kw & c['fkw']) >= 3 or jac >= 0.5:
                 c['items'].append(it); c['kw'] |= kw; placed = True; break
         if not placed:
             clusters.append({'kw': set(kw), 'fkw': kw, 'nt': nt, 'link': link, 'items': [it]})
@@ -200,7 +253,10 @@ def build_news():
         best['age_h'] = round(age_h, 1)
         best['cluster'] = len(c['items'])
         best['score'] = round(final, 1)
-        best['flag'] = news_flag(best['title'], best.get('summary', ''))
+        lg = best.get('lang', 'en')
+        if lg == 'ko' and KO_NOISE_RE.search(best['title']):   # skip daily-recap / price-snapshot columns
+            continue
+        best['flag'] = news_flag(best['title'], best.get('summary', ''), lg)
         # important items get an interpretation (meaning + RWA implication): reg-flagged,
         # corroborated by 2+ sources, or high-scoring
         if best['flag'] == 'reg' or best['cluster'] >= 2 or best['score'] >= 15:
@@ -208,18 +264,35 @@ def build_news():
             if ins:
                 best['insight'] = ins
         # keep only items that pass BOTH the score AND the topical gate (drops off-topic leaks)
-        if best['raw_score'] >= 6 and is_relevant(best['title'], best.get('summary', '')):
+        if best['raw_score'] >= 6 and is_relevant(best['title'], best.get('summary', ''), lg):
             ranked.append(best)
     # show newest first (common sense for a news feed); relevance filter + dedup already applied above
     ranked.sort(key=lambda x: -(x.get('ts') or 0))
-    top = ranked[:45]
+    # soft-cap Korean items so fresh Korea-desk feeds don't crowd out global RWA / US-regulation /
+    # overseas-exchange news; keep the newest KO up to the cap, all non-KO, then re-sort newest-first.
+    KO_CAP = 16
+    ko = [r for r in ranked if r.get('lang') == 'ko'][:KO_CAP]
+    non = [r for r in ranked if r.get('lang') != 'ko']
+    top = ko + non
+    top.sort(key=lambda x: -(x.get('ts') or 0))
+    top = top[:45]
     for r in top:
         r.pop('ts', None); r.pop('raw_score', None)
-    for r in top:                       # pre-translate to Korean + Chinese (free, server-side)
-        r['title_ko'] = _translate(r['title'], 'ko')
-        r['summary_ko'] = _translate(r.get('summary', ''), 'ko')
-        r['title_zh'] = _translate(r['title'], 'zh-CN')
-        r['summary_zh'] = _translate(r.get('summary', ''), 'zh-CN')
+    for r in top:                       # localize into all 3 languages, respecting the source language
+        if r.get('lang') == 'ko':       # Korean source: keep original as KO, translate out to EN/ZH
+            r['title_ko'] = r['title']; r['summary_ko'] = r.get('summary', '')
+            r['title'] = _translate(r['title_ko'], 'en', 'ko')
+            r['summary'] = _translate(r['summary_ko'], 'en', 'ko')
+            r['title_zh'] = _translate(r['title_ko'], 'zh-CN', 'ko')
+            r['summary_zh'] = _translate(r['summary_ko'], 'zh-CN', 'ko')
+            if r.get('insight') is None:            # Korean items: derive insight from the EN translation
+                ins = news_insight(r['title'], r.get('summary', ''))
+                if ins: r['insight'] = ins
+        else:                            # English source: translate into KO + ZH
+            r['title_ko'] = _translate(r['title'], 'ko')
+            r['summary_ko'] = _translate(r.get('summary', ''), 'ko')
+            r['title_zh'] = _translate(r['title'], 'zh-CN')
+            r['summary_zh'] = _translate(r.get('summary', ''), 'zh-CN')
     return top
 
 # ---- professional finance/crypto glossary ----
@@ -314,7 +387,7 @@ def _josa_fix(term, josa):
     if josa in ('으로', '로'): return '로' if (not b or jong == 8) else '으로'
     return josa
 
-def _translate(text, tl='ko'):
+def _translate(text, tl='ko', sl='en'):
     text = (text or '').strip()
     if not text:
         return ''
@@ -325,13 +398,14 @@ def _translate(text, tl='ko'):
         repl.append(term)
         return f'XQV{len(repl)-1}XQ'
     prot = _ENT_RE.sub(lambda m: _sub(m, m.group(0)), text)   # keep names as-is (Strategy, Jupiter…)
-    for rx, ko, zh in _GLOSS_RE:
-        term = (ko, zh)[lang_i]
-        if not term:
-            continue
-        prot = rx.sub(lambda m, t=term: _sub(m, t), prot)
+    if sl == 'en':                 # glossary is English→target; only apply when source IS English
+        for rx, ko, zh in _GLOSS_RE:
+            term = (ko, zh)[lang_i]
+            if not term:
+                continue
+            prot = rx.sub(lambda m, t=term: _sub(m, t), prot)
     try:
-        u = ("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl="
+        u = ("https://translate.googleapis.com/translate_a/single?client=gtx&sl=" + sl + "&tl="
              + tl + "&dt=t&q=" + urllib.parse.quote(prot[:1800]))
         d = json.loads(_get(u, 10))
         out = ''.join(seg[0] for seg in d[0] if seg and seg[0])
