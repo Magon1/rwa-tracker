@@ -254,11 +254,16 @@ def _merge_archive(fresh):
     with _lock:
         arc = _cache.get('archive') or {}
         for it in fresh:
+            if (it.get('ts') or 0) > now + 3600:   # clamp bad/future dates so they can't pin to the top
+                it['ts'] = now
             k = _key(it)
             if k in arc:
                 arc[k].update(it)            # refresh score/cluster/translations, keep first-seen
             else:
                 arc[k] = it
+        for x in arc.values():               # heal any previously-stored future timestamps
+            if (x.get('ts') or 0) > now + 3600:
+                x['ts'] = now
         cutoff = now - ARCHIVE_DAYS * 86400
         items = [x for x in arc.values() if (x.get('ts') or now) >= cutoff]
         items.sort(key=lambda x: -(x.get('ts') or 0))
@@ -301,8 +306,16 @@ def fetch_feed(name, url, out, lang='en', cat='crypto'):
             summary = re.sub('<[^>]+>', '', summary)[:300]
             ts = 0
             try:
-                dt = parsedate_to_datetime(pub) if pub and ',' in pub else datetime.datetime.fromisoformat(pub.replace('Z', '+00:00'))
+                pub = (pub or '').strip()
+                dt = parsedate_to_datetime(pub) if ',' in pub else datetime.datetime.fromisoformat(pub.replace('Z', '+00:00'))
+                if dt.tzinfo is None:
+                    # naive timestamp (no tz in the feed) — assume the outlet's local zone, else the
+                    # server (UTC) would read a KST time as 9h in the FUTURE. Korean feeds → KST.
+                    tz = datetime.timezone(datetime.timedelta(hours=9)) if lang == 'ko' else datetime.timezone.utc
+                    dt = dt.replace(tzinfo=tz)
                 ts = dt.timestamp()
+                if ts > time.time() + 3600:   # guard: never let a bad/future date float to the top
+                    ts = time.time()
             except Exception:
                 ts = 0
             out.append({'title': title, 'link': link, 'source': name, 'summary': summary,
@@ -555,8 +568,16 @@ def get_news(page=1, size=50, q=''):
     pages = max(1, (total + size - 1) // size)
     page = max(1, min(page, pages))
     start = (page - 1) * size
+    now = time.time()
+    items = []
+    for x in data[start:start + size]:
+        x = dict(x)
+        ts = x.get('ts') or 0
+        if ts:                       # recompute age at serve time so it stays accurate over time
+            x['age_h'] = round(max(0.0, (now - ts) / 3600), 1)
+        items.append(x)
     return {'generated': int(_cache['t']), 'total': total, 'page': page, 'pages': pages,
-            'size': size, 'query': q, 'top5': top5, 'items': data[start:start + size]}
+            'size': size, 'query': q, 'top5': top5, 'items': items}
 
 def _news_loop():
     while True:
