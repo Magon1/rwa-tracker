@@ -244,8 +244,8 @@
   .nii-r{font-size:12.5px;line-height:1.55;color:var(--ink)}.nii-r+.nii-r{margin-top:5px}
   .nii-l{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--accent);margin-right:5px}
   .ni-ins-tag{font-size:12px}
-  .ni-flash{animation:niflash 1.6s ease}
-  @keyframes niflash{0%,100%{background:transparent}25%{background:color-mix(in srgb,var(--accent) 14%,transparent)}}
+  .ni-flash{animation:niflash 1.05s ease}
+  @keyframes niflash{0%,100%{background:transparent}30%{background:color-mix(in srgb,var(--accent) 20%,transparent)}}
   /* breaking-macro lane */
   .cat.macro{color:var(--gold);background:color-mix(in srgb,var(--gold) 18%,transparent);font-weight:700}
   .ni-item.macro{border-left:3px solid var(--gold);padding-left:9px}
@@ -787,7 +787,7 @@ const TR={
     en:'🔴 red = regulation/license alerts · "N sources" = N outlets reported it (corroboration=importance) · 💡 = click for RWA insight'},
   ins_mean:{ko:'의미',en:'Meaning'}, ins_impl:{ko:'RWA 시장 함의',en:'RWA takeaway'},
   ins_tip:{ko:'클릭하면 RWA 시장 관점 인사이트',en:'Click for RWA-market insight'},
-  share_news:{ko:'공유',en:'Share'}, share_copied:{ko:'✓ 복사됨 — 붙여넣기로 공유',en:'✓ Copied — paste to share'},
+  share_news:{ko:'공유',en:'Share'}, share_copied:{ko:'✓ 링크가 복사되었습니다',en:'✓ Link copied'},
   news_search:{ko:'뉴스 검색 — 제목·내용',en:'Search news — title/content'},
   news_clear:{ko:'지우기',en:'Clear'},
   news_noresult:{ko:'‘{q}’ 검색 결과가 없습니다',en:'No results for “{q}”'},
@@ -882,7 +882,7 @@ const TR_ZH={
   news_src_tip:'报道该新闻的媒体数（越多越重要）',
   news_legend:'🔴 红色 = 政府监管/牌照相关重要新闻 · "N家报道" = N家媒体报道（交叉验证 = 重要度）· 💡 = 点击查看 RWA 洞察',
   ins_mean:'含义', ins_impl:'RWA 市场影响', ins_tip:'点击查看 RWA 市场洞察',
-  share_news:'分享', share_copied:'✓ 已复制 — 粘贴即可分享',
+  share_news:'分享', share_copied:'✓ 链接已复制',
   news_search:'搜索新闻 — 标题/内容', news_clear:'清除',
   news_noresult:'没有找到“{q}”的结果',
   news_prev:'← 上一页', news_next:'下一页 →', news_page:'{p} / {n}',
@@ -1586,7 +1586,7 @@ function renderNewsList(){
         <p>${sum||(lang==='ko'?'요약 없음 — 원문에서 확인':'No summary — see source')}</p>${ins}
         <div class="ni-actions">
           <a href="${n.link}" target="_blank">${lang==='ko'?'원문 기사 →':'Read source →'}</a>
-          <button class="ni-share" onclick="event.stopPropagation();shareNews('${encodeURIComponent(n.link||'')}','${encodeURIComponent(newsTitle(n))}')">🔗 ${t('share_news')}</button>
+          <button class="ni-share" onclick="event.stopPropagation();shareNews('${encodeURIComponent(n.link||'')}')">🔗 ${t('share_news')}</button>
         </div></div>
     </div>`;}).join('');
 }
@@ -1597,14 +1597,26 @@ function toast(msg){
   el.textContent=msg;el.classList.add('show');
   clearTimeout(_toastT);_toastT=setTimeout(()=>el.classList.remove('show'),1900);
 }
-async function shareNews(enc,encTitle){
-  const url=enc?decodeURIComponent(enc):'';
-  const headline=encTitle?decodeURIComponent(encTitle):'';
-  const via=lang==='ko'?'— OnchainEquities · onchainequity.io':lang==='zh'?'— OnchainEquities · onchainequity.io':'— via OnchainEquities · onchainequity.io';
-  try{
-    if(navigator.share){await navigator.share({title:'OnchainEquities',text:headline+' '+via,url:url||location.origin});}
-    else{await navigator.clipboard.writeText(headline+'\n'+(url||location.origin)+'\n'+via);toast(t('share_copied'));}
-  }catch(e){}
+async function copyText(txt){   // clipboard with a legacy fallback (works without navigator.clipboard)
+  try{await navigator.clipboard.writeText(txt);return true;}catch(e){}
+  try{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.focus();ta.select();const ok=document.execCommand('copy');
+    document.body.removeChild(ta);return ok;}catch(e){return false;}
+}
+async function shareNews(enc){
+  const link=enc?decodeURIComponent(enc):'';
+  // deep link back into OnchainEquities → opens the news tab, scrolls to this article, flashes it
+  const deep=location.origin+'/#n='+encodeURIComponent(link);
+  await copyText(deep);
+  toast(t('share_copied'));
+}
+/* deep-link: onchainequity.io/#n=<article-url> → open news tab, find the article, flash it ~1s */
+function handleDeepLink(){
+  const m=(location.hash||'').match(/^#n=(.+)$/);
+  if(!m)return;
+  let link;try{link=decodeURIComponent(m[1]);}catch(e){return;}
+  if(!link)return;
+  openNews(encodeURIComponent(link));   // shared open path: shows news tab + scroll + flash
 }
 async function loadNews(page=newsPage,q=newsQuery){
   const box=document.getElementById('newsLive');
@@ -1682,12 +1694,13 @@ function openNews(enc){
   showTab('news');                  // showTab→loadNews→renderNewsList renders it open
   renderNewsFeed();
   if(!link)return;
-  let tries=0;                      // wait for the (async) news render, then scroll to it
+  let tries=0;                      // wait for the (async) news render, then scroll to it + flash ~1s
   const iv=setInterval(()=>{
     const tgt=[...document.querySelectorAll('#newsLive .ni-item')].find(it=>it.dataset.link===link);
     if(tgt){clearInterval(iv);tgt.scrollIntoView({behavior:'smooth',block:'center'});
-      tgt.classList.add('ni-flash');setTimeout(()=>tgt.classList.remove('ni-flash'),1600);}
-    if(++tries>25)clearInterval(iv);
+      tgt.classList.remove('ni-flash');void tgt.offsetWidth;   // restart the animation if re-triggered
+      tgt.classList.add('ni-flash');setTimeout(()=>tgt.classList.remove('ni-flash'),1100);}
+    if(++tries>50)clearInterval(iv);   // deep-link opens on a cold load — allow the feed time to render
   },120);
 }
 /* ---- US earnings calendar (left card) ---- */
@@ -1834,6 +1847,8 @@ document.body.className=savedTheme==='editorial'?'':'t-'+savedTheme;
 syncChartTheme();
 fetch('./assets.json',{cache:'no-store'}).then(r=>r.json()).then(j=>{FULL=j;renderTable();if(document.getElementById('modal').style.display==='flex')renderModal();}).catch(()=>{});
 renderAll();showTab('main');tick();setInterval(tick,30000);confirmGeoLang();loadNews();loadEarnings();loadRWA();loadSector();
+if(location.hash.indexOf('#n=')===0)handleDeepLink();          // arrived via a shared article link
+window.addEventListener('hashchange',handleDeepLink);          // or the hash changes while open
 </script>
 </body>
 </html>
