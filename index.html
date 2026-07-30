@@ -232,6 +232,14 @@
   .ni-summary{padding:0 4px 14px 102px}
   .ni-summary p{margin:0 0 8px;font-size:12.5px;color:var(--ink2);line-height:1.55}
   .ni-summary a{font-family:var(--mono);font-size:11px;color:var(--accent)}
+  .ni-actions{display:flex;align-items:center;gap:14px;margin-top:4px}
+  .ni-share{font-family:var(--mono);font-size:11px;color:var(--mut);background:none;border:1px solid var(--line2);
+    border-radius:5px;padding:3px 9px;cursor:pointer;transition:.15s}
+  .ni-share:hover{color:var(--accent);border-color:var(--accent)}
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(18px);background:var(--ink);
+    color:var(--paper);font-family:var(--mono);font-size:12.5px;padding:10px 18px;border-radius:8px;opacity:0;
+    pointer-events:none;transition:.25s;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .ni-insight{margin:2px 0 12px;padding:11px 13px;background:color-mix(in srgb,var(--accent) 6%,transparent);border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
   .nii-r{font-size:12.5px;line-height:1.55;color:var(--ink)}.nii-r+.nii-r{margin-top:5px}
   .nii-l{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--accent);margin-right:5px}
@@ -779,6 +787,7 @@ const TR={
     en:'🔴 red = regulation/license alerts · "N sources" = N outlets reported it (corroboration=importance) · 💡 = click for RWA insight'},
   ins_mean:{ko:'의미',en:'Meaning'}, ins_impl:{ko:'RWA 시장 함의',en:'RWA takeaway'},
   ins_tip:{ko:'클릭하면 RWA 시장 관점 인사이트',en:'Click for RWA-market insight'},
+  share_news:{ko:'공유',en:'Share'}, share_copied:{ko:'✓ 복사됨 — 붙여넣기로 공유',en:'✓ Copied — paste to share'},
   news_search:{ko:'뉴스 검색 — 제목·내용',en:'Search news — title/content'},
   news_clear:{ko:'지우기',en:'Clear'},
   news_noresult:{ko:'‘{q}’ 검색 결과가 없습니다',en:'No results for “{q}”'},
@@ -873,6 +882,7 @@ const TR_ZH={
   news_src_tip:'报道该新闻的媒体数（越多越重要）',
   news_legend:'🔴 红色 = 政府监管/牌照相关重要新闻 · "N家报道" = N家媒体报道（交叉验证 = 重要度）· 💡 = 点击查看 RWA 洞察',
   ins_mean:'含义', ins_impl:'RWA 市场影响', ins_tip:'点击查看 RWA 市场洞察',
+  share_news:'分享', share_copied:'✓ 已复制 — 粘贴即可分享',
   news_search:'搜索新闻 — 标题/内容', news_clear:'清除',
   news_noresult:'没有找到“{q}”的结果',
   news_prev:'← 上一页', news_next:'下一页 →', news_page:'{p} / {n}',
@@ -1574,8 +1584,27 @@ function renderNewsList(){
         <span class="ni-caret">▾</span></div>
       <div class="ni-summary" style="display:${open?'block':'none'}">
         <p>${sum||(lang==='ko'?'요약 없음 — 원문에서 확인':'No summary — see source')}</p>${ins}
-        <a href="${n.link}" target="_blank">${lang==='ko'?'원문 기사 →':'Read source →'}</a></div>
+        <div class="ni-actions">
+          <a href="${n.link}" target="_blank">${lang==='ko'?'원문 기사 →':'Read source →'}</a>
+          <button class="ni-share" onclick="event.stopPropagation();shareNews('${encodeURIComponent(n.link||'')}','${encodeURIComponent(newsTitle(n))}')">🔗 ${t('share_news')}</button>
+        </div></div>
     </div>`;}).join('');
+}
+let _toastT;
+function toast(msg){
+  let el=document.getElementById('toast');
+  if(!el){el=document.createElement('div');el.id='toast';el.className='toast';document.body.appendChild(el);}
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(_toastT);_toastT=setTimeout(()=>el.classList.remove('show'),1900);
+}
+async function shareNews(enc,encTitle){
+  const url=enc?decodeURIComponent(enc):'';
+  const headline=encTitle?decodeURIComponent(encTitle):'';
+  const via=lang==='ko'?'— OnchainEquities · onchainequity.io':lang==='zh'?'— OnchainEquities · onchainequity.io':'— via OnchainEquities · onchainequity.io';
+  try{
+    if(navigator.share){await navigator.share({title:'OnchainEquities',text:headline+' '+via,url:url||location.origin});}
+    else{await navigator.clipboard.writeText(headline+'\n'+(url||location.origin)+'\n'+via);toast(t('share_copied'));}
+  }catch(e){}
 }
 async function loadNews(page=newsPage,q=newsQuery){
   const box=document.getElementById('newsLive');

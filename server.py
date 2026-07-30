@@ -45,13 +45,28 @@ FEEDS = [
     # headlines via proper RSS. 'macro' items use the macro relevance gate, not the crypto gate.
     ("Investinglive", "https://www.forexlive.com/feed/news", "en", "macro"),
 ]
-# macro/big-news relevance gate — only high-impact market-moving headlines pass (not currency ticks)
+# macro/big-news relevance gate. Scope = what THIS site cares about: US regulation/policy, Fed,
+# crypto/RWA, and genuinely big market/geopolitical news. NOT routine regional data prints.
 MACRO_RE = re.compile(
-    r'\bfed\b|fomc|federal reserve|rate (?:cut|hike|decision)|interest rate|\bcpi\b|inflation|'
-    r'\bpce\b|treasur|\byield|\bsec\b|regulat|tariff|sanction|\bwar\b|ceasefire|central bank|'
-    r'\bpboc\b|\becb\b|\bboj\b|\bboe\b|recession|\bgdp\b|jobs report|nonfarm|payroll|debt ceiling|'
-    r'default|downgrade|stimulus|\bstocks?\b|equit|nasdaq|s&p|dow jones|crude|\boil\b|\bgold\b|'
-    r'bitcoin|crypto|stablecoin|tokeniz', re.I)
+    r'\bfed\b|fomc|federal reserve|powell|rate (?:cut|hike|decision)|'                    # Fed / monetary
+    r'\bsec\b|\bcftc\b|\bdoj\b|regulat|lawsuit|\bban\b|sanction|tariff|congress|senate|'  # US regulation/policy
+    r'white house|treasury secretar|executive order|clarity act|genius act|stablecoin bill|'
+    r'bitcoin|crypto|stablecoin|tokeniz|digital asset|\betf\b|\brwa\b|'                   # crypto / RWA
+    r'\bwar\b|ceasefire|invasion|attack|shutdown|debt ceiling|default|downgrade|recession|'  # big shocks
+    r'nonfarm|jobs report|\bfomc\b|emergency|bail ?out|crash|plunge|collapse|'
+    r'\bus\b.{0,20}(cpi|pce|gdp|inflation|jobs|payroll)|trump', re.I)                     # US-specific data only
+# hard exclusions — routine regional/FX data prints + preview/recap columns that aren't "big news"
+MACRO_EXCL = re.compile(
+    r'(eurozone|euro area|german|germany|ital(?:y|ian)|spa(?:in|nish)|fr(?:ance|ench)|dutch|'
+    r'netherlands|swiss|switzerland|portug|greece|greek|austria|belg|nordic|swed|norw|finn|'
+    r'danish|denmark|polish|poland|czech|hungar|turk|brazil|mexic|canad|austral|new zealand)\b'
+    r'.{0,45}(gdp|econom|inflation|\bcpi\b|\bppi\b|\bpmi\b|ifo|zew|sentiment|retail sales|'
+    r'unemployment|jobless|trade balance|current account|industrial production|factory|confidence)|'
+    r'what are the main events|fx news wrap|news wrap|technical analysis|reference rate|'
+    r'price analysis|forecast:', re.I)
+def macro_ok(title, summary):
+    text = (title + ' ' + (summary or '')).lower()
+    return bool(MACRO_RE.search(text)) and not MACRO_EXCL.search(text)
 
 # ---- importance scoring ----
 HIGH = {  # core RWA tokenized-equity entities
@@ -417,8 +432,9 @@ def build_news():
             if ins:
                 best['insight'] = ins
         if cat == 'macro':
-            # breaking macro/big-news lane: use the macro gate (crypto keywords not required)
-            if MACRO_RE.search((best['title'] + ' ' + best.get('summary', '')).lower()):
+            # breaking macro/big-news lane: US regulation / Fed / crypto / big shocks only —
+            # routine regional data prints & preview columns are excluded (macro_ok).
+            if macro_ok(best['title'], best.get('summary', '')):
                 ranked.append(best)
         # crypto lane: keep only items that pass BOTH the score AND the topical gate
         elif best['raw_score'] >= 6 and is_relevant(best['title'], best.get('summary', ''), lg):
@@ -427,7 +443,7 @@ def build_news():
     ranked.sort(key=lambda x: -(x.get('ts') or 0))
     # soft-cap each lane so no single desk crowds out the others: Korean, breaking-macro, and
     # global crypto/RWA. Keep the newest of each up to its cap, then re-sort newest-first.
-    KO_CAP, MACRO_CAP = 16, 8
+    KO_CAP, MACRO_CAP = 16, 5
     ko = [r for r in ranked if r.get('lang') == 'ko'][:KO_CAP]
     macro = [r for r in ranked if r.get('lang') != 'ko' and r.get('cat') == 'macro'][:MACRO_CAP]
     other = [r for r in ranked if r.get('lang') != 'ko' and r.get('cat') != 'macro']
