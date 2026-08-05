@@ -29,7 +29,7 @@
     --paper:#f1efe7; --card:#fbfaf5; --card2:#f6f4ec; --ink:#1c1b17; --ink2:#403d35;
     --mut:#7a766c; --line:#ddd8ca; --line2:#cbc5b3; --chart-grid:#e3dfd4;
     --up:#1c7a4a; --down:#bb3a2c; --gold:#b8893b; --accent:#1c1b17;
-    --ondo:#6366f1; --xs:#2f6fed; --bp:#e5383b; --dinari:#0891b2;
+    --ondo:#6366f1; --xs:#2f6fed; --bp:#e5383b; --dinari:#0891b2; --bn:#c98a00;
     --mono:'IBM Plex Mono',ui-monospace,monospace;
     --serif:'Fraunces',Georgia,serif;
     --sans:'Inter',system-ui,sans-serif;
@@ -39,28 +39,28 @@
     --paper:#0a0a0a; --card:#121212; --card2:#171717; --ink:#e8e8e8; --ink2:#c2c2c2;
     --mut:#8a8a8a; --line:#222; --line2:#2e2e2e; --chart-grid:#1c1c1c;
     --up:#26d962; --down:#ff4d4d; --gold:#ffa028; --accent:#ffa028;
-    --ondo:#a78bfa; --xs:#5b9bff; --bp:#e5383b;
+    --ondo:#a78bfa; --xs:#5b9bff; --bp:#e5383b; --bn:#F0B90B;
     --mono:'JetBrains Mono',monospace; --serif:'JetBrains Mono',monospace; --sans:'IBM Plex Sans',sans-serif; --radius:2px;
   }
   body.t-nebula{ /* modern analytics dark · Dune/Nansen */
     --paper:#0e0f13; --card:#1a1b22; --card2:#20222b; --ink:#f4f5f7; --ink2:#cbd0db;
     --mut:#8b8f9c; --line:#262833; --line2:#333647; --chart-grid:#23252f;
     --up:#2dd4a7; --down:#ff5c72; --gold:#7c5cff; --accent:#7c5cff;
-    --ondo:#a78bfa; --xs:#5b8cff; --bp:#e5383b;
+    --ondo:#a78bfa; --xs:#5b8cff; --bp:#e5383b; --bn:#F0B90B;
     --mono:'IBM Plex Mono',monospace; --serif:'Space Grotesk',sans-serif; --sans:'Inter',sans-serif; --radius:12px;
   }
   body.t-institutional{ /* clean light · DefiLlama/Stripe/Token Terminal */
     --paper:#fbfbfd; --card:#ffffff; --card2:#f4f6f9; --ink:#0a2540; --ink2:#334155;
     --mut:#6b7280; --line:#e6e8ec; --line2:#d8dbe0; --chart-grid:#eef0f3;
     --up:#10a862; --down:#e5484d; --gold:#4f46e5; --accent:#4f46e5;
-    --ondo:#6366f1; --xs:#2f6fed; --bp:#e5383b;
+    --ondo:#6366f1; --xs:#2f6fed; --bp:#e5383b; --bn:#c98a00;
     --mono:'IBM Plex Mono',monospace; --serif:'Manrope',sans-serif; --sans:'Inter',sans-serif; --radius:8px;
   }
   body.t-vault{ /* warm gold private-bank dark */
     --paper:#0d0c0a; --card:#1a1815; --card2:#211e19; --ink:#f3efe7; --ink2:#d8d2c5;
     --mut:#9a9384; --line:#2b2823; --line2:#38332b; --chart-grid:#241f19;
     --up:#3fb97a; --down:#d9544d; --gold:#e5b94e; --accent:#e5b94e;
-    --ondo:#b8a6f5; --xs:#6f93e6; --bp:#e5383b;
+    --ondo:#b8a6f5; --xs:#6f93e6; --bp:#e5383b; --bn:#F0B90B;
     --mono:'IBM Plex Mono',monospace; --serif:'Fraunces',serif; --sans:'Inter',sans-serif; --radius:7px;
   }
   *{box-sizing:border-box}
@@ -184,6 +184,7 @@
   .pill.Backpack{color:var(--bp);border-color:color-mix(in srgb,var(--bp) 40%,transparent);background:color-mix(in srgb,var(--bp) 13%,transparent)}
   .pill.xStocks{color:var(--xs);border-color:color-mix(in srgb,var(--xs) 40%,transparent);background:color-mix(in srgb,var(--xs) 13%,transparent)}
   .pill.Ondo{color:var(--ondo);border-color:color-mix(in srgb,var(--ondo) 40%,transparent);background:color-mix(in srgb,var(--ondo) 13%,transparent)}
+  .pill.Binance{color:var(--bn);border-color:color-mix(in srgb,var(--bn) 40%,transparent);background:color-mix(in srgb,var(--bn) 13%,transparent)}
   .pill.Dinari{color:var(--dinari);border-color:color-mix(in srgb,var(--dinari) 40%,transparent);background:color-mix(in srgb,var(--dinari) 13%,transparent)}
   .tag{font-family:var(--mono);font-size:10px;color:var(--mut);border:1px solid var(--line2);padding:1px 5px;border-radius:3px}
   .vbar{position:relative}
@@ -240,24 +241,6 @@
     color:var(--paper);font-family:var(--mono);font-size:12.5px;padding:10px 18px;border-radius:8px;opacity:0;
     pointer-events:none;transition:.25s;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25)}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-  /* on-chain equity landscape (cited research) */
-  .src-badge{font-family:var(--mono);font-size:10.5px;color:var(--accent);border:1px solid var(--line2);
-    border-radius:5px;padding:4px 9px;text-decoration:none;white-space:nowrap;background:var(--card)}
-  .src-badge:hover{border-color:var(--accent)}
-  .te-row{margin-bottom:13px}
-  .te-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:4px}
-  .te-name{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--ink)}
-  .te-name i{width:9px;height:9px;border-radius:2px;flex:none}
-  .te-top b{font-family:var(--mono);font-size:14px}
-  .te-bar{height:8px;border-radius:5px;background:var(--card2);overflow:hidden}
-  .te-bar span{display:block;height:100%;border-radius:5px}
-  .te-note{font-family:var(--mono);font-size:10.5px;color:var(--mut);margin-top:3px}
-  .land-facts{display:flex;flex-direction:column;gap:12px}
-  .lf-row{display:flex;gap:11px;align-items:flex-start}
-  .lf-ic{font-size:17px;flex:none;line-height:1.3}
-  .lf-v{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent)}
-  .lf-l{font-size:12px;color:var(--ink2);line-height:1.5;margin-top:2px}
-  #landNote a{color:var(--accent)}
   .ni-insight{margin:2px 0 12px;padding:11px 13px;background:color-mix(in srgb,var(--accent) 6%,transparent);border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
   .nii-r{font-size:12.5px;line-height:1.55;color:var(--ink)}.nii-r+.nii-r{margin-top:5px}
   .nii-l{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--accent);margin-right:5px}
@@ -405,6 +388,7 @@
   .ibtn.Backpack{color:var(--bp);border-color:var(--bp)} .ibtn.Backpack:hover{background:var(--bp)}
   .ibtn.xStocks{color:var(--xs);border-color:var(--xs)} .ibtn.xStocks:hover{background:var(--xs)}
   .ibtn.Ondo{color:var(--ondo);border-color:var(--ondo)} .ibtn.Ondo:hover{background:var(--ondo)}
+  .ibtn.Binance{color:var(--bn);border-color:var(--bn)} .ibtn.Binance:hover{background:var(--bn)}
   .ibtn.Dinari{color:var(--dinari);border-color:var(--dinari)} .ibtn.Dinari:hover{background:var(--dinari)}
   .view-btn{display:inline-flex;align-items:center;gap:7px;margin-top:14px;color:#fff;
     font-family:var(--mono);font-size:11.5px;font-weight:600;padding:9px 14px;border-radius:var(--radius)}
@@ -496,9 +480,9 @@
         <div style="display:flex;justify-content:space-between;align-items:center">
           <h3 data-t="share_by"></h3>
           <div class="seg" id="shareSeg">
-            <button data-m="volume" class="on" data-t="m_vol"></button>
+            <button data-m="mcap" class="on" data-t="m_mcap"></button>
+            <button data-m="volume" data-t="m_vol"></button>
             <button data-m="count" data-t="m_count"></button>
-            <button data-m="mcap" data-t="m_mcap"></button>
           </div>
         </div>
         <div class="pd" id="shareNote"></div>
@@ -508,23 +492,6 @@
       <div class="panel"><h3 data-t="dist"></h3><div class="pd"><span id="donutMetric"></span></div>
         <canvas id="donut" height="210"></canvas></div>
     </div>
-  </section>
-
-  <section id="s-landscape" data-tab="main">
-    <div class="sec-head"><div><div class="sec-label">02B · On-Chain Landscape</div><h2 data-t="land_h"></h2></div>
-      <a class="src-badge" href="https://www.binance.com/en/research/analysis/stock-price-discovery-moves-on-chain" target="_blank" rel="noopener">Binance Research · 2026-07</a></div>
-    <div class="desc" data-t="land_d"></div>
-    <div class="grid g2" style="margin-top:4px">
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 data-t="land_share_h"></h3><span class="pd" style="margin:0" data-t="land_share_sub"></span></div>
-        <div id="teShareBars" style="margin-top:14px"></div>
-      </div>
-      <div class="panel">
-        <h3 data-t="land_facts_h"></h3>
-        <div class="land-facts" id="landFacts" style="margin-top:12px"></div>
-      </div>
-    </div>
-    <div class="mcov" id="landNote" style="margin:12px 0 0"></div>
   </section>
 
   <section id="s-chain" data-tab="main">
@@ -657,7 +624,7 @@
 
 <script>
 const cv=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
-const IKEY={xStocks:'--xs',Backpack:'--bp',Ondo:'--ondo'};
+const IKEY={xStocks:'--xs',Backpack:'--bp',Ondo:'--ondo',Binance:'--bn'};
 function syncChartTheme(){if(window.Chart){Chart.defaults.font.family=cv('--sans')||'Inter';Chart.defaults.color=cv('--ink2')||'#403d35';}
   if(typeof issuersList!=='undefined')issuersList.forEach(i=>{if(ISSUERS[i])ISSUERS[i].color=cv(IKEY[i]);});}
 function applyTheme(name){
@@ -706,13 +673,7 @@ const TR={
   sec1_h:{ko:'현재 가장 활발한 토큰화 주식',en:'Most Active Tokenized Stocks'},
   sec1_d:{ko:'24h 온체인 DEX 거래량 상위 10 — 종목 · 발행사 · 등락',en:'Top 10 by 24h on-chain DEX volume — asset · issuer · change'},
   sec2_h:{ko:'발행사 점유율',en:'Issuer Market Share'},
-  sec2_d:{ko:'추적 3개 발행사 · 거래량(DEX 스왑)은 Backpack, 온체인 발행액은 Ondo가 1위',en:'3 tracked issuers · Backpack leads DEX volume, Ondo leads on-chain value'},
-  land_h:{ko:'온체인 주식 시장 지형',en:'On-Chain Equity Landscape'},
-  land_d:{ko:'토큰화 주식 시장이 어디로 쏠리는지 — 발행사 점유율·체인·가격 발견 (Binance Research 반영)',en:'Where the tokenized-equity market is consolidating — issuer share, venue & price discovery (per Binance Research)'},
-  land_share_h:{ko:'토큰화 주식 점유율',en:'Tokenized-Equity Share'}, land_share_sub:{ko:'시가총액 기준 · 2026-07',en:'by market cap · Jul 2026'},
-  land_facts_h:{ko:'핵심 포인트',en:'Key Takeaways'},
-  land_note:{ko:'출처: <a href="https://www.binance.com/en/research/analysis/stock-price-discovery-moves-on-chain" target="_blank" rel="noopener">Binance Research — Stock Price Discovery Moves On-Chain</a> (2026-07). ⚠️ Binance <b>자사 리서치</b>(자사 상품 bStocks 관련) — bStocks $500M 마일스톤은 PR Newswire 등 외부 매체로 교차확인. 점유율은 발표 시점 스냅샷.',
-    en:'Source: <a href="https://www.binance.com/en/research/analysis/stock-price-discovery-moves-on-chain" target="_blank" rel="noopener">Binance Research — Stock Price Discovery Moves On-Chain</a> (Jul 2026). ⚠️ Binance <b>first-party research</b> (covers its own bStocks); the $500M milestone is cross-verified via PR Newswire. Shares are a point-in-time snapshot.'},
+  sec2_d:{ko:'온체인 발행액(시총) 기준 — Ondo·xStocks는 <b>DefiLlama 라이브</b>, bStocks는 Binance($500M). 거래량 탭은 DEX 스왑만(Ondo·bStocks는 보유형/CEX라 ≈0)',en:'By on-chain value (mcap) — Ondo & xStocks <b>live from DefiLlama</b>, bStocks from Binance ($500M). The volume tab is DEX-only (Ondo/bStocks are hold/CEX, hence ≈0)'},
   sec3_h:{ko:'체인별 분포',en:'By Chain'},
   sec3_d:{ko:'가치는 Ethereum·BNB에, 거래는 Solana에 — 분리해서 봐야 함',en:'Value sits on Ethereum/BNB, trading on Solana — read them separately'},
   sec4_h:{ko:'같은 종목, 다른 발행사 — 가격차',en:'Same Stock, Different Issuers — Price Gap'},
@@ -857,10 +818,7 @@ const TR_ZH={
   callout_q:'成交量第一 ≠ 发行额第一',
   callout_a:'链上24h <b>DEX 成交量由 Backpack 与 xStocks 在 Solana 上主导</b> — 两者轮流领先，实时第一以顶部头部为准。相反 <b>Ondo 发行规模（链上价值）第一，但几乎没有 DEX 二级交易</b> — 以铸造/赎回及机构转账为主，其活跃度体现为"转账成交量"而非兑换。⚠ 各发行方的成交量口径不同（兑换 vs 转账），简单相加比较需谨慎。',
   sec1_h:'当前最活跃的代币化股票', sec1_d:'按24h链上 DEX 成交量前10 — 资产 · 发行方 · 涨跌',
-  sec2_h:'发行方市场份额', sec2_d:'基于3家追踪发行方 · 成交量 Backpack 领先，链上发行额 Ondo 领先',
-  land_h:'链上股票市场格局', land_d:'代币化股票市场向何处集中 — 发行方份额·链·价格发现(参考 Binance Research)',
-  land_share_h:'代币化股票份额', land_share_sub:'按市值 · 2026-07', land_facts_h:'核心要点',
-  land_note:'来源：<a href="https://www.binance.com/en/research/analysis/stock-price-discovery-moves-on-chain" target="_blank" rel="noopener">Binance Research — Stock Price Discovery Moves On-Chain</a> (2026-07)。⚠️ 币安<b>自家研究</b>(涉及自家产品 bStocks) — $500M里程碑经 PR Newswire 等外部媒体交叉验证。份额为发布时快照。',
+  sec2_h:'发行方市场份额', sec2_d:'按链上发行额(市值) — Ondo·xStocks 为 <b>DefiLlama 实时</b>，bStocks 为 Binance($500M)。成交量选项仅含 DEX 兑换(Ondo·bStocks 为持有/CEX，故≈0)',
   sec3_h:'按链分布', sec3_d:'价值在 Ethereum/BNB，交易在 Solana — 需分开看',
   sec4_h:'同一股票，不同发行方 — 价差', sec4_d:'一只股票被多家发行方代币化 · 价差是套利信号',
   sec5_h:'全部代币数据', sec5_d:'基于真实 mint/合约 · 价格 LIVE=DefiLlama · 成交量=tokens.xyz',
@@ -943,12 +901,13 @@ Object.keys(TR_ZH).forEach(k=>{if(TR[k])TR[k].zh=TR_ZH[k];else TR[k]={zh:TR_ZH[k
 const t=k=>(TR[k]&&(TR[k][lang]||TR[k].en))||k;
 
 /* ===================== DATA ===================== */
-const ISSUERS={ xStocks:{color:'#2f6fed'}, Backpack:{color:'#e5383b'}, Ondo:{color:'#6366f1'} };
+const ISSUERS={ xStocks:{color:'#2f6fed'}, Backpack:{color:'#e5383b'}, Ondo:{color:'#6366f1'}, Binance:{color:'#F0B90B'} };
 const issuersList=Object.keys(ISSUERS);
-const ISSUER_AGG={  // as of 2026-07-23 · Ondo=공식 PR($1B+ TVL), xStocks 발행액=RWA 07-16, Backpack=CoinGecko 07-23 · vol은 라이브 재계산
-  Ondo:    {count:438, mcap:1.0e9,  vol:0},        // "Ondo Stocks"(구 Global Markets) · 업계 최초 $1B TVL · DEX 스왑 ≈0
-  xStocks: {count:628, mcap:507e6,  vol:29e6},     // backed.fi API 07-23 (628 assets)
-  Backpack:{count:8,   mcap:21.3e6, vol:112.1e6},  // SPCX·MU·SNDK·DRAM·SKHY·BOT·INTC·HOOD
+const ISSUER_AGG={  // mcap = on-chain value; Ondo/xStocks LIVE from DefiLlama (/api/sector.issuers), else fallback
+  Ondo:    {count:438, mcap:944e6,  vol:0},        // Ondo Global Markets — DefiLlama live · DEX 스왑 ≈0(보유·담보용)
+  xStocks: {count:628, mcap:370e6,  vol:29e6},     // xStocks — DefiLlama live · Backed Finance
+  Backpack:{count:8,   mcap:21.3e6, vol:112.1e6},  // SPCX·MU·SNDK·DRAM·SKHY·BOT·INTC·HOOD (Solana DEX)
+  Binance: {count:46,  mcap:500e6,  vol:0},        // bStocks — BNB Chain(BEP-20) · $500M AUM(Binance PR 07-29) · CEX 중심이라 DEX vol 미집계
 };
 const SECTOR={mcap:1.86e9, monthlyVol:9e9, mcap30d:15.1, volYoY:'170×', holders:671490, holders30d:75.7};  // RWA.xyz 07-22 · 월 전송량 $9B(2026-06, 전년비 170×, FXStreet)
 const CHAIN_MCAP=[['Ethereum',647e6,'#627EEA'],['BNB Chain',562e6,'#F0B90B'],['Solana',443e6,'#9945FF'],['Avalanche',140e6,'#E84142'],['Other',68e6,'#9aa0ab']];  // 비중 RWA 07-16 × 총액 $1.86B
@@ -1014,23 +973,9 @@ const NEWS={ko:[
   {c:'milestone',l:'RECORD',t:'Binance bStocks hits $500M in 7 weeks — BNB Chain becomes #1 on-chain equity venue (~30%)',m:'Binance Research · Jul 29'},
   {c:'launch',l:'LAUNCH',t:'Backpack adds Intel, Robinhood, RoboStrategy — 8 on-chain tokens',m:'Jul'},
   {c:'entrant',l:'ENTRANT',t:'xStocks (Kraken) expands to 628 assets',m:'backed.fi · Jul'}]};
-/* Tokenized-equity landscape — Binance Research "Stock Price Discovery Moves On-Chain" (2026-07).
-   Market share by tokenized-equity market cap. bStocks $500M cross-verified (PR Newswire, Jul-29). */
-const TE_SHARE=[
-  {name:'Ondo',     pct:45, color:'#5a51b0', note:{ko:'BNB Chain 등 · 75%→45%',       en:'BNB Chain et al · 75%→45%',       zh:'BNB链等 · 75%→45%'}},
-  {name:'bStocks',  pct:27, color:'#F0B90B', note:{ko:'Binance · BNB Chain(BEP-20)',   en:'Binance · BNB Chain (BEP-20)',    zh:'币安 · BNB链(BEP-20)'}},
-  {name:'xStocks',  pct:27, color:'#2f5fc0', note:{ko:'Backed · Solana 중심',           en:'Backed · Solana-first',           zh:'Backed · 以Solana为主'}},
-  {name:'Robinhood',pct:1,  color:'#00c805', note:{ko:'자체 체인(Arbitrum)',            en:'own chain (Arbitrum)',            zh:'自有链(Arbitrum)'}},
-];
-const TE_FACTS=[
-  {ic:'🏆', v:'BNB Chain · ~30%', l:{ko:'온체인 주식 <b>최대 거래처</b> — bStocks + Ondo BNB 물량 합산',en:'<b>#1 venue</b> for on-chain equities — bStocks + Ondo on BNB',zh:'链上股票<b>最大场所</b> — bStocks + Ondo BNB'}},
-  {ic:'🚀', v:'bStocks · $500M', l:{ko:'<b>7주 만</b>에 $0→$500M (6/11 출시) · 5→46+ 종목',en:'$0→$500M in <b>under 7 weeks</b> (Jun 11) · 5→46+ tickers',zh:'不到<b>7周</b>从$0到$500M(6/11)· 5→46+标的'}},
-  {ic:'🎯', v:{ko:'가격 발견 작동',en:'Price discovery works',zh:'价格发现生效'}, l:{ko:'주말·시간외 온체인가가 <b>월요일 갭의 92%</b> 반영 · 3%↑ 갭은 방향 <b>100%</b>(41회)',en:'Weekend/after-hours prices catch <b>92% of Monday gap</b> · 100% directional on >3% gaps (41×)',zh:'周末/盘后价格反映<b>周一缺口92%</b> · >3%缺口方向<b>100%</b>(41次)'}},
-  {ic:'📈', v:{ko:'온체인 0.3%',en:'On-chain 0.3%',zh:'链上 0.3%'}, l:{ko:'기초자산 거래량 대비 <b>0.3%</b> — 6주 전 0.01% (성장 여력 큼)',en:'<b>0.3%</b> of underlying stock volume — up from 0.01% six weeks ago',zh:'为标的股票成交量<b>0.3%</b> — 六周前0.01%'}},
-];
 
 /* ===================== HELPERS ===================== */
-let shareMetric='volume', issuerFilter='all', searchQ='', priceLive=false, tablePage=0, tableSort='vol', topPage=0, liveVolTs=0;
+let shareMetric='mcap', issuerFilter='all', searchQ='', priceLive=false, tablePage=0, tableSort='vol', topPage=0, liveVolTs=0;
 let watch=new Set(JSON.parse(localStorage.getItem('watch')||'[]')), watchOnly=false;
 function toggleWatch(tk){if(watch.has(tk))watch.delete(tk);else watch.add(tk);
   localStorage.setItem('watch',JSON.stringify([...watch]));renderTop();renderTable();renderMovers();}
@@ -1170,9 +1115,9 @@ function recomputeAgg(){
   if(!FULL)return;
   ['Backpack','xStocks'].forEach(iss=>{
     const arr=FULL[iss]; if(!arr||!arr.length)return;
-    ISSUER_AGG[iss].vol=arr.reduce((s,a)=>s+(a.vol||0),0);
+    ISSUER_AGG[iss].vol=arr.reduce((s,a)=>s+(a.vol||0),0);   // live DEX volume + count from tracked tokens
     ISSUER_AGG[iss].count=arr.length;
-    const m=arr.reduce((s,a)=>s+(a.mc||0),0); if(m>0)ISSUER_AGG[iss].mcap=m;
+    // mcap (on-chain value) is NOT recomputed here — token-summed mcap is unreliable; use DefiLlama live
   });
 }
 function renderTable(){
@@ -1490,25 +1435,17 @@ function renderRWA(){
   if(!sectorData)loadSector(); else renderRwaMoney();   // daily money-flow chart needs /api/sector
 }
 let prevPx={};
-/* ---- On-chain tokenized-equity landscape (Binance Research, cited) ---- */
-function tl(o){return o&&typeof o==='object'?(o[lang]||o.en):o;}   // pick localized string or pass-through
-function renderLandscape(){
-  const bars=document.getElementById('teShareBars');
-  if(bars)bars.innerHTML=TE_SHARE.map(s=>`<div class="te-row">
-    <div class="te-top"><span class="te-name"><i style="background:${s.color}"></i>${s.name}</span><b>${s.pct}%</b></div>
-    <div class="te-bar"><span style="width:${s.pct}%;background:${s.color}"></span></div>
-    <div class="te-note">${tl(s.note)}</div></div>`).join('');
-  const fc=document.getElementById('landFacts');
-  if(fc)fc.innerHTML=TE_FACTS.map(f=>`<div class="lf-row"><span class="lf-ic">${f.ic}</span>
-    <div><div class="lf-v">${tl(f.v)}</div><div class="lf-l">${tl(f.l)}</div></div></div>`).join('');
-  const note=document.getElementById('landNote');
-  if(note)note.innerHTML=t('land_note');
-}
 /* ---- RWA sector-expansion dashboard (KPI tiles + stablecoin trend) ---- */
 let sectorData=null;
 async function loadSector(){
   try{const r=await fetch('/api/sector',{cache:'no-store'});const j=await r.json();if(j&&(j.stable||j.rwatvl))sectorData=j;}catch(e){}
-  renderSector();renderRwaMoney();
+  applyLiveIssuers();
+  renderSector();renderRwaMoney();renderShare();
+}
+function applyLiveIssuers(){   // overlay live DefiLlama on-chain value onto the issuer market-share
+  const li=sectorData&&sectorData.issuers; if(!li)return;
+  if(li.Ondo&&ISSUER_AGG.Ondo)ISSUER_AGG.Ondo.mcap=li.Ondo;
+  if(li.xStocks&&ISSUER_AGG.xStocks)ISSUER_AGG.xStocks.mcap=li.xStocks;
 }
 const pctSpan=(v,d)=>v==null?'':`<span class="${v>=0?'up':'down'}">${v>=0?'▲':'▼'}${Math.abs(v).toFixed(d==null?1:d)}%</span>`;
 function rwaIndex(){  // mcap-weighted aggregate move of the RWA-stock basket + breadth
@@ -1872,7 +1809,7 @@ function renderAll(){
   recomputeAgg();
   const loc=lang==='ko'?'ko-KR':(lang==='zh'?'zh-CN':'en-US');
   document.getElementById('editionDate').textContent='LIVE · '+new Date().toLocaleString(loc,{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-  renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderLandscape();renderCross();renderTable();renderCmp();renderNews();renderEarnings();renderNewsFeed();renderRevenue();if(rwaData)renderRWA();if(sectorData)renderSector();
+  renderHero();renderMovers();renderIssuerCTA();renderTop();renderShare();renderCross();renderTable();renderCmp();renderNews();renderEarnings();renderNewsFeed();renderRevenue();if(rwaData)renderRWA();if(sectorData)renderSector();
   chainMcapCh=chainDonut('chainMcap',CHAIN_MCAP,false,chainMcapCh);
   chainVolCh=chainDonut('chainVol',CHAIN_VOL,true,chainVolCh);
   renderChainLegend('chainMcapLeg',CHAIN_MCAP,false);renderChainLegend('chainVolLeg',CHAIN_VOL,true);

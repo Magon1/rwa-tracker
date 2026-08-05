@@ -1042,6 +1042,17 @@ def build_sector():
                          'chg7': round(c7, 1) if c7 is not None else None,
                          'treasury': round(tre / 1e9, 2),
                          'top': [{'name': p.get('name'), 'tvl': round((p.get('tvl', 0) or 0) / 1e9, 2)} for p in top]}
+        # live tokenized-STOCK issuer market cap (on-chain value) from the same DefiLlama pull.
+        # Ondo Global Markets = Ondo's tokenized stocks (NOT "Ondo Yield Assets" = its treasuries).
+        def _tvl(name):
+            return next((round(p.get('tvl', 0) or 0) for p in prot if (p.get('name') or '') == name), 0)
+        iss = {}
+        o = _tvl('Ondo Global Markets')
+        if o: iss['Ondo'] = o
+        x = _tvl('xStocks')
+        if x: iss['xStocks'] = x
+        if iss:
+            out['issuers'] = iss   # bStocks/Binance is CEX+BNB, not on DefiLlama → set client-side
     except Exception as e:
         sys.stderr.write(f"sector rwatvl: {e}\n")
     try:  # mcap-weighted RWA-equity index time-series (Yahoo backfill) + BTC comparison
